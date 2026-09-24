@@ -1,3 +1,4 @@
+import { supabase } from '../../lib/supabase';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, OnlineUser, UserRole } from '../types';
 import { getThaiFormattedTime } from '../utils/thaiDate';
@@ -32,6 +33,44 @@ export const ChatPopup: React.FC<ChatPopupProps> = ({
   onSendMessage,
   onlineUsers,
   mySessionId,
+  // --- วางโค้ด Supabase ตั้งแต่ตรงนี้ ---
+  const fetchChatHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching chats:', error);
+      } else if (data) {
+        console.log('ประวัติแชทจาก Supabase:', data);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  };
+
+  const saveChatMessage = async (textMessage: string, senderName: string) => {
+    try {
+      const { error } = await supabase
+        .from('chats')
+        .insert([{ text: textMessage, sender: senderName }]);
+
+      if (error) {
+        console.error('Error saving chat:', error);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchChatHistory();
+    }
+  }, [isOpen]);
+  // --- สิ้นสุดส่วนโค้ด Supabase ---
   userName,
   userRole = 'member',
   unreadCount,
