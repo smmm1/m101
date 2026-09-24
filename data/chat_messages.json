@@ -1,0 +1,65 @@
+[
+  {
+    "id": "sys-welcome",
+    "senderId": "system",
+    "senderName": "ระบบสื่อสาร Mustang",
+    "text": "ยินดีต้อนรับสู่ห้องแชทสื่อสารทีม Mustang! ข้อความทั้งหมดจะถูกบันทึกไว้อย่างปลอดภัย แม้ออกจากระบบแชทก็ยังคงอยู่",
+    "timestamp": 1790230801457,
+    "color": "#059669",
+    "role": "system"
+  },
+  {
+    "id": "msg-1790234424611-w0maq",
+    "senderId": "user-1790233591598-1gah2",
+    "senderName": "8888",
+    "text": "ฟหก",
+    "timestamp": 1790234424611,
+    "color": "#06b6d4",
+    "role": "user"
+  },
+  {
+    "id": "msg-1790234475996-z9l0i",
+    "senderId": "user-1790233591598-1gah2",
+    "senderName": "777",
+    "text": "4141",
+    "timestamp": 1790234475996,
+    "color": "#06b6d4",
+    "role": "user"
+  },
+  {
+    "id": "msg-1790234609619-j69mk",
+    "senderId": "user-1790234567808-dr7ye",
+    "senderName": "sqq",
+    "text": "what",
+    "timestamp": 1790234609619,
+    "color": "#14b8a6",
+    "role": "user"
+  },
+  {
+    "id": "msg-1790234615050-3im85",
+    "senderId": "user-1790234567808-dr7ye",
+    "senderName": "sqq",
+    "text": "🚀",
+    "timestamp": 1790234615050,
+    "color": "#14b8a6",
+    "role": "user"
+  },
+  {
+    "id": "msg-1790234615210-uswe6",
+    "senderId": "user-1790234567808-dr7ye",
+    "senderName": "sqq",
+    "text": "🚀",
+    "timestamp": 1790234615210,
+    "color": "#14b8a6",
+    "role": "user"
+  },
+  {
+    "id": "msg-1790234615347-lvsbl",
+    "senderId": "user-1790234567808-dr7ye",
+    "senderName": "sqq",
+    "text": "🚀",
+    "timestamp": 1790234615347,
+    "color": "#14b8a6",
+    "role": "user"
+  }
+]

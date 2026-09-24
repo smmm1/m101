@@ -1,0 +1,8 @@
+{
+  "name": "Mustangm",
+  "description": "ระบบบริหารจัดการทะเบียนนิติบุคคล ทะเบียนกิจการ ตรวจสอบความถูกต้อง เชื่อมต่อฐานข้อมูล DBD และติดตามสถานะประจำปี",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
