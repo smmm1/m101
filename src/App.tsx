@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { ActiveScreen, BusinessRecord, UserRole } from './types';
+import React, { useState, useEffect } from 'react';
+import { ActiveScreen, BusinessRecord } from './types';
 import { INITIAL_BUSINESS_RECORDS } from './data/initialData';
 import { LoginScreen } from './components/LoginScreen';
 import { Sidebar } from './components/Sidebar';
@@ -12,320 +12,545 @@ import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { BusinessListView } from './components/BusinessListView';
 import { EditBusinessModal } from './components/EditBusinessModal';
+import { AddBusinessModal } from './components/AddBusinessModal';
 import { SettingsView } from './components/SettingsView';
-import { HelpModal } from './components/HelpModal';
+import { YearManageModal } from './components/YearManageModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { ChatPopup } from './components/ChatPopup';
-import { usePresence } from './utils/usePresence';
+import { parseDocumentFile } from './utils/excelHelper';
+import {
+  ImportConflictModal,
+  DuplicateConflictItem,
+  ConflictResolutionMode,
+} from './components/ImportConflictModal';
+import { ThemeProvider } from './context/ThemeContext';
+import { CursorProvider } from './context/CursorContext';
 
-const STORAGE_KEY_RECORDS = 'directory_records_v1';
+const STORAGE_KEY_YEARS = 'directory_years_v1';
+const STORAGE_KEY_SELECTED_YEAR = 'directory_selected_year_v1';
+const STORAGE_KEY_RECORDS_BY_YEAR = 'directory_records_by_year_v1';
+const STORAGE_KEY_OLD_RECORDS = 'directory_records_v1';
 const STORAGE_KEY_USER = 'app_directory_user_v1';
 const STORAGE_KEY_AUTH = 'app_directory_is_logged_in_v1';
-const STORAGE_KEY_ROLE = 'app_directory_user_role_v1';
 
 export default function App() {
-  // Authentication State
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
-  });
-
-  // Current Screen
-  const [currentScreen, setCurrentScreen] = useState<ActiveScreen>('dashboard');
-
-  // User Display Name
-  const [userName, setUserName] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEY_USER) || 'Mustang';
-  });
-
-  // User Role (1602: admin, 0000: member)
-  const [userRole, setUserRole] = useState<UserRole>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_ROLE);
-    if (saved === 'admin' || saved === 'member') return saved;
-    return 'admin';
-  });
-
-  const [kickNotice, setKickNotice] = useState<string>('');
-
-  const handleKicked = useCallback((reason: string) => {
-    setIsLoggedIn(false);
-    localStorage.removeItem(STORAGE_KEY_AUTH);
-    setKickNotice(reason || 'คุณถูกผู้ดูแลระบบ (Admin) เตะออกจากระบบ');
-  }, []);
-
-  // Real-time Active Presence Tracking & Live Chat
-  const {
-    onlineUsers,
-    isConnected: isPresenceConnected,
-    mySessionId,
-    chatMessages,
-    sendChatMessage,
-    kickMember,
-    clearMyChat,
-    restoreMyChat,
-    isChatCleared,
-    unreadCount,
-    isChatOpen,
-    setIsChatOpen,
-    isSoundEnabled,
-    toggleSound,
-    latestIncomingMessage,
-    clearLatestIncomingMessage,
-  } = usePresence(
-    userName,
-    currentScreen,
-    isLoggedIn,
-    userRole,
-    handleKicked
+  return (
+    <ThemeProvider>
+      <CursorProvider>
+        <AppContent />
+      </CursorProvider>
+    </ThemeProvider>
   );
+}
 
-  // Business Directory Records
-  const [records, setRecords] = useState<BusinessRecord[]>(() => {
+function AppContent() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_RECORDS);
+      return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [currentScreen, setCurrentScreen] = useState<ActiveScreen>('dashboard');
+  const [userName, setUserName] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_USER) || 'Mustang';
+    } catch {
+      return 'Mustang';
+    }
+  });
+
+  // Multi-Year state (defaults to only year 69)
+  const [availableYears, setAvailableYears] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_YEARS);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // Normalize legacy '2569' to '69' if present
+          return parsed.map((y: string) => (y === '2569' ? '69' : String(y)));
+        }
+      }
+    } catch {}
+    return ['69'];
+  });
+
+  const [selectedYear, setSelectedYear] = useState<string>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
+    if (saved === '2569') return '69';
+    return saved || '69';
+  });
+
+  const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
+          // If legacy '2569' exists in parsed, migrate to '69'
+          if (parsed['2569'] && !parsed['69']) {
+            parsed['69'] = parsed['2569'];
+            delete parsed['2569'];
+          }
           return parsed;
         }
       }
-    } catch (e) {}
-    return INITIAL_BUSINESS_RECORDS;
+    } catch {}
+
+    // Fallback: check legacy single-year records
+    let fallback69 = INITIAL_BUSINESS_RECORDS;
+    try {
+      const legacy = localStorage.getItem(STORAGE_KEY_OLD_RECORDS);
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (Array.isArray(parsed) && parsed.length > 0) fallback69 = parsed;
+      }
+    } catch {}
+
+    return {
+      '69': fallback69,
+    };
   });
 
-  // Selected Topic Filter
-  const [selectedTopic, setSelectedTopic] = useState<string>('all');
+  // Current year active records
+  const currentRecords = recordsByYear[selectedYear] || [];
 
-  // Compute unique topics with counts
-  const topicCounts = React.useMemo(() => {
-    const map = new Map<string, number>();
-    records.forEach((r) => {
-      const t = r.topic || 'บันทึกข้อมูลเอง';
-      map.set(t, (map.get(t) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
-  }, [records]);
-
-  // Search Query
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Modals
-  const [editingRecord, setEditingRecord] = useState<BusinessRecord | null>(null);
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // Toasts
+  const [editingRecord, setEditingRecord] = useState<BusinessRecord | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isYearModalOpen, setIsYearModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Persist records
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
-  }, [records]);
+  // State for Import Conflict Modal
+  const [pendingImportFile, setPendingImportFile] = useState<string>('');
+  const [conflictDuplicates, setConflictDuplicates] = useState<DuplicateConflictItem[]>([]);
+  const [conflictNewItems, setConflictNewItems] = useState<Partial<BusinessRecord>[]>([]);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
-  // Persist user
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_USER, userName);
-  }, [userName]);
-
-  // Persist auth
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_AUTH, isLoggedIn ? 'true' : 'false');
-  }, [isLoggedIn]);
-
-  // Toast Helper
-  const showToast = (message: string, title?: string, type: 'success' | 'info' | 'error' = 'success') => {
-    const id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
-    setToasts((prev) => [...prev, { id, message, title, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3800);
+  const showToast = (message: string, title?: string, type: ToastMessage['type'] = 'success') => {
+    const newToast: ToastMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+      title,
+      message,
+      type,
+    };
+    setToasts((prev) => [...prev, newToast]);
   };
 
   const handleDismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Login handler with role support (1602: admin, 0000: member)
-  const handleLogin = (user: string, role: UserRole) => {
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_YEARS, JSON.stringify(availableYears));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [availableYears]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SELECTED_YEAR, selectedYear);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_RECORDS_BY_YEAR, JSON.stringify(recordsByYear));
+      // Also sync current year to legacy key for backwards compatibility
+      if (recordsByYear[selectedYear]) {
+        localStorage.setItem(STORAGE_KEY_OLD_RECORDS, JSON.stringify(recordsByYear[selectedYear]));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [recordsByYear, selectedYear]);
+
+  const handleLogin = (user: string) => {
     if (user) {
       setUserName(user);
-      localStorage.setItem(STORAGE_KEY_USER, user);
+      try {
+        localStorage.setItem(STORAGE_KEY_USER, user);
+      } catch {}
     }
-    setKickNotice('');
-    setUserRole(role);
-    localStorage.setItem(STORAGE_KEY_ROLE, role);
     setIsLoggedIn(true);
-    localStorage.setItem(STORAGE_KEY_AUTH, 'true');
-    setCurrentScreen('dashboard');
-
-    const roleName = role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Admin)' : 'สมาชิกทั่วไป (Member)';
-    showToast(
-      `ยินดีต้อนรับคุณ ${user || userName || 'Mustang'} ในยศ [${roleName}]`,
-      'เข้าสู่ระบบสำเร็จ'
-    );
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTH, 'true');
+    } catch {}
+    showToast(`ยินดีต้อนรับคุณ ${user || 'ผู้ใช้งาน'}`, 'เข้าสู่ระบบสำเร็จ');
   };
 
-  // Kick Member handler (Admin only)
-  const handleAdminKickMember = async (targetId: string, targetName: string) => {
-    await kickMember(targetId, targetName);
-    showToast(`เตะสมาชิก [${targetName}] ออกจากระบบเรียบร้อยแล้ว`, 'จัดการสมาชิก');
-  };
-
-  // Logout handler
   const handleLogout = () => {
     setIsLoggedIn(false);
-    localStorage.setItem(STORAGE_KEY_AUTH, 'false');
-    showToast('ออกจากระบบเรียบร้อยแล้ว');
+    try {
+      localStorage.removeItem(STORAGE_KEY_AUTH);
+    } catch {}
+    showToast('ออกจากระบบเรียบร้อยแล้ว', 'แจ้งเตือน', 'info');
   };
 
-  // Add new record
-  const handleAddRecord = (newRecord: BusinessRecord) => {
-    setRecords((prev) => [...prev, newRecord]);
+  // Year Management
+  const handleSelectYear = (year: string) => {
+    setSelectedYear(year);
+    if (!availableYears.includes(year)) {
+      setAvailableYears((prev) => [...prev, year].sort());
+    }
+    showToast(`สลับการทำงานไปยัง "ปี ${year}"`, 'เปลี่ยนรอบปี');
   };
 
-  // Update existing record
-  const handleUpdateRecord = (updated: BusinessRecord) => {
-    setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  const handleAddYear = (newYear: string, copyFromYear?: string) => {
+    if (!availableYears.includes(newYear)) {
+      setAvailableYears((prev) => [...prev, newYear].sort());
+    }
+
+    let initialDataForNewYear: BusinessRecord[] = [];
+    if (copyFromYear && recordsByYear[copyFromYear]) {
+      // Deep copy records from source year, reset status to 'pending' for new accounting cycle
+      initialDataForNewYear = recordsByYear[copyFromYear].map((r, idx) => ({
+        ...r,
+        id: `yr-${newYear}-${Date.now()}-${idx}`,
+        status: 'pending',
+        auditorDate: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+
+    setRecordsByYear((prev) => ({
+      ...prev,
+      [newYear]: initialDataForNewYear,
+    }));
+
+    setSelectedYear(newYear);
+    setIsYearModalOpen(false);
+
+    if (copyFromYear) {
+      showToast(
+        `สร้างรอบปี ${newYear} พร้อมคัดลอกรายชื่อบริษัท ${initialDataForNewYear.length} รายการจากปี ${copyFromYear} เรียบร้อย`,
+        'สร้างรอบปีใหม่สำเร็จ'
+      );
+    } else {
+      showToast(`สร้างรอบปี ${newYear} เรียบร้อยแล้ว`, 'สร้างรอบปีใหม่สำเร็จ');
+    }
   };
 
-  // Delete single record
-  const handleDeleteRecord = (id: string) => {
-    setRecords((prev) => prev.filter((r) => r.id !== id));
+  const handleDeleteYear = (yearToDelete: string) => {
+    if (availableYears.length <= 1) {
+      showToast('ไม่สามารถลบรอบปีเดียวที่เหลืออยู่ได้', 'แจ้งเตือน', 'error');
+      return;
+    }
+
+    const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
+    setAvailableYears(nextAvailable);
+
+    setRecordsByYear((prev) => {
+      const copy = { ...prev };
+      delete copy[yearToDelete];
+      return copy;
+    });
+
+    if (selectedYear === yearToDelete) {
+      setSelectedYear(nextAvailable[0]);
+    }
+
+    showToast(`ลบรอบปี ${yearToDelete} เรียบร้อยแล้ว`, 'ลบรอบปี');
   };
 
-  // Delete multiple records
-  const handleDeleteMultiple = (ids: string[]) => {
-    setRecords((prev) => prev.filter((r) => !ids.includes(r.id)));
-  };
-
-  // Batch import records from Excel/CSV
-  const handleImportRecords = (newItems: Partial<BusinessRecord>[]) => {
-    const baseTimestamp = Date.now();
-    
-    setRecords((prev) => {
-      // ค้นหาลำดับเลขที่สูงที่สุดในฐานข้อมูลปัจจุบัน เพื่อนำไปบวกนับเพิ่มต่อยอด
-      let maxSeq = 0;
-      prev.forEach((r) => {
-        const cleaned = r.sequenceNo ? r.sequenceNo.replace(/\D/g, '') : '';
-        const num = parseInt(cleaned, 10);
-        if (!isNaN(num) && num > maxSeq) {
-          maxSeq = num;
-        }
-      });
-
-      const formattedNewRecords: BusinessRecord[] = newItems.map((item, idx) => {
-        const rowTimestamp = new Date(baseTimestamp + (newItems.length - idx) * 1000).toISOString();
-        const calculatedSeq = maxSeq + idx + 1;
-
-        return {
-          id: 'import-' + baseTimestamp + '-' + String(idx).padStart(4, '0'),
-          sequenceNo: String(calculatedSeq),
-          taxId: item.taxId !== undefined ? item.taxId : '',
-          companyName: item.companyName || `กิจการนำเข้า ${calculatedSeq}`,
-          type: item.type || 'company',
-          auditorDate: item.auditorDate !== undefined ? item.auditorDate : '',
-          password: item.password !== undefined ? item.password : '',
-          remark: item.remark !== undefined ? item.remark : '',
-          eFilingCode: item.eFilingCode !== undefined ? item.eFilingCode : '',
-          ssoCode: item.ssoCode !== undefined ? item.ssoCode : '',
-          status: item.status || 'pending',
-          isVerifiedDbd: true,
-          topic: item.topic || 'นำเข้าจากไฟล์',
-          sourceType: item.sourceType || 'excel',
-          sourceFileName: item.sourceFileName,
-          createdAt: rowTimestamp,
-          updatedAt: rowTimestamp
-        };
-      });
-
-      return [...formattedNewRecords, ...prev];
+  // Record CRUD for the Active Year
+  const updateActiveYearRecords = (updater: (prev: BusinessRecord[]) => BusinessRecord[]) => {
+    setRecordsByYear((prev) => {
+      const currentList = prev[selectedYear] || [];
+      const updatedList = updater(currentList);
+      return {
+        ...prev,
+        [selectedYear]: updatedList,
+      };
     });
   };
 
-  // If not logged in, render Screen 1 (Login Screen)
+  const handleAddRecord = (newRecord: BusinessRecord) => {
+    updateActiveYearRecords((prev) => [newRecord, ...prev]);
+  };
+
+  const handleUpdateRecord = (updated: BusinessRecord) => {
+    updateActiveYearRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    showToast(`อัปเดตข้อมูล "${updated.companyName}" สำเร็จ`, 'บันทึกเรียบร้อย');
+    setEditingRecord(null);
+  };
+
+  const handleDeleteRecord = (id: string) => {
+    const target = currentRecords.find((r) => r.id === id);
+    updateActiveYearRecords((prev) => prev.filter((r) => r.id !== id));
+    showToast(`ลบข้อมูล "${target?.companyName || id}" แล้ว`, 'ลบข้อมูล');
+  };
+
+  const handleDeleteMultiple = (ids: string[]) => {
+    updateActiveYearRecords((prev) => prev.filter((r) => !ids.includes(r.id)));
+    showToast(`ลบข้อมูล ${ids.length} รายการแล้ว`, 'ลบข้อมูล');
+  };
+
+  // Helper to append formatted records
+  const createNewFormattedRecords = (
+    newItems: Partial<BusinessRecord>[],
+    currentList: BusinessRecord[]
+  ): BusinessRecord[] => {
+    const baseTimestamp = Date.now();
+    let maxSeq = 0;
+    currentList.forEach((r) => {
+      const cleaned = r.sequenceNo ? r.sequenceNo.replace(/\D/g, '') : '';
+      const num = parseInt(cleaned, 10);
+      if (!isNaN(num) && num > maxSeq) maxSeq = num;
+    });
+
+    return newItems.map((item, idx) => {
+      const rowTimestamp = new Date(baseTimestamp + (newItems.length - idx) * 1000).toISOString();
+      const calculatedSeq = maxSeq + idx + 1;
+
+      return {
+        id: `import-${selectedYear}-${baseTimestamp}-${String(idx).padStart(4, '0')}`,
+        sequenceNo: String(calculatedSeq),
+        taxId: item.taxId !== undefined ? item.taxId : '',
+        companyName: item.companyName || `กิจการนำเข้า ${calculatedSeq}`,
+        type: item.type || 'company',
+        auditorDate: item.auditorDate !== undefined ? item.auditorDate : '',
+        password: item.password !== undefined ? item.password : '',
+        remark: item.remark !== undefined ? item.remark : '',
+        eFilingCode: item.eFilingCode !== undefined ? item.eFilingCode : '',
+        ssoCode: item.ssoCode !== undefined ? item.ssoCode : '',
+        status: item.status || 'pending',
+        isVerifiedDbd: true,
+        topic: item.topic || `นำเข้าปี ${selectedYear}`,
+        sourceType: item.sourceType || 'excel',
+        sourceFileName: item.sourceFileName,
+        createdAt: rowTimestamp,
+        updatedAt: rowTimestamp,
+      };
+    });
+  };
+
+  // Import Process for Active Year
+  const processImportRecords = (
+    parsedItems: Partial<BusinessRecord>[],
+    fileName: string
+  ) => {
+    const duplicateList: DuplicateConflictItem[] = [];
+    const newItemsList: Partial<BusinessRecord>[] = [];
+
+    const existingTaxMap = new Map<string, BusinessRecord>();
+    currentRecords.forEach((r) => {
+      const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
+      if (cleanTax) {
+        existingTaxMap.set(cleanTax, r);
+      }
+    });
+
+    parsedItems.forEach((item) => {
+      const cleanTax = item.taxId ? item.taxId.replace(/\D/g, '').trim() : '';
+      if (cleanTax && existingTaxMap.has(cleanTax)) {
+        duplicateList.push({
+          incoming: item,
+          existing: existingTaxMap.get(cleanTax)!,
+        });
+      } else {
+        newItemsList.push(item);
+      }
+    });
+
+    if (duplicateList.length > 0) {
+      setPendingImportFile(fileName);
+      setConflictDuplicates(duplicateList);
+      setConflictNewItems(newItemsList);
+      setIsConflictModalOpen(true);
+    } else {
+      const formatted = createNewFormattedRecords(newItemsList, currentRecords);
+      updateActiveYearRecords((prev) => [...formatted, ...prev]);
+      showToast(`นำเข้าสำเร็จ ${formatted.length} รายการ เข้าสู่ปี ${selectedYear}`, 'นำเข้าไฟล์สำเร็จ');
+    }
+  };
+
+  // Resolve Duplicate Conflict
+  const handleResolveConflict = (mode: ConflictResolutionMode) => {
+    setIsConflictModalOpen(false);
+
+    if (mode === 'update_existing') {
+      const incomingUpdatesMap = new Map<string, Partial<BusinessRecord>>();
+      conflictDuplicates.forEach(({ incoming, existing }) => {
+        const cleanTax = existing.taxId ? existing.taxId.replace(/\D/g, '').trim() : '';
+        if (cleanTax) {
+          incomingUpdatesMap.set(cleanTax, incoming);
+        }
+      });
+
+      updateActiveYearRecords((prev) => {
+        const updatedList = prev.map((r) => {
+          const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
+          if (cleanTax && incomingUpdatesMap.has(cleanTax)) {
+            const incoming = incomingUpdatesMap.get(cleanTax)!;
+            return {
+              ...r,
+              companyName: incoming.companyName || r.companyName,
+              type: incoming.type || r.type,
+              auditorDate: incoming.auditorDate !== undefined && incoming.auditorDate !== '' ? incoming.auditorDate : r.auditorDate,
+              password: incoming.password !== undefined && incoming.password !== '' ? incoming.password : r.password,
+              remark: incoming.remark !== undefined && incoming.remark !== '' ? incoming.remark : r.remark,
+              eFilingCode: incoming.eFilingCode !== undefined && incoming.eFilingCode !== '' ? incoming.eFilingCode : r.eFilingCode,
+              ssoCode: incoming.ssoCode !== undefined && incoming.ssoCode !== '' ? incoming.ssoCode : r.ssoCode,
+              status: incoming.status || r.status,
+              topic: incoming.topic || r.topic,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return r;
+        });
+
+        const newFormatted = createNewFormattedRecords(conflictNewItems, updatedList);
+        return [...newFormatted, ...updatedList];
+      });
+
+      showToast(
+        `อัปเดตข้อมูลเดิม ${conflictDuplicates.length} รายการ และเพิ่มกิจการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
+        'อัปเดตข้อมูลสำเร็จ'
+      );
+    } else if (mode === 'skip_duplicates') {
+      if (conflictNewItems.length > 0) {
+        updateActiveYearRecords((prev) => {
+          const newFormatted = createNewFormattedRecords(conflictNewItems, prev);
+          return [...newFormatted, ...prev];
+        });
+        showToast(
+          `ข้ามรายการซ้ำ ${conflictDuplicates.length} รายการ และนำเข้ารายการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
+          'นำเข้าเฉพาะรายการใหม่'
+        );
+      } else {
+        showToast(
+          `ข้ามรายการซ้ำทั้งหมด ${conflictDuplicates.length} รายการ`,
+          'ข้ามรายการซ้ำแล้ว',
+          'info'
+        );
+      }
+    } else if (mode === 'import_all') {
+      const allIncoming = [...conflictDuplicates.map((d) => d.incoming), ...conflictNewItems];
+      updateActiveYearRecords((prev) => {
+        const newFormatted = createNewFormattedRecords(allIncoming, prev);
+        return [...newFormatted, ...prev];
+      });
+      showToast(
+        `นำเข้าทั้งหมด ${allIncoming.length} รายการ เข้าสู่ปี ${selectedYear}`,
+        'นำเข้าทั้งหมดสำเร็จ'
+      );
+    }
+  };
+
+  const handleHeaderFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const parsed = await parseDocumentFile(file, `ไฟล์: ${file.name}`);
+      if (parsed.length > 0) {
+        processImportRecords(parsed, file.name);
+      } else {
+        showToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'info');
+      }
+    } catch {
+      showToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
+    }
+    e.target.value = '';
+  };
+
   if (!isLoggedIn) {
     return (
       <>
-        <LoginScreen
-          onLogin={handleLogin}
-          defaultUserName={userName}
-          kickNotice={kickNotice}
-        />
+        <LoginScreen onLogin={handleLogin} defaultUserName={userName} />
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
       </>
     );
   }
 
-  // Logged-in App shell (Screen 2 / Screen 3 / Settings)
   return (
-    <div className="bg-[#f6faf8] text-[#192823] font-body antialiased flex h-screen w-screen overflow-hidden">
+    <div className="bg-white text-[#18181b] font-body antialiased flex h-screen w-screen overflow-hidden">
       {/* Sidebar Navigation */}
       <Sidebar
         currentScreen={currentScreen}
         onNavigate={setCurrentScreen}
-        totalCompaniesCount={records.length}
+        totalCompaniesCount={currentRecords.length}
         userName={userName}
-        userRole={userRole}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onLogout={handleLogout}
-        selectedTopic={selectedTopic}
-        onSelectTopic={setSelectedTopic}
-        topics={topicCounts}
-        onlineUsers={onlineUsers}
-        mySessionId={mySessionId}
-        isPresenceConnected={isPresenceConnected}
-        onKickMember={handleAdminKickMember}
       />
 
       {/* Main Content Workspace */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f6faf8]">
-        {/* Top Header Bar */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+        {/* Top Header Bar with Year Switcher */}
         <Header
           currentScreen={currentScreen}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
           onNavigate={setCurrentScreen}
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          onOpenHelp={() => setIsHelpModalOpen(true)}
-          records={records}
-          onEditRecord={setEditingRecord}
-          userName={userName}
-          userRole={userRole}
+          onOpenAddModal={() => setIsAddModalOpen(true)}
+          onFileSelect={handleHeaderFileSelect}
+          selectedYear={selectedYear}
+          availableYears={availableYears}
+          recordsByYear={recordsByYear}
+          onSelectYear={handleSelectYear}
+          onOpenYearModal={() => setIsYearModalOpen(true)}
+          onShowToast={showToast}
         />
 
         {/* Dynamic Screen View */}
         {currentScreen === 'dashboard' && (
           <DashboardView
-            records={records}
+            records={currentRecords}
             userName={userName}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            recordsByYear={recordsByYear}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            selectedTopic={selectedTopic}
-            onSelectTopic={setSelectedTopic}
             onEditRecord={setEditingRecord}
             onDeleteRecord={handleDeleteRecord}
             onDeleteMultiple={handleDeleteMultiple}
             onAddRecord={handleAddRecord}
             onShowToast={showToast}
-            onImportRecords={handleImportRecords}
+            onImportRecords={(items) => processImportRecords(items, 'นำเข้าไฟล์')}
           />
         )}
 
         {currentScreen === 'business-list' && (
-          <BusinessListView records={records} />
+          <BusinessListView
+            records={currentRecords}
+            selectedYear={selectedYear}
+            onEditRecord={setEditingRecord}
+            onDeleteRecord={handleDeleteRecord}
+            onShowToast={showToast}
+          />
         )}
 
         {currentScreen === 'settings' && (
           <SettingsView
-            userName={userName}
-            userRole={userRole}
-            onUpdateUserName={setUserName}
-            records={records}
+            records={currentRecords}
             onShowToast={showToast}
-            onSwitchAccount={handleLogout}
+            onLogout={handleLogout}
+            onRestoreRecords={(newRecords) => {
+              updateActiveYearRecords(() => newRecords);
+            }}
           />
         )}
       </div>
+
+      {/* Add Modal */}
+      {isAddModalOpen && (
+        <AddBusinessModal
+          allRecords={currentRecords}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={handleAddRecord}
+          onShowToast={showToast}
+          nextSequenceNo={String(currentRecords.length + 1)}
+        />
+      )}
 
       {/* Edit Modal */}
       <EditBusinessModal
@@ -335,34 +560,30 @@ export default function App() {
         onShowToast={showToast}
       />
 
-      {/* Help Quick Guide Modal */}
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
+      {/* Year Manage Modal */}
+      {isYearModalOpen && (
+        <YearManageModal
+          isOpen={isYearModalOpen}
+          onClose={() => setIsYearModalOpen(false)}
+          selectedYear={selectedYear}
+          availableYears={availableYears}
+          recordsByYear={recordsByYear}
+          onSelectYear={handleSelectYear}
+          onAddYear={handleAddYear}
+          onDeleteYear={handleDeleteYear}
+        />
+      )}
+
+      {/* Import Conflict Resolution Modal */}
+      <ImportConflictModal
+        isOpen={isConflictModalOpen}
+        fileName={pendingImportFile}
+        duplicateItems={conflictDuplicates}
+        newItems={conflictNewItems}
+        onResolve={handleResolveConflict}
+        onClose={() => setIsConflictModalOpen(false)}
       />
 
-      {/* Pop-up Live Team Chat */}
-      <ChatPopup
-        isOpen={isChatOpen}
-        onOpen={() => setIsChatOpen(true)}
-        onClose={() => setIsChatOpen(false)}
-        messages={chatMessages}
-        onSendMessage={sendChatMessage}
-        onlineUsers={onlineUsers}
-        mySessionId={mySessionId}
-        userName={userName}
-        userRole={userRole}
-        unreadCount={unreadCount}
-        onClearMyChat={clearMyChat}
-        onRestoreMyChat={restoreMyChat}
-        isChatCleared={isChatCleared}
-        isSoundEnabled={isSoundEnabled}
-        onToggleSound={toggleSound}
-        latestIncomingMessage={latestIncomingMessage}
-        onDismissIncomingMessage={clearLatestIncomingMessage}
-      />
-
-      {/* Global Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
     </div>
   );

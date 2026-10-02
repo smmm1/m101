@@ -27,26 +27,3 @@ export type ViewMode = 'table' | 'cards';
 export type FilterStatus = 'all' | 'company' | 'partnership' | 'individual' | 'pending' | 'in_progress' | 'completed';
 
 export type ActiveScreen = 'login' | 'dashboard' | 'settings' | 'add-business' | 'business-list';
-
-export type UserRole = 'admin' | 'member';
-
-export interface OnlineUser {
-  id: string;
-  userName: string;
-  currentScreen: string;
-  joinedAt: number;
-  lastActive: number;
-  color?: string;
-  role?: UserRole;
-}
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  text: string;
-  timestamp: number;
-  color?: string;
-  role?: 'user' | 'system';
-  userRole?: UserRole;
-}
