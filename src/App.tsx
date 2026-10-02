@@ -43,13 +43,14 @@ export default function App() {
 }
 
 function AppContent() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+  // Always enforce starting at login screen whenever entering or opening the site
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
-    } catch {
-      return false;
-    }
-  });
+      localStorage.removeItem(STORAGE_KEY_AUTH);
+    } catch {}
+  }, []);
 
   const [currentScreen, setCurrentScreen] = useState<ActiveScreen>('dashboard');
   const [userName, setUserName] = useState<string>(() => {
@@ -179,17 +180,11 @@ function AppContent() {
       } catch {}
     }
     setIsLoggedIn(true);
-    try {
-      localStorage.setItem(STORAGE_KEY_AUTH, 'true');
-    } catch {}
     showToast(`ยินดีต้อนรับคุณ ${user || 'ผู้ใช้งาน'}`, 'เข้าสู่ระบบสำเร็จ');
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    try {
-      localStorage.removeItem(STORAGE_KEY_AUTH);
-    } catch {}
     showToast('ออกจากระบบเรียบร้อยแล้ว', 'แจ้งเตือน', 'info');
   };
 
