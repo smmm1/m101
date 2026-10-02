@@ -130,13 +130,19 @@ function AppContent() {
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
   const showToast = (message: string, title?: string, type: ToastMessage['type'] = 'success') => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
     const newToast: ToastMessage = {
-      id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+      id,
       title,
       message,
       type,
     };
     setToasts((prev) => [...prev, newToast]);
+
+    // Auto-dismiss after 2.2 seconds so it briefly appears and disappears automatically
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 2200);
   };
 
   const handleDismissToast = (id: string) => {
