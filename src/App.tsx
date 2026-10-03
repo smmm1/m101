@@ -14,6 +14,7 @@ import { BusinessListView } from './components/BusinessListView';
 import { EditBusinessModal } from './components/EditBusinessModal';
 import { AddBusinessModal } from './components/AddBusinessModal';
 import { SettingsView } from './components/SettingsView';
+
 import { YearManageModal } from './components/YearManageModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { parseDocumentFile } from './utils/excelHelper';
@@ -540,6 +541,8 @@ function AppContent() {
             }}
           />
         )}
+
+
       </div>
 
       {/* Add Modal */}

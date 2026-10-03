@@ -99,6 +99,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <XpSettingsIcon size={18} />
                 <span>การตั้งค่า</span>
               </button>
+
+
             </nav>
           </div>
 
