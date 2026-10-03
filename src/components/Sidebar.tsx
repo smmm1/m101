@@ -32,39 +32,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-56 bg-[#fafafa] border-r border-[#ececec] flex flex-col justify-between shrink-0 transition-transform duration-200 select-none ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-48 bg-[#fbfbfb] border-r border-zinc-200/80 flex flex-col justify-between shrink-0 transition-transform duration-200 select-none ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Brand Header */}
-          <div className="p-4 border-b border-[#f0f0f0]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-linear-to-br from-blue-500 via-blue-600 to-indigo-800 text-white font-bold flex items-center justify-center text-xs shadow-xs border border-blue-300/40">
+          <div className="p-3 border-b border-zinc-200/60">
+            <div className="flex items-center gap-2">
+              <div className="w-6.5 h-6.5 rounded-lg bg-zinc-900 text-white font-bold flex items-center justify-center text-xs shadow-xs">
                 M
               </div>
-              <span className="text-sm font-bold text-[#111827] font-headline tracking-tight">
+              <span className="text-xs font-bold text-zinc-900 font-headline tracking-tight">
                 Mustang
               </span>
             </div>
           </div>
 
           {/* Navigation Items */}
-          <div className="p-3 flex-1 overflow-y-auto no-scrollbar">
-            <nav className="flex flex-col gap-1">
+          <div className="p-2.5 flex-1 overflow-y-auto no-scrollbar">
+            <nav className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => {
                   onNavigate('dashboard');
                   onCloseMobile?.();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                   currentScreen === 'dashboard'
-                    ? 'bg-[#ebe8e3] text-[#18181b] font-semibold shadow-2xs'
-                    : 'text-[#52525b] hover:text-[#18181b] hover:bg-[#f2f1ee]'
+                    ? 'bg-zinc-900 text-white font-semibold shadow-sm'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 font-medium'
                 }`}
               >
-                <XpComputerIcon size={18} />
+                <XpComputerIcon size={16} />
                 <span>ภาพรวม</span>
               </button>
 
@@ -74,13 +74,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onNavigate('business-list');
                   onCloseMobile?.();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                   currentScreen === 'business-list'
-                    ? 'bg-[#ebe8e3] text-[#18181b] font-semibold shadow-2xs'
-                    : 'text-[#52525b] hover:text-[#18181b] hover:bg-[#f2f1ee]'
+                    ? 'bg-zinc-900 text-white font-semibold shadow-sm'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 font-medium'
                 }`}
               >
-                <XpFolderIcon size={18} />
+                <XpFolderIcon size={16} />
                 <span>ทะเบียนกิจการ</span>
               </button>
 
@@ -90,13 +90,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onNavigate('settings');
                   onCloseMobile?.();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                   currentScreen === 'settings'
-                    ? 'bg-[#ebe8e3] text-[#18181b] font-semibold shadow-2xs'
-                    : 'text-[#52525b] hover:text-[#18181b] hover:bg-[#f2f1ee]'
+                    ? 'bg-zinc-900 text-white font-semibold shadow-sm'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 font-medium'
                 }`}
               >
-                <XpSettingsIcon size={18} />
+                <XpSettingsIcon size={16} />
                 <span>การตั้งค่า</span>
               </button>
 

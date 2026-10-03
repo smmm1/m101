@@ -334,7 +334,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 4 Summary Stat Cards */}
-      <div className="border border-[#e4e4e7] rounded-xl bg-white grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#e4e4e7] overflow-hidden shadow-2xs">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {/* ทั้งหมด */}
         <button
           type="button"
@@ -342,17 +342,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             setStatusFilter('all');
             setCurrentPage(1);
           }}
-          className={`p-3.5 sm:p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
             statusFilter === 'all'
-              ? 'bg-[#f4f4f5]/80 ring-2 ring-inset ring-neutral-900'
-              : 'hover:bg-[#fafafa]'
+              ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm ring-2 ring-zinc-900/25 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
+              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-zinc-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#71717a]">ทั้งหมด</span>
-            <XpBuildingIcon size={16} />
+            <span className={`text-[11px] font-medium ${statusFilter === 'all' ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-400'}`}>ทั้งหมด</span>
+            <div className={`p-0.5 rounded ${statusFilter === 'all' ? 'bg-white/10 text-white dark:bg-zinc-900/10 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>
+              <XpBuildingIcon size={14} />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-[#18181b] font-mono mt-2">
+          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'all' ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-zinc-100'}`}>
             {totalCount.toLocaleString()}
           </div>
         </button>
@@ -364,17 +366,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending');
             setCurrentPage(1);
           }}
-          className={`p-3.5 sm:p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
             statusFilter === 'pending'
-              ? 'bg-amber-50/80 ring-2 ring-inset ring-amber-600'
-              : 'hover:bg-[#fafafa]'
+              ? 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/25'
+              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-amber-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#71717a]">รอดำเนินการ</span>
-            <XpStatusSphere status="pending" size={14} />
+            <span className={`text-[11px] font-medium ${statusFilter === 'pending' ? 'text-amber-100' : 'text-zinc-500 dark:text-zinc-400'}`}>รอดำเนินการ</span>
+            <div className={`p-0.5 rounded ${statusFilter === 'pending' ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400'}`}>
+              <XpStatusSphere status="pending" size={12} />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-[#b45309] font-mono mt-2">
+          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'pending' ? 'text-white' : 'text-amber-700 dark:text-amber-400'}`}>
             {pendingCount.toLocaleString()}
           </div>
         </button>
@@ -386,17 +390,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             setStatusFilter(statusFilter === 'in_progress' ? 'all' : 'in_progress');
             setCurrentPage(1);
           }}
-          className={`p-3.5 sm:p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
             statusFilter === 'in_progress'
-              ? 'bg-sky-50/80 ring-2 ring-inset ring-sky-600'
-              : 'hover:bg-[#fafafa]'
+              ? 'bg-sky-600 text-white border-sky-600 shadow-sm ring-2 ring-sky-600/25'
+              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-sky-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#71717a]">กำลังทำ</span>
-            <XpStatusSphere status="in_progress" size={14} />
+            <span className={`text-[11px] font-medium ${statusFilter === 'in_progress' ? 'text-sky-100' : 'text-zinc-500 dark:text-zinc-400'}`}>กำลังทำ</span>
+            <div className={`p-0.5 rounded ${statusFilter === 'in_progress' ? 'bg-white/10 text-white' : 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400'}`}>
+              <XpStatusSphere status="in_progress" size={12} />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-[#0284c7] font-mono mt-2">
+          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'in_progress' ? 'text-white' : 'text-sky-700 dark:text-sky-400'}`}>
             {inProgressCount.toLocaleString()}
           </div>
         </button>
@@ -408,17 +414,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             setStatusFilter(statusFilter === 'completed' ? 'all' : 'completed');
             setCurrentPage(1);
           }}
-          className={`p-3.5 sm:p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
             statusFilter === 'completed'
-              ? 'bg-emerald-50/80 ring-2 ring-inset ring-emerald-600'
-              : 'hover:bg-[#fafafa]'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/25'
+              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-emerald-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#71717a]">เสร็จสิ้น</span>
-            <XpStatusSphere status="completed" size={14} />
+            <span className={`text-[11px] font-medium ${statusFilter === 'completed' ? 'text-emerald-100' : 'text-zinc-500 dark:text-zinc-400'}`}>เสร็จสิ้น</span>
+            <div className={`p-0.5 rounded ${statusFilter === 'completed' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'}`}>
+              <XpStatusSphere status="completed" size={12} />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-[#16a34a] font-mono mt-2">
+          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'completed' ? 'text-white' : 'text-emerald-700 dark:text-emerald-400'}`}>
             {completedCount.toLocaleString()}
           </div>
         </button>
