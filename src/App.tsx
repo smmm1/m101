@@ -196,7 +196,19 @@ function AppContent() {
       }
     }, 800);
 
-    return () => clearTimeout(timer);
+    const flushOnPageHide = () => {
+      if (snapshot === lastSavedSnapshot.current) return;
+      const blob = new Blob([snapshot], { type: 'application/json' });
+      if (navigator.sendBeacon('/api/data', blob)) {
+        lastSavedSnapshot.current = snapshot;
+      }
+    };
+    window.addEventListener('pagehide', flushOnPageHide);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pagehide', flushOnPageHide);
+    };
   }, [availableYears, recordsByYear, isDataReady]);
 
   useEffect(() => {

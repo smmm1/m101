@@ -11,8 +11,33 @@ const port = 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-const { dataRouter } = await import('./api/data-routes');
-app.use('/api', dataRouter);
+const { loadData, saveData, isValidPayload } = await import('./api/data');
+
+app.get('/api/data', async (_req, res) => {
+  try {
+    res.json(await loadData());
+  } catch (error) {
+    console.error('Failed to load data', error);
+    res.status(500).json({ error: 'Failed to load data' });
+  }
+});
+
+const handleSave: express.RequestHandler = async (req, res) => {
+  if (!isValidPayload(req.body)) {
+    res.status(400).json({ error: 'Invalid payload' });
+    return;
+  }
+  try {
+    await saveData(req.body);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Failed to save data', error);
+    res.status(500).json({ error: 'Failed to save data' });
+  }
+};
+
+app.put('/api/data', handleSave);
+app.post('/api/data', handleSave);
 
 async function start() {
   const httpServer = createHttpServer(app);
