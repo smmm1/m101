@@ -1,8 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { BusinessRecord } from '../types';
-import { useTheme, ThemeMode } from '../context/ThemeContext';
 import { useCursor, CursorMode } from '../context/CursorContext';
-import { XpSunIcon, XpMoonIcon, XpComputerIcon } from './ClassicIcons';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -23,14 +21,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSwitchAccount,
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
-  const { theme, setTheme, isDark } = useTheme();
   const { cursorMode, setCursorMode } = useCursor();
-
-  const handleSelectTheme = (mode: ThemeMode) => {
-    setTheme(mode);
-    const label = mode === 'dark' ? 'โหมดมืด' : mode === 'light' ? 'โหมดสว่าง' : 'ตามระบบ';
-    onShowToast(`เปลี่ยนการแสดงผลเป็น "${label}" เรียบร้อยแล้ว`, 'เปลี่ยนธีมสำเร็จ');
-  };
 
   const handleSelectCursor = (mode: CursorMode) => {
     setCursorMode(mode);
@@ -116,103 +107,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 max-w-4xl">
-        {/* Theme & Display Mode Card */}
-        <div className="border border-[#e4e4e7] rounded-xl p-5 bg-white flex flex-col gap-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xs font-bold text-[#18181b]">
-                ธีมและการแสดงผล (Theme & Display)
-              </h2>
-              <p className="text-[11.5px] text-[#71717a] mt-0.5">
-                เลือกรูปแบบโทนสีของหน้าจอตามความชอบ เพื่อความสบายตาในการทำงาน
-              </p>
-            </div>
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
-              {isDark ? '🌙 กำลังใช้โหมดมืด' : '☀️ กำลังใช้โหมดสว่าง'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            {/* Light Mode Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectTheme('light')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                theme === 'light'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <XpSunIcon size={20} />
-                  <span className="text-xs font-bold text-[#18181b]">โหมดสว่าง (Light)</span>
-                </div>
-                {theme === 'light' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                พื้นหลังสีขาวนวล สบายตา เหมาะสำหรับทำงานตอนกลางวัน
-              </p>
-            </button>
-
-            {/* Dark Mode Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectTheme('dark')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                theme === 'dark'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <XpMoonIcon size={20} />
-                  <span className="text-xs font-bold text-[#18181b]">โหมดมืด (Dark)</span>
-                </div>
-                {theme === 'dark' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                พื้นหลังสีมืดเข้ม ลดแสงสะท้อน ถนอมสายตาเมื่อทำงานนานๆ
-              </p>
-            </button>
-
-            {/* System Default Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectTheme('system')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                theme === 'system'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <XpComputerIcon size={20} />
-                  <span className="text-xs font-bold text-[#18181b]">ตามระบบ (Auto)</span>
-                </div>
-                {theme === 'system' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                ปรับเปลี่ยนอัตโนมัติตามธีมของ Windows / macOS / อุปกรณ์
-              </p>
-            </button>
-          </div>
-        </div>
-
         {/* Mouse Pointer Style Card */}
         <div className="border border-[#e4e4e7] rounded-xl p-5 bg-white flex flex-col gap-4 shadow-2xs">
           <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ActiveScreen } from '../types';
 import { XpCalendarIcon, XpAddDocIcon } from './ClassicIcons';
 import { ThemeToggleButton } from './ThemeToggleButton';
+import { OnlineUserBadge } from './OnlineUserBadge';
 
 interface HeaderProps {
   currentScreen: ActiveScreen;
@@ -139,6 +140,8 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right side: Action Buttons */}
       <div className="flex items-center gap-2">
+        <OnlineUserBadge />
+
         <input
           ref={fileInputRef}
           type="file"
@@ -146,9 +149,6 @@ export const Header: React.FC<HeaderProps> = ({
           onChange={onFileSelect}
           className="hidden"
         />
-
-        {/* ปุ่มสลับโทนมืด/สว่าง */}
-        <ThemeToggleButton onShowToast={onShowToast} />
 
         {/* นำเข้าไฟล์ button */}
         <button

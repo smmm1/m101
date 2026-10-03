@@ -104,13 +104,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Theme Mode Toggle in Sidebar */}
-          <div className="px-3 pb-1 border-t border-[#f0f0f0]">
-            <div className="pt-2">
-              <ThemeToggleButton variant="sidebar" />
-            </div>
-          </div>
-
           {/* Bottom Profile Footer */}
           <div className="p-3 border-t border-[#f0f0f0]">
             <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-[#f2f1ee] transition-colors">

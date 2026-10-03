@@ -41,19 +41,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const isDark = theme === 'system' ? systemIsDark : theme === 'dark';
-
   useEffect(() => {
     const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    root.classList.remove('dark');
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.setItem(STORAGE_KEY, 'light');
     } catch {}
-  }, [theme, isDark]);
+  }, []);
+
+  const isDark = false;
 
   const toggleTheme = () => {
     setThemeState((prev) => {

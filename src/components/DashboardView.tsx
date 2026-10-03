@@ -76,6 +76,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Active status dropdown row
   const [openStatusRowId, setOpenStatusRowId] = useState<string | null>(null);
 
+  // Recently updated / added row ID for visual highlight
+  const [lastUpdatedId, setLastUpdatedId] = useState<string | null>(null);
+
+  // Inline cell editing state
+  const [editingCell, setEditingCell] = useState<{ id: string; field: keyof BusinessRecord } | null>(null);
+  const [inlineValue, setInlineEditValue] = useState<string>('');
+
+  // Keep selectedDetailRecord in sync with updated records prop immediately
+  useEffect(() => {
+    if (selectedDetailRecord) {
+      const latest = records.find((r) => r.id === selectedDetailRecord.id);
+      if (latest && latest !== selectedDetailRecord) {
+        setSelectedDetailRecord(latest);
+      }
+    }
+  }, [records, selectedDetailRecord]);
+
+  // When records count increases (record added), jump to page 1 and highlight top item
+  const prevCountRef = useRef(records.length);
+  useEffect(() => {
+    if (records.length > prevCountRef.current) {
+      setCurrentPage(1);
+      const newlyAdded = records[0];
+      if (newlyAdded?.id) {
+        setLastUpdatedId(newlyAdded.id);
+      }
+    }
+    prevCountRef.current = records.length;
+  }, [records]);
+
+  // Clear highlight after 3 seconds
+  useEffect(() => {
+    if (lastUpdatedId) {
+      const timer = setTimeout(() => setLastUpdatedId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastUpdatedId]);
+
   // Keyboard shortcut for Ctrl+K or / to search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -137,12 +175,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       updatedAt: new Date().toISOString(),
     };
     onEditRecord(updated);
+    setLastUpdatedId(record.id);
     setOpenStatusRowId(null);
     if (selectedDetailRecord && selectedDetailRecord.id === record.id) {
       setSelectedDetailRecord(updated);
     }
     const statusLabel = newStatus === 'completed' ? 'เสร็จสิ้น' : newStatus === 'in_progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ';
     onShowToast(`เปลี่ยนสถานะเป็น "${statusLabel}" เรียบร้อย`, 'อัปเดตสถานะ');
+  };
+
+  const handleStartInlineEdit = (record: BusinessRecord, field: keyof BusinessRecord, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCell({ id: record.id, field });
+    setInlineEditValue(String(record[field] || ''));
+  };
+
+  const handleSaveInlineCell = (record: BusinessRecord, field: keyof BusinessRecord) => {
+    if (!editingCell) return;
+    const val = inlineValue.trim();
+    if (String(record[field] || '') !== val) {
+      const updated: BusinessRecord = {
+        ...record,
+        [field]: val,
+        updatedAt: new Date().toISOString(),
+      };
+      onEditRecord(updated);
+      setLastUpdatedId(record.id);
+      onShowToast(`อัปเดตข้อมูลสำเร็จ`, 'บันทึกด่วน');
+    }
+    setEditingCell(null);
   };
 
   // Filter & Search & Sort
@@ -698,8 +759,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <tr
                       key={record.id}
                       onClick={() => setSelectedDetailRecord(record)}
-                      className={`hover:bg-[#fafafa] transition-colors group cursor-pointer ${
-                        isSelected ? 'bg-neutral-50/80' : ''
+                      className={`transition-all duration-300 group cursor-pointer ${
+                        record.id === lastUpdatedId
+                          ? 'bg-emerald-50/90 ring-1 ring-emerald-400 font-medium'
+                          : isSelected
+                          ? 'bg-neutral-50/80'
+                          : 'hover:bg-[#fafafa]'
                       }`}
                     >
                       <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -760,30 +825,97 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           : 'บุคคลธรรมดา'}
                       </td>
 
-                      <td className="py-2.5 px-3 text-[#71717a]">
-                        {record.auditorDate || '-'}
+                      {/* Auditor Date - Click to quick edit */}
+                      <td
+                        className="py-2.5 px-3 text-[#71717a]"
+                        onClick={(e) => handleStartInlineEdit(record, 'auditorDate', e)}
+                      >
+                        {editingCell?.id === record.id && editingCell?.field === 'auditorDate' ? (
+                          <input
+                            type="text"
+                            value={inlineValue}
+                            onChange={(e) => setInlineEditValue(e.target.value)}
+                            onBlur={() => handleSaveInlineCell(record, 'auditorDate')}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'auditorDate')}
+                            autoFocus
+                            placeholder="วว/ดด/ปป"
+                            className="px-2 py-0.5 text-xs rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-1 group/field cursor-pointer hover:text-emerald-700" title="คลิกเพื่อแก้ไขด่วน">
+                            <span>{record.auditorDate || '-'}</span>
+                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/field:opacity-100 text-emerald-600">edit</span>
+                          </div>
+                        )}
                       </td>
 
+                      {/* Password - Click to quick edit */}
                       <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <span>{record.password || '-'}</span>
-                          {record.password && (
+                        {editingCell?.id === record.id && editingCell?.field === 'password' ? (
+                          <input
+                            type="text"
+                            value={inlineValue}
+                            onChange={(e) => setInlineEditValue(e.target.value)}
+                            onBlur={() => handleSaveInlineCell(record, 'password')}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'password')}
+                            autoFocus
+                            className="px-2 py-0.5 text-xs font-mono rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-1 group/field">
+                            <span
+                              onClick={(e) => handleStartInlineEdit(record, 'password', e)}
+                              className="cursor-pointer hover:text-emerald-700"
+                              title="คลิกเพื่อแก้ไขด่วน"
+                            >
+                              {record.password || '-'}
+                            </span>
+                            {record.password && (
+                              <button
+                                type="button"
+                                onClick={(e) => copyToClipboard(record.password, 'รหัสผ่าน', `pass-${record.id}`, e)}
+                                title="คัดลอกรหัสผ่าน"
+                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 text-[#71717a] hover:text-[#18181b] transition-all cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">
+                                  {copiedId === `pass-${record.id}` ? 'check' : 'content_copy'}
+                                </span>
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={(e) => copyToClipboard(record.password, 'รหัสผ่าน', `pass-${record.id}`, e)}
-                              title="คัดลอกรหัสผ่าน"
-                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 text-[#71717a] hover:text-[#18181b] transition-all cursor-pointer"
+                              onClick={(e) => handleStartInlineEdit(record, 'password', e)}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 text-emerald-600 hover:text-emerald-800"
+                              title="แก้ไขรหัสผ่านด่วน"
                             >
-                              <span className="material-symbols-outlined text-[13px]">
-                                {copiedId === `pass-${record.id}` ? 'check' : 'content_copy'}
-                              </span>
+                              <span className="material-symbols-outlined text-[13px]">edit</span>
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </td>
 
-                      <td className="py-2.5 px-3 font-mono text-[#52525b]">
-                        {record.eFilingCode || '-'}
+                      {/* eFilingCode - Click to quick edit */}
+                      <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
+                        {editingCell?.id === record.id && editingCell?.field === 'eFilingCode' ? (
+                          <input
+                            type="text"
+                            value={inlineValue}
+                            onChange={(e) => setInlineEditValue(e.target.value)}
+                            onBlur={() => handleSaveInlineCell(record, 'eFilingCode')}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'eFilingCode')}
+                            autoFocus
+                            className="px-2 py-0.5 text-xs font-mono rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
+                          />
+                        ) : (
+                          <div
+                            onClick={(e) => handleStartInlineEdit(record, 'eFilingCode', e)}
+                            className="flex items-center gap-1 group/field cursor-pointer hover:text-emerald-700"
+                            title="คลิกเพื่อแก้ไขด่วน"
+                          >
+                            <span>{record.eFilingCode || '-'}</span>
+                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/field:opacity-100 text-emerald-600">edit</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Status Tag */}

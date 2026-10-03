@@ -33,6 +33,25 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
   const [selectedDetailRecord, setSelectedDetailRecord] = useState<BusinessRecord | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // Keep selectedDetailRecord in sync with updated records prop immediately
+  React.useEffect(() => {
+    if (selectedDetailRecord) {
+      const latest = records.find((r) => r.id === selectedDetailRecord.id);
+      if (latest && latest !== selectedDetailRecord) {
+        setSelectedDetailRecord(latest);
+      }
+    }
+  }, [records, selectedDetailRecord]);
+
+  // Jump to page 1 on new record addition
+  const prevCountRef = React.useRef(records.length);
+  React.useEffect(() => {
+    if (records.length > prevCountRef.current) {
+      setCurrentPage(1);
+    }
+    prevCountRef.current = records.length;
+  }, [records]);
+
   const itemsPerPage = 12;
 
   const copyToClipboard = (text: string, label: string, key: string, e?: React.MouseEvent) => {
