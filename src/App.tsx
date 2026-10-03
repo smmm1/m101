@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import useSWR from 'swr';
 import { ActiveScreen, BusinessRecord } from './types';
 import { INITIAL_BUSINESS_RECORDS } from './data/initialData';
 import { LoginScreen } from './components/LoginScreen';
@@ -32,6 +33,50 @@ const STORAGE_KEY_RECORDS_BY_YEAR = 'directory_records_by_year_v1';
 const STORAGE_KEY_OLD_RECORDS = 'directory_records_v1';
 const STORAGE_KEY_USER = 'app_directory_user_v1';
 const STORAGE_KEY_AUTH = 'app_directory_is_logged_in_v1';
+
+type AppData = { years: string[]; recordsByYear: Record<string, BusinessRecord[]> };
+
+async function fetchAppData(url: string): Promise<AppData> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load data (${res.status})`);
+  return res.json();
+}
+
+// One-time migration source: data previously kept only in this browser.
+function loadLegacyLocalData(): AppData {
+  let years = ['69'];
+  let recordsByYear: Record<string, BusinessRecord[]> | null = null;
+
+  try {
+    const savedYears = JSON.parse(localStorage.getItem(STORAGE_KEY_YEARS) || 'null');
+    if (Array.isArray(savedYears) && savedYears.length > 0) {
+      years = savedYears.map((y: string) => (y === '2569' ? '69' : String(y)));
+    }
+    const savedRecords = JSON.parse(localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR) || 'null');
+    if (savedRecords && typeof savedRecords === 'object' && Object.keys(savedRecords).length > 0) {
+      if (savedRecords['2569'] && !savedRecords['69']) {
+        savedRecords['69'] = savedRecords['2569'];
+        delete savedRecords['2569'];
+      }
+      recordsByYear = savedRecords;
+    }
+  } catch {}
+
+  if (!recordsByYear) {
+    let fallback69 = INITIAL_BUSINESS_RECORDS;
+    try {
+      const legacy = JSON.parse(localStorage.getItem(STORAGE_KEY_OLD_RECORDS) || 'null');
+      if (Array.isArray(legacy) && legacy.length > 0) fallback69 = legacy;
+    } catch {}
+    recordsByYear = { '69': fallback69 };
+  }
+
+  const allYears = Array.from(new Set([...years, ...Object.keys(recordsByYear)])).sort();
+  return {
+    years: allYears,
+    recordsByYear: Object.fromEntries(allYears.map((y) => [y, recordsByYear![y] || []])),
+  };
+}
 
 export default function App() {
   return (
@@ -62,20 +107,7 @@ function AppContent() {
     }
   });
 
-  // Multi-Year state (defaults to only year 69)
-  const [availableYears, setAvailableYears] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_YEARS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Normalize legacy '2569' to '69' if present
-          return parsed.map((y: string) => (y === '2569' ? '69' : String(y)));
-        }
-      }
-    } catch {}
-    return ['69'];
-  });
+  const [availableYears, setAvailableYears] = useState<string[]>(['69']);
 
   const [selectedYear, setSelectedYear] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
@@ -83,36 +115,29 @@ function AppContent() {
     return saved || '69';
   });
 
-  const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
-          // If legacy '2569' exists in parsed, migrate to '69'
-          if (parsed['2569'] && !parsed['69']) {
-            parsed['69'] = parsed['2569'];
-            delete parsed['2569'];
-          }
-          return parsed;
-        }
-      }
-    } catch {}
+  const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>({});
 
-    // Fallback: check legacy single-year records
-    let fallback69 = INITIAL_BUSINESS_RECORDS;
-    try {
-      const legacy = localStorage.getItem(STORAGE_KEY_OLD_RECORDS);
-      if (legacy) {
-        const parsed = JSON.parse(legacy);
-        if (Array.isArray(parsed) && parsed.length > 0) fallback69 = parsed;
-      }
-    } catch {}
-
-    return {
-      '69': fallback69,
-    };
+  const { data: remoteData, error: loadError } = useSWR<AppData>('/api/data', fetchAppData, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   });
+  const [isDataReady, setIsDataReady] = useState(false);
+  const lastSavedSnapshot = useRef<string>('');
+
+  useEffect(() => {
+    if (!remoteData || isDataReady) return;
+
+    const hasRemoteData = remoteData.years.length > 0;
+    const initial = hasRemoteData ? remoteData : loadLegacyLocalData();
+    if (hasRemoteData) {
+      lastSavedSnapshot.current = JSON.stringify(remoteData);
+    }
+
+    setAvailableYears(initial.years);
+    setRecordsByYear(initial.recordsByYear);
+    setSelectedYear((current) => (initial.years.includes(current) ? current : initial.years[0]));
+    setIsDataReady(true);
+  }, [remoteData, isDataReady]);
 
   // Current year active records
   const currentRecords = recordsByYear[selectedYear] || [];
@@ -150,14 +175,29 @@ function AppContent() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Sync to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_YEARS, JSON.stringify(availableYears));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [availableYears]);
+    if (!isDataReady) return;
+
+    const snapshot = JSON.stringify({ years: availableYears, recordsByYear });
+    if (snapshot === lastSavedSnapshot.current) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/data', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: snapshot,
+        });
+        if (!res.ok) throw new Error(`Save failed with status ${res.status}`);
+        lastSavedSnapshot.current = snapshot;
+      } catch (e) {
+        console.error(e);
+        showToast('ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้ กรุณาลองใหม่', 'บันทึกไม่สำเร็จ', 'error');
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [availableYears, recordsByYear, isDataReady]);
 
   useEffect(() => {
     try {
@@ -166,18 +206,6 @@ function AppContent() {
       console.error(e);
     }
   }, [selectedYear]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_RECORDS_BY_YEAR, JSON.stringify(recordsByYear));
-      // Also sync current year to legacy key for backwards compatibility
-      if (recordsByYear[selectedYear]) {
-        localStorage.setItem(STORAGE_KEY_OLD_RECORDS, JSON.stringify(recordsByYear[selectedYear]));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [recordsByYear, selectedYear]);
 
   const handleLogin = (user: string) => {
     if (user) {
@@ -463,8 +491,18 @@ function AppContent() {
     e.target.value = '';
   };
 
-  if (!isLoggedIn) {
+  if (!isDataReady) {
     return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+        <p role="status" aria-live="polite" className="text-sm">
+          {loadError ? 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณารีเฟรชหน้าอีกครั้ง' : 'กำลังโหลดข้อมูล...'}
+        </p>
+      </main>
+    );
+  }
+
+  if (!isLoggedIn) {
+  return (
       <>
         <LoginScreen onLogin={handleLogin} defaultUserName={userName} />
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />

@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "@neondatabase/serverless": "^1.2.0",
+    "@supabase/supabase-js": "^2.45.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "canvas-confetti": "^1.9.4",
@@ -23,10 +25,10 @@
     "papaparse": "^5.7.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "swr": "^2.5.1",
     "vite": "^8.3.0",
     "ws": "^8.21.3",
-    "xlsx": "^0.18.5" ,
-    "@supabase/supabase-js": "^2.45.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

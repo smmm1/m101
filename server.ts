@@ -3,13 +3,16 @@ import { createServer as createHttpServer } from 'http';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: ['.env.development.local', '.env'], quiet: true });
 
 const app = express();
 const port = 3000;
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+const { dataRouter } = await import('./api/data-routes');
+app.use('/api', dataRouter);
 
 async function start() {
   const httpServer = createHttpServer(app);
