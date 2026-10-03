@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ActiveScreen, BusinessRecord } from './types';
 import { INITIAL_BUSINESS_RECORDS } from './data/initialData';
 import { LoginScreen } from './components/LoginScreen';
@@ -414,7 +415,7 @@ function AppContent() {
       });
 
       showToast(
-        `อัปเดตข้อมูลเดิม ${conflictDuplicates.length} รายการ และเพิ่มกิจการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
+        `อัปเดตข้อมูลเดิม ${conflictDuplicates.length} รายการ และเพ���่มกิจการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
         'อัปเดตข้อมูลสำเร็จ'
       );
     } else if (mode === 'skip_duplicates') {
@@ -589,6 +590,7 @@ function AppContent() {
       />
 
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
+      <Analytics />
     </div>
   );
 }
