@@ -31,7 +31,6 @@ const STORAGE_KEY_SELECTED_YEAR = 'directory_selected_year_v1';
 const STORAGE_KEY_RECORDS_BY_YEAR = 'directory_records_by_year_v1';
 const STORAGE_KEY_OLD_RECORDS = 'directory_records_v1';
 const STORAGE_KEY_USER = 'app_directory_user_v1';
-const STORAGE_KEY_AUTH = 'app_directory_is_logged_in_v1';
 
 export default function App() {
   return (
@@ -245,6 +244,8 @@ function AppContent() {
   }, [recordsByYear, selectedYear]);
 
   const handleLogin = (user: string) => {
+    setCloudReady(false);
+    setCloudError('');
     if (user) {
       setUserName(user);
       try {
@@ -257,6 +258,8 @@ function AppContent() {
 
   const handleLogout = () => {
     void supabase.auth.signOut();
+    setCloudReady(false);
+    setCloudError('');
     setIsLoggedIn(false);
     showToast('ออกจากระบบเรียบร้อยแล้ว', 'แจ้งเตือน', 'info');
   };
@@ -312,6 +315,9 @@ function AppContent() {
       return;
     }
 
+    void supabase.from('directory_year_data').delete().eq('fiscal_year', yearToDelete).then(({ error }) => {
+      if (error) setCloudError('ลบรอบปีในฐานข้อมูลไม่สำเร็จ: ' + error.message);
+    });
     const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
     setAvailableYears(nextAvailable);
 
