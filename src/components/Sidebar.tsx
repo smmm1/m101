@@ -10,6 +10,7 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
   onLogout: () => void;
+  isAdmin?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,6 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
   onLogout,
+  isAdmin = false,
 }) => {
   const { config } = useSystemConfig();
   const brandName = config.appName || 'Mustang Directory';
@@ -155,24 +157,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                {/* Admin Backend Tool Icon (Bottom-Left explicit access) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onNavigate('backend-admin');
-                    onCloseMobile?.();
-                  }}
-                  title="ระบบหลังบ้าน (Admin Console)"
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${
-                    currentScreen === 'backend-admin'
-                      ? 'bg-amber-500 text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[17px] leading-none">
-                    build
-                  </span>
-                </button>
+                {/* Admin Backend Tool Icon (admin role only) */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate('backend-admin');
+                      onCloseMobile?.();
+                    }}
+                    title="ระบบหลังบ้าน (Admin Console)"
+                    aria-label="ระบบหลังบ้าน (Admin Console)"
+                    className={`p-2 rounded-lg transition-all cursor-pointer ${
+                      currentScreen === 'backend-admin'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[17px] leading-none">build</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
