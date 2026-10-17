@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="material-symbols-outlined text-[16px]">
                 upload_file
               </span>
-              <span>นำเข้าไฟล์</span>
+              <span>{config.buttonImportText || 'นำเข้าไฟล์'}</span>
             </button>
 
             {/* เพิ่มกิจการ button */}
@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="button-24"
               >
                 <span className="material-symbols-outlined text-[16px]">add</span>
-                <span>เพิ่มกิจการ</span>
+                <span>{config.buttonAddText || 'เพิ่มกิจการ'}</span>
               </button>
             )}
           </>
