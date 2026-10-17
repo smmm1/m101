@@ -36,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
+        style={{ width: 'var(--site-sidebar-width, 224px)' }}
         className={`fixed lg:static inset-y-0 left-0 z-50 w-56 bg-white dark:bg-[#0c0d14] border-r border-zinc-200/80 dark:border-zinc-800/80 flex flex-col justify-between shrink-0 transition-transform duration-200 select-none ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
@@ -52,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {brandName}
                 </span>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate leading-tight">
-                  SaaS Dashboard
+                  {config.appTagline || 'SaaS Dashboard'}
                 </span>
               </div>
             </div>
@@ -176,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   type="button"
                   onClick={onLogout}
-                  title="ออกจากระบบ"
+                  title={config.buttonLogoutText || 'ออกจากระบบ'}
                   className="p-2 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[17px] leading-none">
