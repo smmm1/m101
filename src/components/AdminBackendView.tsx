@@ -7,7 +7,8 @@ import {
   XpTrashIcon,
   XpStatusSphere,
 } from './ClassicIcons';
-import { useSystemConfig, SystemConfig } from '../context/SystemConfigContext';
+import { useSystemConfig, SystemConfig, DEFAULT_SYSTEM_CONFIG } from '../context/SystemConfigContext';
+import { VisualSiteEditor } from './VisualSiteEditor';
 
 interface AdminBackendViewProps {
   recordsByYear: Record<string, BusinessRecord[]>;
@@ -54,7 +55,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   const { config, updateConfig, resetConfig } = useSystemConfig();
 
   const [activeTab, setActiveTab] = useState<
-    'master-data' | 'titles-theme' | 'users' | 'branding' | 'maintenance'
+    'master-data' | 'titles-theme' | 'users' | 'branding' | 'maintenance' | 'visual-editor'
   >('titles-theme');
 
   const [activeYear, setActiveYear] = useState<string>(selectedYear);
@@ -290,15 +291,52 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   };
 
   // Save Titles & Themes
-  const handleSaveTitlesAndTheme = () => {
+  const handleSaveTitlesAndTheme = async () => {
+    const now = new Date().toISOString();
+    const { data: existing, error: loadError } = await supabase.from('site_content').select('draft_content, published_content').eq('id', true).maybeSingle();
+    if (loadError) {
+      onShowToast('อ่านค่าปัจจุบันก่อนบันทึกไม่ได้: ' + loadError.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
+    const { error } = await supabase.from('site_content').upsert({
+      id: true,
+      draft_content: { ...(existing?.draft_content || {}), systemConfig: themeDraft },
+      published_content: { ...(existing?.published_content || {}), systemConfig: themeDraft },
+      published_at: now,
+      updated_at: now,
+      updated_by: currentUserName,
+    }, { onConflict: 'id' });
+    if (error) {
+      onShowToast('บันทึกการตั้งค่าไม่สำเร็จ: ' + error.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     updateConfig(themeDraft);
-    onShowToast('บันทึกการตั้งค่าสีธีมและหัวข้อทั้งหมดเรียบร้อย', 'บันทึกสำเร็จ');
+    onShowToast('บันทึกและเผยแพร่การตั้งค่าสีธีมและหัวข้อแล้ว', 'บันทึกสำเร็จ');
   };
 
-  const handleResetTitlesAndTheme = () => {
+  const handleResetTitlesAndTheme = async () => {
     if (!confirm('ต้องการคืนค่าหัวข้อและสีธีมเริ่มต้นทั้งหมดหรือไม่?')) return;
+    const now = new Date().toISOString();
+    const { data: existing, error: loadError } = await supabase.from('site_content').select('draft_content, published_content').eq('id', true).maybeSingle();
+    if (loadError) {
+      onShowToast('อ่านค่าปัจจุบันก่อนคืนค่าไม่ได้: ' + loadError.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
+    const { error } = await supabase.from('site_content').upsert({
+      id: true,
+      draft_content: { ...(existing?.draft_content || {}), systemConfig: DEFAULT_SYSTEM_CONFIG },
+      published_content: { ...(existing?.published_content || {}), systemConfig: DEFAULT_SYSTEM_CONFIG },
+      published_at: now,
+      updated_at: now,
+      updated_by: currentUserName,
+    }, { onConflict: 'id' });
+    if (error) {
+      onShowToast('คืนค่าไม่สำเร็จ: ' + error.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     resetConfig();
-    onShowToast('คืนค่าหัวข้อและสีธีมเริ่มต้นเรียบร้อยแล้ว', 'คืนค่าเริ่มต้น');
+    setThemeDraft(DEFAULT_SYSTEM_CONFIG);
+    onShowToast('คืนค่าการออกแบบเริ่มต้นและเผยแพร่แล้ว', 'คืนค่าเริ่มต้น');
   };
 
   // Export Entire Database (All years)
@@ -394,6 +432,14 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
       <div className="flex items-center gap-1.5 border-b border-zinc-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar pb-1">
         <button
           type="button"
+          onClick={() => setActiveTab('visual-editor')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${activeTab === 'visual-editor' ? 'bg-blue-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+        >
+          <span className="material-symbols-outlined text-[16px]">design_services</span>
+          <span>Visual Builder</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('titles-theme')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'titles-theme'
@@ -461,6 +507,15 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
         </button>
       </div>
 
+      {activeTab === 'visual-editor' && (
+        <VisualSiteEditor
+          userEmail={currentUserName}
+          currentConfig={config}
+          onPublish={(nextConfig) => updateConfig(nextConfig)}
+          onShowToast={onShowToast}
+        />
+      )}
+
       {/* TAB 1: TITLES & THEME CUSTOMIZATION (NEW) */}
       {activeTab === 'titles-theme' && (
         <div className="flex flex-col gap-6 max-w-4xl">
@@ -490,7 +545,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                 className="px-4 py-1.5 rounded-lg text-white text-xs font-bold shadow-2xs hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">check</span>
-                <span>บันทึกการเปลี่ยนแปลงทั้งหมด</span>
+                <span>{config.buttonSaveText || 'บันทึกการเปลี่ยนแปลงทั้งหมด'}</span>
               </button>
             </div>
           </div>
@@ -1042,17 +1097,17 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                                   type="button"
                                   onClick={saveEditRow}
                                   className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold cursor-pointer"
-                                  title="บันทึก"
+                                  title={config.buttonSaveText || 'บันทึก'}
                                 >
-                                  บันทึก
+                                  {config.buttonSaveText || 'บันทึก'}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={cancelEditRow}
                                   className="px-2 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded text-[11px] cursor-pointer"
-                                  title="ยกเลิก"
+                                  title={config.buttonCancelText || 'ยกเลิก'}
                                 >
-                                  ยกเลิก
+                                  {config.buttonCancelText || 'ยกเลิก'}
                                 </button>
                               </div>
                             </td>
@@ -1118,7 +1173,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                                 type="button"
                                 onClick={() => handleDeleteRow(record.id, record.companyName)}
                                 className="p-1 rounded text-rose-600 hover:bg-rose-50 cursor-pointer"
-                                title="ลบแถวนี้"
+                                title={config.buttonDeleteText || 'ลบแถวนี้'}
                               >
                                 <XpTrashIcon size={14} />
                               </button>

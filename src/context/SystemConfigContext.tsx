@@ -1,9 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface SystemConfig {
   // Theme Colors
   primaryColor: string; // e.g. '#18181b', '#059669', '#2563eb'
   accentColor: string; // e.g. '#d97706', '#0284c7'
+  pageBackground: string;
+  surfaceColor: string;
+  textColor: string;
+  mutedTextColor: string;
+  borderColor: string;
+  fontFamily: string;
+  buttonRadius: string;
+  cardRadius: string;
+  sidebarWidth: string;
   
   // Brand & Monogram
   appName: string;
@@ -25,6 +35,16 @@ export interface SystemConfig {
   menuDashboard: string;
   menuBusinessList: string;
   menuSettings: string;
+
+  // Common action button labels
+  buttonAddText: string;
+  buttonImportText: string;
+  buttonSaveText: string;
+  buttonCancelText: string;
+  buttonDeleteText: string;
+  buttonPublishText: string;
+  buttonPreviewText: string;
+  buttonLogoutText: string;
 
   // Table Column Headers
   colSeq: string;
@@ -48,6 +68,15 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   // Colors
   primaryColor: '#18181b',
   accentColor: '#d97706',
+  pageBackground: '#f8fafc',
+  surfaceColor: '#ffffff',
+  textColor: '#18181b',
+  mutedTextColor: '#71717a',
+  borderColor: '#e4e4e7',
+  fontFamily: 'Inter, system-ui, sans-serif',
+  buttonRadius: '10',
+  cardRadius: '16',
+  sidebarWidth: '224',
 
   // Brand
   appName: 'Mustang Directory',
@@ -69,6 +98,16 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   menuDashboard: 'ภาพรวม',
   menuBusinessList: 'ทะเบียนกิจการ',
   menuSettings: 'การตั้งค่า',
+
+  // Common action button labels
+  buttonAddText: 'เพิ่มรายการ',
+  buttonImportText: 'นำเข้าไฟล์',
+  buttonSaveText: 'บันทึก',
+  buttonCancelText: 'ยกเลิก',
+  buttonDeleteText: 'ลบ',
+  buttonPublishText: 'เผยแพร่ขึ้นเว็บ',
+  buttonPreviewText: 'ดูตัวอย่าง',
+  buttonLogoutText: 'ออกจากระบบ',
 
   // Columns
   colSeq: 'ลำดับ',
@@ -111,13 +150,59 @@ export const SystemConfigProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return DEFAULT_SYSTEM_CONFIG;
   });
 
-  // Apply CSS Variables to root whenever primaryColor changes
+  // Load the published design from Supabase after an allowlisted user signs in.
+  useEffect(() => {
+    let active = true;
+    const loadPublishedConfig = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) return;
+      const { data, error } = await supabase.from('site_content').select('published_content').eq('id', true).maybeSingle();
+      if (!active || error || !data?.published_content) return;
+      const publishedConfig = data.published_content.systemConfig || data.published_content;
+      setConfig({ ...DEFAULT_SYSTEM_CONFIG, ...publishedConfig });
+    };
+    void loadPublishedConfig();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) void Promise.resolve().then(loadPublishedConfig);
+    });
+    return () => { active = false; authListener.subscription.unsubscribe(); };
+  }, []);
+
+  // Apply CSS Variables to root whenever the published design changes
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--color-primary', config.primaryColor);
     root.style.setProperty('--color-accent', config.accentColor);
     root.style.setProperty('--color-primary-light', `${config.primaryColor}18`);
     root.style.setProperty('--color-primary-border', `${config.primaryColor}35`);
+    root.style.setProperty('--site-page-bg', config.pageBackground || '#f8fafc');
+    root.style.setProperty('--site-surface', config.surfaceColor || '#ffffff');
+    root.style.setProperty('--site-text', config.textColor || '#18181b');
+    root.style.setProperty('--site-muted-text', config.mutedTextColor || '#71717a');
+    root.style.setProperty('--site-border', config.borderColor || '#e4e4e7');
+    root.style.setProperty('--site-font', config.fontFamily || 'Inter, system-ui, sans-serif');
+    root.style.setProperty('--site-button-radius', `${config.buttonRadius || '10'}px`);
+    root.style.setProperty('--site-card-radius', `${config.cardRadius || '16'}px`);
+    root.style.setProperty('--site-sidebar-width', `${config.sidebarWidth || '224'}px`);
+    let themeStyle = document.getElementById('m101-visual-theme') as HTMLStyleElement | null;
+    if (!themeStyle) {
+      themeStyle = document.createElement('style');
+      themeStyle.id = 'm101-visual-theme';
+      document.head.appendChild(themeStyle);
+    }
+    themeStyle.textContent = `
+      body, #root { background: var(--site-page-bg); color: var(--site-text); font-family: var(--site-font); }
+      [class~="bg-zinc-900"], [class~="bg-blue-600"], [class~="bg-emerald-600"] { background-color: var(--color-primary) !important; }
+      [class~="bg-blue-50"] { background-color: var(--color-primary-light) !important; }
+      [class~="bg-white"] { background-color: var(--site-surface) !important; }
+      [class~="bg-[#fafafa]"], [class~="bg-[#f8f9fc]"], [class~="bg-zinc-50"] { background-color: var(--site-page-bg) !important; }
+      [class~="text-blue-600"] { color: var(--color-primary) !important; }
+      [class~="text-zinc-900"], [class~="text-[#18181b]"] { color: var(--site-text) !important; }
+      [class~="text-zinc-500"], [class~="text-zinc-400"] { color: var(--site-muted-text) !important; }
+      [class~="border-zinc-200"], [class~="border-[#e4e4e7]"] { border-color: var(--site-border) !important; }
+      [class~="rounded-xl"], [class~="rounded-2xl"] { border-radius: var(--site-card-radius) !important; }
+      [class~="rounded-lg"] { border-radius: var(--site-button-radius) !important; }
+    `;
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));

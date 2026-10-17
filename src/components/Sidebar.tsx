@@ -10,6 +10,7 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
   onLogout: () => void;
+  isAdmin?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,6 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
   onLogout,
+  isAdmin = false,
 }) => {
   const { config } = useSystemConfig();
   const brandName = config.appName || 'Mustang Directory';
@@ -36,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
+        style={{ width: 'var(--site-sidebar-width, 224px)' }}
         className={`fixed lg:static inset-y-0 left-0 z-50 w-56 bg-white dark:bg-[#0c0d14] border-r border-zinc-200/80 dark:border-zinc-800/80 flex flex-col justify-between shrink-0 transition-transform duration-200 select-none ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
@@ -52,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {brandName}
                 </span>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate leading-tight">
-                  SaaS Dashboard
+                  {config.appTagline || 'SaaS Dashboard'}
                 </span>
               </div>
             </div>
@@ -154,29 +157,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                {/* Admin Backend Tool Icon (Bottom-Left explicit access) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onNavigate('backend-admin');
-                    onCloseMobile?.();
-                  }}
-                  title="ระบบหลังบ้าน (Admin Console)"
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${
-                    currentScreen === 'backend-admin'
-                      ? 'bg-amber-500 text-white shadow-xs'
-                      : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[17px] leading-none">
-                    build
-                  </span>
-                </button>
+                {/* Admin Backend Tool Icon (admin role only) */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate('backend-admin');
+                      onCloseMobile?.();
+                    }}
+                    title="ระบบหลังบ้าน (Admin Console)"
+                    aria-label="ระบบหลังบ้าน (Admin Console)"
+                    className={`p-2 rounded-lg transition-all cursor-pointer ${
+                      currentScreen === 'backend-admin'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : 'text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[17px] leading-none">build</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
                   onClick={onLogout}
-                  title="ออกจากระบบ"
+                  title={config.buttonLogoutText || 'ออกจากระบบ'}
                   className="p-2 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[17px] leading-none">
