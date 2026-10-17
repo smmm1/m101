@@ -192,7 +192,12 @@ export const SystemConfigProvider: React.FC<{ children: React.ReactNode }> = ({ 
     themeStyle.textContent = `
       body, #root { background: var(--site-page-bg); color: var(--site-text); font-family: var(--site-font); }
       [class~="bg-zinc-900"], [class~="bg-blue-600"], [class~="bg-emerald-600"] { background-color: var(--color-primary) !important; }
+      [class~="bg-blue-50"] { background-color: var(--color-primary-light) !important; }
       [class~="bg-white"] { background-color: var(--site-surface) !important; }
+      [class~="bg-[#fafafa]"], [class~="bg-[#f8f9fc]"], [class~="bg-zinc-50"] { background-color: var(--site-page-bg) !important; }
+      [class~="text-blue-600"] { color: var(--color-primary) !important; }
+      [class~="text-zinc-900"], [class~="text-[#18181b]"] { color: var(--site-text) !important; }
+      [class~="text-zinc-500"], [class~="text-zinc-400"] { color: var(--site-muted-text) !important; }
       [class~="border-zinc-200"], [class~="border-[#e4e4e7]"] { border-color: var(--site-border) !important; }
       [class~="rounded-xl"], [class~="rounded-2xl"] { border-radius: var(--site-card-radius) !important; }
       [class~="rounded-lg"] { border-radius: var(--site-button-radius) !important; }
