@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ActiveScreen } from '../types';
+import { ActiveScreen, SiteContent } from '../types';
 import { XpCalendarIcon, XpAddDocIcon } from './ClassicIcons';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { OnlineUserBadge } from './OnlineUserBadge';
@@ -16,6 +16,7 @@ interface HeaderProps {
   onSelectYear: (year: string) => void;
   onOpenYearModal: () => void;
   onShowToast?: (message: string, title?: string) => void;
+  siteContent?: SiteContent;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,17 +30,19 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectYear,
   onOpenYearModal,
   onShowToast,
+  siteContent,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const yearDropdownRef = useRef<HTMLDivElement>(null);
 
   const screenTitles: Record<ActiveScreen, string> = {
-    dashboard: 'ภาพรวม',
-    'business-list': 'ทะเบียนกิจการ',
+    dashboard: siteContent?.dashboardHeading || 'ภาพรวม',
+    'business-list': siteContent?.businessListHeading || 'ทะเบียนกิจการ',
     settings: 'การตั้งค่า',
     'add-business': 'เพิ่มกิจการ',
     login: 'เข้าสู่ระบบ',
+    cms: 'จัดการเนื้อหา',
   };
 
   const title = screenTitles[currentScreen] || 'Mustang Directory';
