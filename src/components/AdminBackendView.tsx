@@ -7,7 +7,7 @@ import {
   XpTrashIcon,
   XpStatusSphere,
 } from './ClassicIcons';
-import { useSystemConfig, SystemConfig } from '../context/SystemConfigContext';
+import { useSystemConfig, SystemConfig, DEFAULT_SYSTEM_CONFIG } from '../context/SystemConfigContext';
 import { VisualSiteEditor } from './VisualSiteEditor';
 
 interface AdminBackendViewProps {
@@ -309,10 +309,24 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
     onShowToast('บันทึกและเผยแพร่การตั้งค่าสีธีมและหัวข้อแล้ว', 'บันทึกสำเร็จ');
   };
 
-  const handleResetTitlesAndTheme = () => {
+  const handleResetTitlesAndTheme = async () => {
     if (!confirm('ต้องการคืนค่าหัวข้อและสีธีมเริ่มต้นทั้งหมดหรือไม่?')) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase.from('site_content').upsert({
+      id: true,
+      draft_content: DEFAULT_SYSTEM_CONFIG,
+      published_content: DEFAULT_SYSTEM_CONFIG,
+      published_at: now,
+      updated_at: now,
+      updated_by: currentUserName,
+    }, { onConflict: 'id' });
+    if (error) {
+      onShowToast('คืนค่าไม่สำเร็จ: ' + error.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     resetConfig();
-    onShowToast('คืนค่าหัวข้อและสีธีมเริ่มต้นเรียบร้อยแล้ว', 'คืนค่าเริ่มต้น');
+    setThemeDraft(DEFAULT_SYSTEM_CONFIG);
+    onShowToast('คืนค่าการออกแบบเริ่มต้นและเผยแพร่แล้ว', 'คืนค่าเริ่มต้น');
   };
 
   // Export Entire Database (All years)
@@ -521,7 +535,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                 className="px-4 py-1.5 rounded-lg text-white text-xs font-bold shadow-2xs hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">check</span>
-                <span>บันทึกการเปลี่ยนแปลงทั้งหมด</span>
+                <span>{config.buttonSaveText || 'บันทึกการเปลี่ยนแปลงทั้งหมด'}</span>
               </button>
             </div>
           </div>
