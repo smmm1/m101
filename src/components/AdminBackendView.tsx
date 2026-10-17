@@ -1087,17 +1087,17 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                                   type="button"
                                   onClick={saveEditRow}
                                   className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold cursor-pointer"
-                                  title="บันทึก"
+                                  title={config.buttonSaveText || 'บันทึก'}
                                 >
-                                  บันทึก
+                                  {config.buttonSaveText || 'บันทึก'}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={cancelEditRow}
                                   className="px-2 py-1 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded text-[11px] cursor-pointer"
-                                  title="ยกเลิก"
+                                  title={config.buttonCancelText || 'ยกเลิก'}
                                 >
-                                  ยกเลิก
+                                  {config.buttonCancelText || 'ยกเลิก'}
                                 </button>
                               </div>
                             </td>
@@ -1163,7 +1163,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
                                 type="button"
                                 onClick={() => handleDeleteRow(record.id, record.companyName)}
                                 className="p-1 rounded text-rose-600 hover:bg-rose-50 cursor-pointer"
-                                title="ลบแถวนี้"
+                                title={config.buttonDeleteText || 'ลบแถวนี้'}
                               >
                                 <XpTrashIcon size={14} />
                               </button>
