@@ -26,4 +26,11 @@ export type ViewMode = 'table' | 'cards';
 
 export type FilterStatus = 'all' | 'company' | 'partnership' | 'individual' | 'pending' | 'in_progress' | 'completed';
 
-export type ActiveScreen = 'login' | 'dashboard' | 'settings' | 'add-business' | 'business-list';
+export interface SiteContent {
+  siteName: string;
+  dashboardHeading: string;
+  dashboardDescription: string;
+  businessListHeading: string;
+}
+
+export type ActiveScreen = 'login' | 'dashboard' | 'settings' | 'add-business' | 'business-list' | 'cms';
