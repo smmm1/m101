@@ -486,6 +486,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
       {activeTab === 'visual-editor' && (
         <VisualSiteEditor
           userEmail={currentUserName}
+          currentConfig={config}
           onPublish={(nextConfig) => updateConfig(nextConfig)}
           onShowToast={onShowToast}
         />
