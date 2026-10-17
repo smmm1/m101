@@ -158,7 +158,8 @@ export const SystemConfigProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!sessionData.session) return;
       const { data, error } = await supabase.from('site_content').select('published_content').eq('id', true).maybeSingle();
       if (!active || error || !data?.published_content) return;
-      setConfig({ ...DEFAULT_SYSTEM_CONFIG, ...data.published_content });
+      const publishedConfig = data.published_content.systemConfig || data.published_content;
+      setConfig({ ...DEFAULT_SYSTEM_CONFIG, ...publishedConfig });
     };
     void loadPublishedConfig();
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
