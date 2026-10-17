@@ -90,7 +90,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e4e4e7] bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-xs text-[#71717a] font-medium transition-colors cursor-pointer shadow-2xs"
           >
             <span className="material-symbols-outlined text-[16px]">logout</span>
-            <span>ออกจากระบบ</span>
+            <span>{config.buttonLogoutText || 'ออกจากระบบ'}</span>
           </button>
         )}
       </div>
