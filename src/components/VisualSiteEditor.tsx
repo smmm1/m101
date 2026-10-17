@@ -93,6 +93,12 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, c
   };
 
   const persist = async (publish: boolean) => {
+    for (const key of COLOR_FIELDS) {
+      if (!/^#[0-9a-f]{6}$/i.test(String(draft[key]))) {
+        setErrorMessage('กรุณาใส่รหัสสี HEX ให้ถูกต้อง เช่น #2563eb');
+        return;
+      }
+    }
     setSaving(true);
     setErrorMessage('');
     const now = new Date().toISOString();
@@ -208,9 +214,10 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, c
                   <div className="border p-2" style={{ backgroundColor: draft.surfaceColor, borderColor: draft.borderColor, borderRadius: draft.cardRadius + 'px' }}><div className="text-[9px]" style={{ color: draft.mutedTextColor }}>ทะเบียนกิจการ</div><div className="mt-1 text-sm font-black">93</div></div>
                   <div className="border p-2" style={{ backgroundColor: draft.surfaceColor, borderColor: draft.borderColor, borderRadius: draft.cardRadius + 'px' }}><div className="text-[9px]" style={{ color: draft.mutedTextColor }}>สถานะ</div><div className="mt-1 text-xs font-black">พร้อมใช้งาน</div></div>
                 </div>
+                {draft.systemNotice && <div className="mt-3 rounded-md border px-2 py-2 text-[9px]" style={{ borderColor: draft.borderColor, color: draft.mutedTextColor }}>ประกาศ: {draft.systemNotice}</div>}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {[draft.buttonAddText, draft.buttonImportText, draft.buttonSaveText].map((label) => <button key={label} type="button" className="px-2.5 py-2 text-[9px] font-bold text-white" style={{ backgroundColor: draft.primaryColor, borderRadius: draft.buttonRadius + 'px' }}>{label}</button>)}
-                  <button type="button" className="border px-2.5 py-2 text-[9px] font-bold" style={{ borderColor: draft.borderColor, color: draft.textColor, borderRadius: draft.buttonRadius + 'px' }}>{draft.buttonCancelText}</button>
+                  {[draft.buttonAddText, draft.buttonImportText, draft.buttonSaveText, draft.buttonDeleteText, draft.buttonPublishText, draft.buttonPreviewText, draft.buttonLogoutText].map((label) => <span key={label} className="px-2.5 py-2 text-[9px] font-bold text-white" style={{ backgroundColor: draft.primaryColor, borderRadius: draft.buttonRadius + 'px' }}>{label}</span>)}
+                  <span className="border px-2.5 py-2 text-[9px] font-bold" style={{ borderColor: draft.borderColor, color: draft.textColor, borderRadius: draft.buttonRadius + 'px' }}>{draft.buttonCancelText}</span>
                 </div>
               </div>
             </div>
