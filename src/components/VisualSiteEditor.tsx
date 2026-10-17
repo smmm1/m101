@@ -4,6 +4,7 @@ import { DEFAULT_SYSTEM_CONFIG, SystemConfig } from '../context/SystemConfigCont
 
 interface VisualSiteEditorProps {
   userEmail: string;
+  currentConfig: SystemConfig;
   onPublish: (config: SystemConfig) => void;
   onShowToast: (message: string, title?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -55,7 +56,7 @@ const SECTIONS: Section[] = [
 const COLOR_FIELDS = new Set<FieldKey>(['primaryColor', 'accentColor', 'pageBackground', 'surfaceColor', 'textColor', 'mutedTextColor', 'borderColor']);
 const RANGE_FIELDS = new Set<FieldKey>(['buttonRadius', 'cardRadius', 'sidebarWidth']);
 
-export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, onPublish, onShowToast }) => {
+export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, currentConfig, onPublish, onShowToast }) => {
   const [draft, setDraft] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG);
   const [activeSection, setActiveSection] = useState('design');
   const [loading, setLoading] = useState(true);
@@ -79,7 +80,7 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, o
         setErrorMessage('โหลดค่าจากฐานข้อมูลไม่ได้: ' + error.message);
       }
       const savedDraft = data?.draft_content || data?.published_content || {};
-      setDraft({ ...DEFAULT_SYSTEM_CONFIG, ...savedDraft });
+      setDraft({ ...currentConfig, ...savedDraft });
       setPublishedAt(data?.published_at || null);
       setLoading(false);
     };
@@ -132,8 +133,8 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, o
           <p className="mt-1 text-xs text-zinc-500">เลือกส่วนที่ต้องการแก้ไข ดูตัวอย่างทันที แล้วบันทึกร่างหรือเผยแพร่เมื่อพร้อม</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={saving} onClick={() => void persist(false)} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-bold text-zinc-700 disabled:opacity-50">{saving ? 'กำลังบันทึก…' : 'บันทึกร่าง'}</button>
-          <button type="button" disabled={saving} onClick={() => void persist(true)} style={{ background: draft.primaryColor }} className="rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{saving ? 'กำลังเผยแพร่…' : 'เผยแพร่ขึ้นเว็บ'}</button>
+          <button type="button" disabled={saving} onClick={() => void persist(false)} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-bold text-zinc-700 disabled:opacity-50">{saving ? 'กำลังบันทึก…' : draft.buttonSaveText}</button>
+          <button type="button" disabled={saving} onClick={() => void persist(true)} style={{ background: draft.primaryColor }} className="rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{saving ? 'กำลังเผยแพร่…' : draft.buttonPublishText}</button>
         </div>
       </div>
       {errorMessage && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{errorMessage}</div>}
@@ -216,7 +217,7 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, o
           </div>
           <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-[10px] leading-5 text-zinc-500">
             {publishedAt ? 'เผยแพร่ล่าสุด: ' + new Date(publishedAt).toLocaleString('th-TH') : 'ยังไม่มีข้อมูลเผยแพร่จากตัวแก้ไขนี้'}<br />
-            พรีวิวนี้จำลองรูปแบบจากค่าร่าง ยังไม่ใช่การแก้ตำแหน่งทุกองค์ประกอบแบบลากวางเหมือน Figma
+            พรีวิวนี้แสดงตัวอย่างดีไซน์และข้อความที่รองรับการตั้งค่า ไม่ใช่การแก้ตำแหน่งทุกองค์ประกอบแบบลากวางเหมือน Figma
           </div>
         </section>
       </div>
