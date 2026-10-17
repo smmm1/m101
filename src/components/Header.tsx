@@ -148,6 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right side: Actions */}
       <div className="flex items-center gap-2 shrink-0">
+        {config.systemNotice && <span className="hidden max-w-64 truncate rounded-lg border px-2 py-1 text-[10px] sm:inline" style={{ borderColor: 'var(--site-border)', color: 'var(--site-muted-text)' }} title={config.systemNotice}>{config.systemNotice}</span>}
         {currentScreen === 'business-list' && (
           <>
             <input
