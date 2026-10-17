@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ActiveScreen, BusinessRecord } from './types';
+import { ActiveScreen, BusinessRecord, SiteContent } from './types';
 import { supabase } from './lib/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { Sidebar } from './components/Sidebar';
@@ -14,6 +14,7 @@ import { BusinessListView } from './components/BusinessListView';
 import { EditBusinessModal } from './components/EditBusinessModal';
 import { AddBusinessModal } from './components/AddBusinessModal';
 import { SettingsView } from './components/SettingsView';
+import { CmsView } from './components/CmsView';
 
 import { YearManageModal } from './components/YearManageModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -47,6 +48,13 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [cloudReady, setCloudReady] = useState<boolean>(false);
   const [cloudError, setCloudError] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [siteContent, setSiteContent] = useState<SiteContent>({
+    siteName: 'Mustang Directory',
+    dashboardHeading: 'ทะเบียนกิจการ',
+    dashboardDescription: 'ระบบบริหารจัดการทะเบียนกิจการของคุณ',
+    businessListHeading: 'ทะเบียนกิจการ',
+  });
 
   useEffect(() => {
     let active = true;
@@ -55,15 +63,16 @@ function AppContent() {
       if (!active || !data.session?.user) return;
       const email = data.session.user.email?.toLowerCase();
       if (!email) { await supabase.auth.signOut(); return; }
-      const { data: allowed, error } = await supabase.from('allowed_users').select('email').eq('email', email).maybeSingle();
+      const { data: allowed, error } = await supabase.from('allowed_users').select('email, role').eq('email', email).maybeSingle();
       if (!active) return;
       if (error || !allowed) { await supabase.auth.signOut(); setIsLoggedIn(false); return; }
       setUserName(email);
+      setIsAdmin(allowed.role === 'admin');
       setIsLoggedIn(true);
     };
     void checkSession();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) { setIsLoggedIn(false); setCloudReady(false); }
+      if (!session) { setIsLoggedIn(false); setCloudReady(false); setIsAdmin(false); }
     });
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
@@ -168,6 +177,19 @@ function AppContent() {
     return () => { active = false; };
   }, [isLoggedIn]);
 
+  // Load published CMS copy separately from business records.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    const loadSiteContent = async () => {
+      const { data, error } = await supabase.from('site_content').select('published_content').eq('id', true).maybeSingle();
+      if (!active || error || !data?.published_content) return;
+      setSiteContent((current) => ({ ...current, ...data.published_content }));
+    };
+    void loadSiteContent();
+    return () => { active = false; };
+  }, [isLoggedIn]);
+
   // Persist data to Supabase only after initial cloud load/migration is complete.
   useEffect(() => {
     if (!isLoggedIn || !cloudReady) return;
@@ -252,6 +274,10 @@ function AppContent() {
         localStorage.setItem(STORAGE_KEY_USER, user);
       } catch {}
     }
+    if (user) {
+      void supabase.from('allowed_users').select('role').eq('email', user.toLowerCase()).maybeSingle()
+        .then(({ data }) => setIsAdmin(data?.role === 'admin'));
+    }
     setIsLoggedIn(true);
     showToast(`ยินดีต้อนรับคุณ ${user || 'ผู้ใช้งาน'}`, 'เข้าสู่ระบบสำเร็จ');
   };
@@ -261,6 +287,7 @@ function AppContent() {
     setCloudReady(false);
     setCloudError('');
     setIsLoggedIn(false);
+    setIsAdmin(false);
     showToast('ออกจากระบบเรียบร้อยแล้ว', 'แจ้งเตือน', 'info');
   };
 
@@ -558,6 +585,8 @@ function AppContent() {
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onLogout={handleLogout}
+        isAdmin={isAdmin}
+        siteName={siteContent.siteName}
       />
 
       {/* Main Content Workspace */}
@@ -575,6 +604,7 @@ function AppContent() {
           onSelectYear={handleSelectYear}
           onOpenYearModal={() => setIsYearModalOpen(true)}
           onShowToast={showToast}
+          siteContent={siteContent}
         />
 
         {/* Dynamic Screen View */}
@@ -592,7 +622,16 @@ function AppContent() {
             onDeleteMultiple={handleDeleteMultiple}
             onAddRecord={handleAddRecord}
             onShowToast={showToast}
+            siteContent={siteContent}
             onImportRecords={(items) => processImportRecords(items, 'นำเข้าไฟล์')}
+          />
+        )}
+
+        {currentScreen === 'cms' && isAdmin && (
+          <CmsView
+            userEmail={userName}
+            onPublishedChange={setSiteContent}
+            onShowToast={showToast}
           />
         )}
 
