@@ -293,10 +293,15 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   // Save Titles & Themes
   const handleSaveTitlesAndTheme = async () => {
     const now = new Date().toISOString();
+    const { data: existing, error: loadError } = await supabase.from('site_content').select('draft_content, published_content').eq('id', true).maybeSingle();
+    if (loadError) {
+      onShowToast('อ่านค่าปัจจุบันก่อนบันทึกไม่ได้: ' + loadError.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     const { error } = await supabase.from('site_content').upsert({
       id: true,
-      draft_content: themeDraft,
-      published_content: themeDraft,
+      draft_content: { ...(existing?.draft_content || {}), systemConfig: themeDraft },
+      published_content: { ...(existing?.published_content || {}), systemConfig: themeDraft },
       published_at: now,
       updated_at: now,
       updated_by: currentUserName,
@@ -312,10 +317,15 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   const handleResetTitlesAndTheme = async () => {
     if (!confirm('ต้องการคืนค่าหัวข้อและสีธีมเริ่มต้นทั้งหมดหรือไม่?')) return;
     const now = new Date().toISOString();
+    const { data: existing, error: loadError } = await supabase.from('site_content').select('draft_content, published_content').eq('id', true).maybeSingle();
+    if (loadError) {
+      onShowToast('อ่านค่าปัจจุบันก่อนคืนค่าไม่ได้: ' + loadError.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     const { error } = await supabase.from('site_content').upsert({
       id: true,
-      draft_content: DEFAULT_SYSTEM_CONFIG,
-      published_content: DEFAULT_SYSTEM_CONFIG,
+      draft_content: { ...(existing?.draft_content || {}), systemConfig: DEFAULT_SYSTEM_CONFIG },
+      published_content: { ...(existing?.published_content || {}), systemConfig: DEFAULT_SYSTEM_CONFIG },
       published_at: now,
       updated_at: now,
       updated_by: currentUserName,
