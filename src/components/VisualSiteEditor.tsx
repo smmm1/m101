@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { DEFAULT_SYSTEM_CONFIG, SystemConfig } from '../context/SystemConfigContext';
+import { SystemConfig } from '../context/SystemConfigContext';
 
 interface VisualSiteEditorProps {
   userEmail: string;
@@ -86,7 +86,7 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, c
     };
     void load();
     return () => { active = false; };
-  }, []);
+  }, [currentConfig]);
 
   const updateField = (key: FieldKey, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
