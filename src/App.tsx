@@ -642,6 +642,7 @@ function AppContent() {
             onEditRecord={setEditingRecord}
             onDeleteRecord={handleDeleteRecord}
             onShowToast={showToast}
+            siteContent={siteContent}
           />
         )}
 
