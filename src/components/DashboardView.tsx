@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
+import { BusinessRecord, BusinessStatus, BusinessType, SiteContent } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { EditBusinessModal } from './EditBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
@@ -34,6 +34,7 @@ interface DashboardViewProps {
   onAddRecord: (record: BusinessRecord) => void;
   onShowToast: (msg: string, title?: string) => void;
   onImportRecords?: (records: Partial<BusinessRecord>[]) => void;
+  siteContent?: SiteContent;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -49,6 +50,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDeleteMultiple,
   onAddRecord,
   onShowToast,
+  siteContent,
 }) => {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
@@ -337,10 +339,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 lg:p-8 flex flex-col gap-5">
       {/* Page Title & Top Actions */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-start gap-2">
           <XpFolderIcon size={22} />
           <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            ทะเบียนกิจการ
+            {siteContent?.dashboardHeading || 'ทะเบียนกิจการ'}
+            <p className="mt-1 text-xs font-normal text-zinc-500">{siteContent?.dashboardDescription || 'ระบบบริหารจัดการทะเบียนกิจการของคุณ'}</p>
           </h1>
           <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
             ปี {selectedYear}
