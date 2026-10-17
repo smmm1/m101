@@ -341,10 +341,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-start gap-2">
           <XpFolderIcon size={22} />
-          <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            {siteContent?.dashboardHeading || 'ทะเบียนกิจการ'}
+          <div>
+            <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
+              {siteContent?.dashboardHeading || 'ทะเบียนกิจการ'}
+            </h1>
             <p className="mt-1 text-xs font-normal text-zinc-500">{siteContent?.dashboardDescription || 'ระบบบริหารจัดการทะเบียนกิจการของคุณ'}</p>
-          </h1>
+          </div>
           <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
             ปี {selectedYear}
           </span>
