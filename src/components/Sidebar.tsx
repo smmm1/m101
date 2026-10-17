@@ -95,14 +95,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onNavigate('cms');
                     onCloseMobile?.();
                   }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
+                  title="จัดการเนื้อหา"
+                  aria-label="จัดการเนื้อหา"
+                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
                     currentScreen === 'cms'
-                      ? 'bg-zinc-900 text-white font-semibold shadow-sm'
-                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 font-medium'
+                      ? 'bg-zinc-200/70 text-zinc-600'
+                      : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">edit_document</span>
-                  <span>จัดการเนื้อหา</span>
                 </button>
               )}
 
