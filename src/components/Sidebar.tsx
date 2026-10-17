@@ -88,25 +88,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>ทะเบียนกิจการ</span>
               </button>
 
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onNavigate('cms');
-                    onCloseMobile?.();
-                  }}
-                  title="จัดการเนื้อหา"
-                  aria-label="จัดการเนื้อหา"
-                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
-                    currentScreen === 'cms'
-                      ? 'bg-zinc-200/70 text-zinc-600'
-                      : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">edit_document</span>
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={() => {
@@ -129,6 +110,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Bottom Profile Footer */}
           <div className="p-3 border-t border-[#f0f0f0]">
+            {isAdmin && (
+              <div className="mb-1 flex justify-start">
+                <button type="button" onClick={() => { onNavigate('cms'); onCloseMobile?.(); }} title="จัดการเนื้อหา" aria-label="จัดการเนื้อหา" className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors cursor-pointer ${currentScreen === 'cms' ? 'bg-zinc-200/70 text-zinc-600' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100'}`}>
+                  <span className="material-symbols-outlined text-[15px]">edit_document</span>
+                </button>
+              </div>
+            )}
             <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-[#f2f1ee] transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-7 h-7 rounded-full bg-linear-to-br from-slate-700 to-slate-950 text-white font-semibold text-[11px] flex items-center justify-center shrink-0 border border-slate-500/30">
