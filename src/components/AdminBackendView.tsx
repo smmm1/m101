@@ -8,6 +8,7 @@ import {
   XpStatusSphere,
 } from './ClassicIcons';
 import { useSystemConfig, SystemConfig } from '../context/SystemConfigContext';
+import { VisualSiteEditor } from './VisualSiteEditor';
 
 interface AdminBackendViewProps {
   recordsByYear: Record<string, BusinessRecord[]>;
@@ -54,7 +55,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   const { config, updateConfig, resetConfig } = useSystemConfig();
 
   const [activeTab, setActiveTab] = useState<
-    'master-data' | 'titles-theme' | 'users' | 'branding' | 'maintenance'
+    'master-data' | 'titles-theme' | 'users' | 'branding' | 'maintenance' | 'visual-editor'
   >('titles-theme');
 
   const [activeYear, setActiveYear] = useState<string>(selectedYear);
@@ -290,9 +291,22 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
   };
 
   // Save Titles & Themes
-  const handleSaveTitlesAndTheme = () => {
+  const handleSaveTitlesAndTheme = async () => {
+    const now = new Date().toISOString();
+    const { error } = await supabase.from('site_content').upsert({
+      id: true,
+      draft_content: themeDraft,
+      published_content: themeDraft,
+      published_at: now,
+      updated_at: now,
+      updated_by: currentUserName,
+    }, { onConflict: 'id' });
+    if (error) {
+      onShowToast('บันทึกการตั้งค่าไม่สำเร็จ: ' + error.message, 'ข้อผิดพลาด', 'error');
+      return;
+    }
     updateConfig(themeDraft);
-    onShowToast('บันทึกการตั้งค่าสีธีมและหัวข้อทั้งหมดเรียบร้อย', 'บันทึกสำเร็จ');
+    onShowToast('บันทึกและเผยแพร่การตั้งค่าสีธีมและหัวข้อแล้ว', 'บันทึกสำเร็จ');
   };
 
   const handleResetTitlesAndTheme = () => {
@@ -394,7 +408,15 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
       <div className="flex items-center gap-1.5 border-b border-zinc-200/80 dark:border-zinc-800 overflow-x-auto no-scrollbar pb-1">
         <button
           type="button"
-          onClick={() => setActiveTab('titles-theme')}
+          onClick={() => setActiveTab('visual-editor')}
+          className={\`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap \${activeTab === 'visual-editor' ? 'bg-blue-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}\`}
+        >
+          <span className="material-symbols-outlined text-[16px]">design_services</span>
+          <span>Visual Builder</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('titles-theme')
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'titles-theme'
               ? 'bg-blue-600 text-white shadow-xs'
@@ -460,6 +482,14 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
           <span>ฐานข้อมูล & กู้คืน (Disaster Recovery)</span>
         </button>
       </div>
+
+      {activeTab === 'visual-editor' && (
+        <VisualSiteEditor
+          userEmail={currentUserName}
+          onPublish={(nextConfig) => updateConfig(nextConfig)}
+          onShowToast={onShowToast}
+        />
+      )}
 
       {/* TAB 1: TITLES & THEME CUSTOMIZATION (NEW) */}
       {activeTab === 'titles-theme' && (
