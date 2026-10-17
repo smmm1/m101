@@ -430,7 +430,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('titles-theme')
+          onClick={() => setActiveTab('titles-theme')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'titles-theme'
               ? 'bg-blue-600 text-white shadow-xs'
