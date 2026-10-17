@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BusinessRecord, BusinessStatus, FilterStatus } from '../types';
+import { BusinessRecord, BusinessStatus, FilterStatus, SiteContent } from '../types';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import {
   XpFolderIcon,
@@ -15,6 +15,7 @@ interface BusinessListViewProps {
   onEditRecord?: (record: BusinessRecord) => void;
   onDeleteRecord?: (id: string) => void;
   onShowToast?: (msg: string, title?: string) => void;
+  siteContent?: SiteContent;
 }
 
 export const BusinessListView: React.FC<BusinessListViewProps> = ({
@@ -23,6 +24,7 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
   onEditRecord,
   onDeleteRecord,
   onShowToast,
+  siteContent,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,7 +144,7 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
         <div className="flex items-center gap-2">
           <XpFolderIcon size={22} />
           <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            ทะเบียนกิจการทั้งหมด
+            {siteContent?.businessListHeading || 'ทะเบียนกิจการทั้งหมด'}
           </h1>
           <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
             ปี {selectedYear}
