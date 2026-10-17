@@ -2,24 +2,12 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
-import { EditBusinessModal } from './EditBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
-import {
-  XpAddDocIcon,
-  XpFloppyIcon,
-  XpSearchIcon,
-  XpTrashIcon,
-  XpKeyIcon,
-  XpBuildingIcon,
-  XpShieldIcon,
-  XpEditIcon,
-  XpStatusSphere,
-  XpFolderIcon,
-} from './ClassicIcons';
+import { useSystemConfig } from '../context/SystemConfigContext';
 
 interface DashboardViewProps {
   records: BusinessRecord[];
-  userName: string;
+  userName?: string;
   selectedYear?: string;
   availableYears?: string[];
   recordsByYear?: Record<string, BusinessRecord[]>;
@@ -38,18 +26,16 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   records,
+  userName = 'Mustang',
   selectedYear = '69',
-  availableYears = [],
-  recordsByYear = {},
-  onCopyFromOtherYear,
   searchQuery: externalSearchQuery,
   onSearchChange: externalOnSearchChange,
   onEditRecord,
   onDeleteRecord,
-  onDeleteMultiple,
   onAddRecord,
   onShowToast,
 }) => {
+  const { config } = useSystemConfig();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
@@ -61,7 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [selectedDetailRecord, setSelectedDetailRecord] = useState<BusinessRecord | null>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(12);
+  const [itemsPerPage] = useState<number>(12);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -71,19 +57,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Copied item feedback
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Active status dropdown row
-  const [openStatusRowId, setOpenStatusRowId] = useState<string | null>(null);
-
-  // Recently updated / added row ID for visual highlight
+  const [, setCopiedId] = useState<string | null>(null);
   const [lastUpdatedId, setLastUpdatedId] = useState<string | null>(null);
 
-  // Inline cell editing state
-  const [editingCell, setEditingCell] = useState<{ id: string; field: keyof BusinessRecord } | null>(null);
-  const [inlineValue, setInlineEditValue] = useState<string>('');
-
-  // Keep selectedDetailRecord in sync with updated records prop immediately
+  // Keep selectedDetailRecord in sync
   useEffect(() => {
     if (selectedDetailRecord) {
       const latest = records.find((r) => r.id === selectedDetailRecord.id);
@@ -93,7 +70,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   }, [records, selectedDetailRecord]);
 
-  // When records count increases (record added), jump to page 1 and highlight top item
   const prevCountRef = useRef(records.length);
   useEffect(() => {
     if (records.length > prevCountRef.current) {
@@ -106,7 +82,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     prevCountRef.current = records.length;
   }, [records]);
 
-  // Clear highlight after 3 seconds
   useEffect(() => {
     if (lastUpdatedId) {
       const timer = setTimeout(() => setLastUpdatedId(null), 3000);
@@ -114,38 +89,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   }, [lastUpdatedId]);
 
-  // Keyboard shortcut for Ctrl+K or / to search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Close export menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
-        setShowExportMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Statistics
   const totalCount = records.length;
   const pendingCount = records.filter((r) => r.status === 'pending').length;
   const inProgressCount = records.filter((r) => r.status === 'in_progress').length;
   const completedCount = records.filter((r) => r.status === 'completed').length;
+  const successRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -162,9 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedId(keyId);
     onShowToast(`คัดลอก ${label} "${text}" เรียบร้อย`, 'คัดลอกสำเร็จ');
-    setTimeout(() => {
-      setCopiedId(null);
-    }, 2000);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleQuickStatusChange = (record: BusinessRecord, newStatus: BusinessStatus, e?: React.MouseEvent) => {
@@ -176,217 +123,253 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     };
     onEditRecord(updated);
     setLastUpdatedId(record.id);
-    setOpenStatusRowId(null);
-    if (selectedDetailRecord && selectedDetailRecord.id === record.id) {
-      setSelectedDetailRecord(updated);
-    }
-    const statusLabel = newStatus === 'completed' ? 'เสร็จสิ้น' : newStatus === 'in_progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ';
-    onShowToast(`เปลี่ยนสถานะเป็น "${statusLabel}" เรียบร้อย`, 'อัปเดตสถานะ');
+    onShowToast(`อัปเดตสถานะของ "${record.companyName}" เรียบร้อย`, 'อัปเดตสำเร็จ');
   };
 
-  const handleStartInlineEdit = (record: BusinessRecord, field: keyof BusinessRecord, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingCell({ id: record.id, field });
-    setInlineEditValue(String(record[field] || ''));
-  };
-
-  const handleSaveInlineCell = (record: BusinessRecord, field: keyof BusinessRecord) => {
-    if (!editingCell) return;
-    const val = inlineValue.trim();
-    if (String(record[field] || '') !== val) {
-      const updated: BusinessRecord = {
-        ...record,
-        [field]: val,
-        updatedAt: new Date().toISOString(),
-      };
-      onEditRecord(updated);
-      setLastUpdatedId(record.id);
-      onShowToast(`อัปเดตข้อมูลสำเร็จ`, 'บันทึกด่วน');
-    }
-    setEditingCell(null);
-  };
-
-  // Filter & Search & Sort
+  // Filter & Sort
   const filteredRecords = useMemo(() => {
-    let list = [...records];
+    return records.filter((item) => {
+      const matchesSearch =
+        item.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.taxId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sequenceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.password.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.eFilingCode.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const cleanQ = q.replace(/[-\s]/g, '');
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      const matchesType = typeFilter === 'all' || item.type === typeFilter;
 
-      list = list.filter((r) => {
-        const cleanTax = r.taxId.replace(/[-\s]/g, '').toLowerCase();
-        return (
-          r.companyName.toLowerCase().includes(q) ||
-          r.taxId.toLowerCase().includes(q) ||
-          cleanTax.includes(cleanQ) ||
-          r.sequenceNo.toLowerCase().includes(q) ||
-          r.auditorDate.toLowerCase().includes(q) ||
-          r.eFilingCode.toLowerCase().includes(q) ||
-          r.ssoCode.toLowerCase().includes(q) ||
-          r.remark.toLowerCase().includes(q) ||
-          (r.topic && r.topic.toLowerCase().includes(q))
-        );
-      });
-    }
-
-    if (statusFilter !== 'all') {
-      list = list.filter((r) => r.status === statusFilter);
-    }
-
-    if (typeFilter !== 'all') {
-      list = list.filter((r) => r.type === typeFilter);
-    }
-
-    // Sort
-    const modifier = sortOrder === 'asc' ? 1 : -1;
-    list.sort((a, b) => {
-      if (sortBy === 'seq') {
-        const numA = parseInt(a.sequenceNo.replace(/\D/g, '') || '0', 10);
-        const numB = parseInt(b.sequenceNo.replace(/\D/g, '') || '0', 10);
-        return (numA - numB) * modifier;
-      }
-      if (sortBy === 'name') {
-        return a.companyName.localeCompare(b.companyName, 'th') * modifier;
-      }
-      if (sortBy === 'taxId') {
-        return a.taxId.localeCompare(b.taxId) * modifier;
-      }
-      if (sortBy === 'status') {
-        const priority: Record<BusinessStatus, number> = { pending: 1, in_progress: 2, completed: 3 };
-        return (priority[a.status] - priority[b.status]) * modifier;
-      }
-      return (new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()) * modifier;
+      return matchesSearch && matchesStatus && matchesType;
     });
+  }, [records, searchQuery, statusFilter, typeFilter]);
 
+  const sortedRecords = useMemo(() => {
+    const list = [...filteredRecords];
+    list.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+      if (sortBy === 'seq') {
+        valA = parseInt(a.sequenceNo, 10) || 0;
+        valB = parseInt(b.sequenceNo, 10) || 0;
+      } else if (sortBy === 'name') {
+        valA = a.companyName;
+        valB = b.companyName;
+      } else if (sortBy === 'taxId') {
+        valA = a.taxId;
+        valB = b.taxId;
+      } else if (sortBy === 'status') {
+        valA = a.status;
+        valB = b.status;
+      } else if (sortBy === 'date') {
+        valA = a.auditorDate;
+        valB = b.auditorDate;
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
     return list;
-  }, [records, searchQuery, statusFilter, typeFilter, sortBy, sortOrder]);
+  }, [filteredRecords, sortBy, sortOrder]);
 
-  const effectiveItemsPerPage = itemsPerPage === -1 ? filteredRecords.length || 1 : itemsPerPage;
-  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / effectiveItemsPerPage));
-  
-  const currentRecords = useMemo(() => {
-    if (itemsPerPage === -1) return filteredRecords;
-    const start = (currentPage - 1) * effectiveItemsPerPage;
-    return filteredRecords.slice(start, start + effectiveItemsPerPage);
-  }, [filteredRecords, currentPage, effectiveItemsPerPage, itemsPerPage]);
+  const totalPages = Math.ceil(sortedRecords.length / itemsPerPage) || 1;
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedRecords.slice(start, start + itemsPerPage);
+  }, [sortedRecords, currentPage, itemsPerPage]);
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedIds(currentRecords.map((r) => r.id));
-    } else {
+  const toggleSelectAll = () => {
+    if (selectedIds.length === paginatedRecords.length) {
       setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedRecords.map((r) => r.id));
     }
   };
 
-  const handleToggleSelect = (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const toggleSelectOne = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
-  // Export Data to Excel
-  const handleExportExcel = () => {
+  // Export to Excel
+  const exportToExcel = () => {
     try {
-      const dataToExport = filteredRecords.map((r) => ({
-        'ลำดับ': r.sequenceNo,
-        'เลขประจำตัวผู้เสียภาษี': r.taxId,
-        'ชื่อบริษัท / ห้างหุ้นส่วนจำกัด': r.companyName,
-        'ประเภท': r.type === 'company' ? 'บริษัทจำกัด' : r.type === 'partnership' ? 'ห้างหุ้นส่วนจำกัด' : 'บุคคลธรรมดา/ร้านค้า',
-        'วันที่แจ้งผู้สอบ': r.auditorDate,
-        'รหัสผ่าน': r.password,
-        'หมายเหตุ': r.remark,
-        'รหัสยื่น e-filing': r.eFilingCode,
+      const dataToExport = records.map((r, idx) => ({
+        'ลำดับ': r.sequenceNo || idx + 1,
+        'ชื่อกิจการ': r.companyName,
+        'เลขผู้เสียภาษี': r.taxId,
+        'ประเภท': r.type === 'company' ? 'บริษัทจำกัด' : 'ห้างหุ้นส่วน/บุคคล',
+        'เลขผู้เสียภาษี / รหัสผ่าน': r.password,
+        'รหัส e-Filing': r.eFilingCode,
         'ประกันสังคม': r.ssoCode,
-        'สถานะ': r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ',
-        'หัวข้อ': r.topic || '',
+        'วันที่ผู้สอบ': r.auditorDate,
+        'สถานะ': r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ',
+        'หมายเหตุ': r.remark,
       }));
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, `ทะเบียนกิจการ_${selectedYear}`);
-      XLSX.writeFile(workbook, `Mustang_Directory_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      onShowToast(`ส่งออกข้อมูล ${filteredRecords.length} รายการสำเร็จ`, 'ส่งออกข้อมูล');
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `BusinessList_Year_${selectedYear}`);
+      XLSX.writeFile(wb, `Mustang_Directory_Year_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      onShowToast('ส่งออกไฟล์ Excel สำเร็จ', 'ดาวน์โหลดสำเร็จ');
       setShowExportMenu(false);
     } catch {
       onShowToast('เกิดข้อผิดพลาดในการส่งออกไฟล์', 'ข้อผิดพลาด');
     }
   };
 
-  // Export Data to JSON Backup
-  const handleExportJSON = () => {
-    try {
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(records, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute('download', `Mustang_Backup_${selectedYear}_${new Date().toISOString().slice(0, 10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      onShowToast('สำรองข้อมูลเรียบร้อยแล้ว', 'สำรองข้อมูล');
-      setShowExportMenu(false);
-    } catch {
-      onShowToast('เกิดข้อผิดพลาดในการสำรองข้อมูล', 'ข้อผิดพลาด');
-    }
-  };
-
-  const isAllSelected = currentRecords.length > 0 && currentRecords.every((r) => selectedIds.includes(r.id));
-
   return (
-    <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 lg:p-8 flex flex-col gap-5">
-      {/* Page Title & Top Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <XpFolderIcon size={22} />
-          <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            ทะเบียนกิจการ
+    <div className="bg-[#f8f9fc] dark:bg-[#090a0f] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors">
+      
+      {/* 1. Top Header & Reference SaaS Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 font-headline tracking-tight">
+            {config.dashboardTitle || 'Reports'}
           </h1>
-          <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
-            ปี {selectedYear}
-          </span>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            {config.dashboardSubtitle || 'ติดตามสถานะการดำเนินงานและภาพรวมทะเบียนนิติบุคคล'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18181b] hover:bg-black text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
-          >
-            <XpAddDocIcon size={15} />
-            <span>เพิ่มกิจการ</span>
-          </button>
+      </div>
 
-          {/* Export Menu */}
+      {/* 2. Reference SaaS Grid of 3 KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Card 1: Active Businesses */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter('all')}
+          className={`p-4 rounded-2xl bg-transparent border border-transparent transition-all text-left flex flex-col justify-between cursor-pointer ${
+            statusFilter === 'all'
+              ? 'border-blue-500 bg-white/50 dark:bg-zinc-800/30'
+              : 'hover:border-zinc-200 dark:hover:border-zinc-800'
+          }`}
+        >
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Active Businesses</span>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">
+              {totalCount}
+            </span>
+            <span className="text-xs text-zinc-400 font-mono">กิจการ</span>
+          </div>
+          <div className="w-full bg-zinc-200/50 dark:bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(totalCount, 100)}%` }} />
+          </div>
+        </button>
+
+        {/* Card 2: Completed Tasks */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter('completed')}
+          className={`p-4 rounded-2xl bg-transparent border border-transparent transition-all text-left flex flex-col justify-between cursor-pointer ${
+            statusFilter === 'completed'
+              ? 'border-emerald-500 bg-white/50 dark:bg-zinc-800/30'
+              : 'hover:border-zinc-200 dark:hover:border-zinc-800'
+          }`}
+        >
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Completed</span>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+              {completedCount}
+            </span>
+            <span className="text-xs text-zinc-400 font-mono">กิจการ</span>
+          </div>
+          <div className="w-full bg-zinc-200/50 dark:bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${totalCount ? (completedCount / totalCount) * 100 : 0}%` }} />
+          </div>
+        </button>
+
+        {/* Card 3: In Progress */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter('in_progress')}
+          className={`p-4 rounded-2xl bg-transparent border border-transparent transition-all text-left flex flex-col justify-between cursor-pointer ${
+            statusFilter === 'in_progress'
+              ? 'border-amber-500 bg-white/50 dark:bg-zinc-800/30'
+              : 'hover:border-zinc-200 dark:hover:border-zinc-800'
+          }`}
+        >
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">In Progress</span>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+              {inProgressCount}
+            </span>
+            <span className="text-xs text-zinc-400 font-mono">กิจการ</span>
+          </div>
+          <div className="w-full bg-zinc-200/50 dark:bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-amber-500 h-full rounded-full" style={{ width: `${totalCount ? (inProgressCount / totalCount) * 100 : 0}%` }} />
+          </div>
+        </button>
+      </div>
+
+      {/* 3. Search & Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[18px]">
+            search
+          </span>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="ค้นหากิจการ, เลขผู้เสียภาษี, หรือรหัส (Ctrl+K)..."
+            className="w-full h-10 pl-10 pr-4 bg-white dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 transition-colors shadow-2xs"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="h-10 px-3 bg-white dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-300 outline-none cursor-pointer shadow-2xs"
+          >
+            <option value="all">สถานะทั้งหมด</option>
+            <option value="pending">รอดำเนินการ</option>
+            <option value="in_progress">กำลังทำ</option>
+            <option value="completed">เสร็จสิ้น</option>
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as any)}
+            className="h-10 px-3 bg-white dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-300 outline-none cursor-pointer shadow-2xs"
+          >
+            <option value="all">ประเภทกิจการทั้งหมด</option>
+            <option value="company">บริษัทจำกัด</option>
+            <option value="partnership">ห้างหุ้นส่วน/บุคคล</option>
+          </select>
+
+          {selectedIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onDeleteMultiple(selectedIds)}
+              className="h-10 px-3.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-rose-200"
+            >
+              <span className="material-symbols-outlined text-[16px]">delete</span>
+              <span>ลบที่เลือก ({selectedIds.length})</span>
+            </button>
+          )}
           <div className="relative" ref={exportMenuRef}>
             <button
               type="button"
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="h-8 px-2.5 rounded-lg border border-[#e4e4e7] bg-white hover:bg-[#f4f4f5] text-[#27272a] text-xs font-medium flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-              title="ส่งออก / สำรองข้อมูล"
+              className="h-10 px-3.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
-              <XpFloppyIcon size={15} />
-              <span>ส่งออก</span>
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span>Export</span>
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-[#e4e4e7] py-1 z-30 animate-in fade-in zoom-in-95">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-30 py-1.5">
                 <button
                   type="button"
-                  onClick={handleExportExcel}
-                  className="w-full px-3 py-2 text-left text-xs text-[#18181b] hover:bg-[#f4f4f5] flex items-center gap-2 cursor-pointer"
+                  onClick={exportToExcel}
+                  className="w-full text-left px-4 py-2 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
                 >
-                  <XpFloppyIcon size={16} />
-                  <span>ส่งออก Excel (.xlsx)</span>
-                </button>
-                <div className="my-1 border-t border-[#f4f4f5]" />
-                <button
-                  type="button"
-                  onClick={handleExportJSON}
-                  className="w-full px-3 py-2 text-left text-xs text-[#18181b] hover:bg-[#f4f4f5] flex items-center gap-2 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-sky-600">data_object</span>
-                  <span>สำรองข้อมูล (JSON)</span>
+                  <span className="material-symbols-outlined text-[16px] text-emerald-600">table_view</span>
+                  <span>ดาวน์โหลดไฟล์ Excel</span>
                 </button>
               </div>
             )}
@@ -394,611 +377,157 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        {/* ทั้งหมด */}
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter('all');
-            setCurrentPage(1);
-          }}
-          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
-            statusFilter === 'all'
-              ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm ring-2 ring-zinc-900/25 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
-              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-zinc-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-medium ${statusFilter === 'all' ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500 dark:text-zinc-400'}`}>ทั้งหมด</span>
-            <div className={`p-0.5 rounded ${statusFilter === 'all' ? 'bg-white/10 text-white dark:bg-zinc-900/10 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>
-              <XpBuildingIcon size={14} />
-            </div>
-          </div>
-          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'all' ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-zinc-100'}`}>
-            {totalCount.toLocaleString()}
-          </div>
-        </button>
-
-        {/* รอดำเนินการ */}
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending');
-            setCurrentPage(1);
-          }}
-          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
-            statusFilter === 'pending'
-              ? 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/25'
-              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-amber-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-medium ${statusFilter === 'pending' ? 'text-amber-100' : 'text-zinc-500 dark:text-zinc-400'}`}>รอดำเนินการ</span>
-            <div className={`p-0.5 rounded ${statusFilter === 'pending' ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400'}`}>
-              <XpStatusSphere status="pending" size={12} />
-            </div>
-          </div>
-          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'pending' ? 'text-white' : 'text-amber-700 dark:text-amber-400'}`}>
-            {pendingCount.toLocaleString()}
-          </div>
-        </button>
-
-        {/* กำลังดำเนินการ */}
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter(statusFilter === 'in_progress' ? 'all' : 'in_progress');
-            setCurrentPage(1);
-          }}
-          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
-            statusFilter === 'in_progress'
-              ? 'bg-sky-600 text-white border-sky-600 shadow-sm ring-2 ring-sky-600/25'
-              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-sky-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-medium ${statusFilter === 'in_progress' ? 'text-sky-100' : 'text-zinc-500 dark:text-zinc-400'}`}>กำลังทำ</span>
-            <div className={`p-0.5 rounded ${statusFilter === 'in_progress' ? 'bg-white/10 text-white' : 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400'}`}>
-              <XpStatusSphere status="in_progress" size={12} />
-            </div>
-          </div>
-          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'in_progress' ? 'text-white' : 'text-sky-700 dark:text-sky-400'}`}>
-            {inProgressCount.toLocaleString()}
-          </div>
-        </button>
-
-        {/* เสร็จสิ้น */}
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter(statusFilter === 'completed' ? 'all' : 'completed');
-            setCurrentPage(1);
-          }}
-          className={`p-2.5 sm:p-3 flex flex-col justify-between text-left transition-all rounded-lg border cursor-pointer ${
-            statusFilter === 'completed'
-              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/25'
-              : 'bg-white text-zinc-900 border-zinc-200/80 shadow-2xs hover:border-emerald-300 hover:shadow-xs dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className={`text-[11px] font-medium ${statusFilter === 'completed' ? 'text-emerald-100' : 'text-zinc-500 dark:text-zinc-400'}`}>เสร็จสิ้น</span>
-            <div className={`p-0.5 rounded ${statusFilter === 'completed' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'}`}>
-              <XpStatusSphere status="completed" size={12} />
-            </div>
-          </div>
-          <div className={`text-lg font-bold font-mono mt-1 ${statusFilter === 'completed' ? 'text-white' : 'text-emerald-700 dark:text-emerald-400'}`}>
-            {completedCount.toLocaleString()}
-          </div>
-        </button>
-      </div>
-
-      {/* Quick Filter & Search Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
-        {/* Filter Tabs */}
-        <div className="flex items-center p-1 bg-white border border-[#e4e4e7] rounded-xl shadow-2xs overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter('all');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              statusFilter === 'all'
-                ? 'bg-[#18181b] text-white shadow-2xs'
-                : 'text-[#71717a] hover:text-[#18181b] hover:bg-[#f4f4f5]'
-            }`}
-          >
-            <span>ทั้งหมด</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${statusFilter === 'all' ? 'bg-neutral-700 text-white' : 'bg-[#f4f4f5] text-[#71717a]'}`}>
-              {totalCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter('pending');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              statusFilter === 'pending'
-                ? 'bg-amber-600 text-white shadow-2xs'
-                : 'text-[#71717a] hover:text-[#18181b] hover:bg-amber-50/50'
-            }`}
-          >
-            <XpStatusSphere status="pending" size={10} />
-            <span>รอดำเนินการ</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${statusFilter === 'pending' ? 'bg-amber-700 text-white' : 'bg-amber-50 text-amber-800'}`}>
-              {pendingCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter('in_progress');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              statusFilter === 'in_progress'
-                ? 'bg-sky-600 text-white shadow-2xs'
-                : 'text-[#71717a] hover:text-[#18181b] hover:bg-sky-50/50'
-            }`}
-          >
-            <XpStatusSphere status="in_progress" size={10} />
-            <span>กำลังทำ</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${statusFilter === 'in_progress' ? 'bg-sky-700 text-white' : 'bg-sky-50 text-sky-800'}`}>
-              {inProgressCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter('completed');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              statusFilter === 'completed'
-                ? 'bg-emerald-600 text-white shadow-2xs'
-                : 'text-[#71717a] hover:text-[#18181b] hover:bg-emerald-50/50'
-            }`}
-          >
-            <XpStatusSphere status="completed" size={10} />
-            <span>เสร็จสิ้น</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${statusFilter === 'completed' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800'}`}>
-              {completedCount}
-            </span>
-          </button>
-        </div>
-
-        {/* Search Bar & Type Filter */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-72">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-              <XpSearchIcon size={16} />
-            </span>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="ค้นหากิจการ, เลขภาษี... (/)"
-              className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#e4e4e7] rounded-xl text-xs text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-neutral-900 shadow-2xs transition-colors"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#18181b] cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[15px]">close</span>
-              </button>
-            )}
-          </div>
-
-          <div className="relative">
-            <select
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value as any);
-                setCurrentPage(1);
-              }}
-              className="appearance-none bg-white border border-[#e4e4e7] rounded-xl pl-3 pr-7 py-1.5 text-xs text-[#18181b] font-medium focus:outline-none focus:border-neutral-900 cursor-pointer shadow-2xs"
-            >
-              <option value="all">ทุกประเภท</option>
-              <option value="company">บริษัทจำกัด</option>
-              <option value="partnership">ห้างหุ้นส่วน</option>
-              <option value="individual">บุคคลธรรมดา</option>
-            </select>
-            <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-[#71717a] text-[16px] pointer-events-none">
-              expand_more
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Batch Selection Banner */}
-      {selectedIds.length > 0 && (
-        <div className="p-2.5 bg-white border border-neutral-900/20 rounded-xl flex items-center justify-between text-xs animate-in fade-in shadow-xs">
-          <div className="flex items-center gap-2 text-[#18181b]">
-            <span className="material-symbols-outlined text-neutral-900 text-[17px]">
-              check_circle
-            </span>
-            <span>
-              เลือกอยู่ <strong>{selectedIds.length}</strong> รายการ
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedIds.length < filteredRecords.length && (
-              <button
-                type="button"
-                onClick={() => setSelectedIds(filteredRecords.map((r) => r.id))}
-                className="text-neutral-900 font-semibold underline hover:text-black cursor-pointer mr-2"
-              >
-                เลือกทั้งหมด ({filteredRecords.length})
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => onDeleteMultiple(selectedIds)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold hover:bg-rose-100 transition-colors cursor-pointer"
-            >
-              <XpTrashIcon size={14} />
-              <span>ลบที่เลือก</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds([])}
-              className="px-2 py-1 rounded-lg bg-[#fafafa] border border-[#e4e4e7] text-[#71717a] hover:text-[#18181b] cursor-pointer"
-            >
-              ยกเลิก
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="border border-[#e4e4e7] rounded-xl bg-white overflow-hidden shadow-2xs flex flex-col">
+      {/* 4. Modern SaaS Data Table */}
+      <div className="overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#e4e4e7] bg-[#fafafa] text-[#71717a] font-medium select-none">
-                <th className="p-3 w-10 text-center">
+              <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="py-3.5 px-4 w-10">
                   <input
                     type="checkbox"
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    title="เลือกทั้งหมด"
-                    className="w-4 h-4 rounded border-[#d4d4d8] text-neutral-900 focus:ring-neutral-900 cursor-pointer"
+                    checked={paginatedRecords.length > 0 && selectedIds.length === paginatedRecords.length}
+                    onChange={toggleSelectAll}
+                    className="rounded cursor-pointer"
                   />
                 </th>
-                
-                <th
-                  onClick={() => handleSort('seq')}
-                  className="py-3 px-3 cursor-pointer hover:text-neutral-900 w-16"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ลำดับ</span>
-                    {sortBy === 'seq' && (
-                      <span className="material-symbols-outlined text-[13px]">
-                        {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                      </span>
-                    )}
-                  </div>
+                <th onClick={() => handleSort('seq')} className="py-3.5 px-3 cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200">
+                  {config.colSeq || 'ลำดับ'}
                 </th>
-
-                <th
-                  onClick={() => handleSort('name')}
-                  className="py-3 px-3 cursor-pointer hover:text-neutral-900"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ชื่อกิจการ</span>
-                    {sortBy === 'name' && (
-                      <span className="material-symbols-outlined text-[13px]">
-                        {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                      </span>
-                    )}
-                  </div>
+                <th onClick={() => handleSort('name')} className="py-3.5 px-4 cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200">
+                  {config.colName || 'ชื่อกิจการ'}
                 </th>
-
-                <th
-                  onClick={() => handleSort('taxId')}
-                  className="py-3 px-3 font-mono cursor-pointer hover:text-neutral-900"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>เลขผู้เสียภาษี</span>
-                    {sortBy === 'taxId' && (
-                      <span className="material-symbols-outlined text-[13px]">
-                        {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                      </span>
-                    )}
-                  </div>
+                <th className="py-3.5 px-4">{config.colTaxId || 'เลขผู้เสียภาษี'}</th>
+                <th className="py-3.5 px-4">{config.colPassword || 'รหัสผ่าน / e-Filing'}</th>
+                <th onClick={() => handleSort('status')} className="py-3.5 px-4 cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200">
+                  {config.colStatus || 'สถานะ'}
                 </th>
-
-                <th className="py-3 px-3">ประเภท</th>
-                <th className="py-3 px-3">แจ้งผู้สอบ</th>
-                <th className="py-3 px-3 font-mono">รหัสผ่าน</th>
-                <th className="py-3 px-3 font-mono">รหัส e-Filing</th>
-
-                <th
-                  onClick={() => handleSort('status')}
-                  className="py-3 px-3 cursor-pointer hover:text-neutral-900"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>สถานะ</span>
-                    {sortBy === 'status' && (
-                      <span className="material-symbols-outlined text-[13px]">
-                        {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                      </span>
-                    )}
-                  </div>
-                </th>
-
-                <th className="py-3 px-3 text-right">จัดการ</th>
+                <th className="py-3.5 px-4 text-right">{config.colAction || 'การจัดการ'}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f4f4f5]">
-              {filteredRecords.length === 0 ? (
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+              {paginatedRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-[#71717a]">
-                    ไม่พบข้อมูลที่ตรงกับเงื่อนไข
+                  <td colSpan={7} className="py-12 text-center text-zinc-400">
+                    ไม่พบข้อมูลกิจการในรอบปี {selectedYear} ตามเงื่อนไขที่ค้นหา
                   </td>
                 </tr>
               ) : (
-                currentRecords.map((record) => {
-                  const isSelected = selectedIds.includes(record.id);
-                  const cleanTax = record.taxId ? record.taxId.replace(/\D/g, '') : '';
-                  const isStatusMenuOpen = openStatusRowId === record.id;
+                paginatedRecords.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+                  const isHighlighted = lastUpdatedId === item.id;
 
                   return (
                     <tr
-                      key={record.id}
-                      onClick={() => setSelectedDetailRecord(record)}
-                      className={`transition-all duration-300 group cursor-pointer ${
-                        record.id === lastUpdatedId
-                          ? 'bg-emerald-50/90 ring-1 ring-emerald-400 font-medium'
+                      key={item.id}
+                      onClick={() => setSelectedDetailRecord(item)}
+                      className={`transition-colors cursor-pointer ${
+                        isHighlighted
+                          ? 'bg-blue-50/80 dark:bg-blue-950/40'
                           : isSelected
-                          ? 'bg-neutral-50/80'
-                          : 'hover:bg-[#fafafa]'
+                          ? 'bg-zinc-50 dark:bg-zinc-800/40'
+                          : 'hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30'
                       }`}
                     >
-                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <input
-                           type="checkbox"
+                          type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleToggleSelect(record.id)}
-                          className="rounded border-[#d4d4d8] text-neutral-900 focus:ring-neutral-900 cursor-pointer"
+                          onChange={(e) => toggleSelectOne(item.id, e as any)}
+                          className="rounded cursor-pointer"
                         />
                       </td>
-
-                      <td className="py-2.5 px-3 font-mono text-[#71717a]">
-                        {record.sequenceNo}
+                      <td className="py-3 px-3 font-mono font-bold text-zinc-500">
+                        {item.sequenceNo}
                       </td>
-
-                      <td className="py-2.5 px-3 font-medium text-[#18181b]">
-                        <span className="truncate max-w-64 block">{record.companyName}</span>
-                      </td>
-
-                      <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <span>{record.taxId || '-'}</span>
-                          {record.taxId && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={(e) => copyToClipboard(record.taxId, 'เลขภาษี', `tax-${record.id}`, e)}
-                                title="คัดลอกเลขภาษี"
-                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 text-[#71717a] hover:text-[#18181b] transition-all cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[13px]">
-                                  {copiedId === `tax-${record.id}` ? 'check' : 'content_copy'}
-                                </span>
-                              </button>
-                              {cleanTax.length === 13 && (
-                                <a
-                                  href={`https://datawarehouse.dbd.go.th/company/profile/${cleanTax}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title="เปิดดูใน DBD"
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-sky-100 text-[#71717a] hover:text-[#0284c7] transition-all"
-                                >
-                                  <span className="material-symbols-outlined text-[13px]">
-                                    open_in_new
-                                  </span>
-                                </a>
-                              )}
-                            </>
+                      <td className="py-3 px-4 font-semibold text-zinc-900 dark:text-zinc-100">
+                        <div className="flex items-center gap-2">
+                          <span>{item.companyName}</span>
+                          {item.type === 'company' ? (
+                            <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200/50">
+                              บจ.
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200/50">
+                              หจก.
+                            </span>
                           )}
                         </div>
                       </td>
-
-                      <td className="py-2.5 px-3 text-[#71717a]">
-                        {record.type === 'company'
-                          ? 'บริษัทจำกัด'
-                          : record.type === 'partnership'
-                          ? 'ห้างหุ้นส่วน'
-                          : 'บุคคลธรรมดา'}
-                      </td>
-
-                      {/* Auditor Date - Click to quick edit */}
-                      <td
-                        className="py-2.5 px-3 text-[#71717a]"
-                        onClick={(e) => handleStartInlineEdit(record, 'auditorDate', e)}
-                      >
-                        {editingCell?.id === record.id && editingCell?.field === 'auditorDate' ? (
-                          <input
-                            type="text"
-                            value={inlineValue}
-                            onChange={(e) => setInlineEditValue(e.target.value)}
-                            onBlur={() => handleSaveInlineCell(record, 'auditorDate')}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'auditorDate')}
-                            autoFocus
-                            placeholder="วว/ดด/ปป"
-                            className="px-2 py-0.5 text-xs rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1 group/field cursor-pointer hover:text-emerald-700" title="คลิกเพื่อแก้ไขด่วน">
-                            <span>{record.auditorDate || '-'}</span>
-                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/field:opacity-100 text-emerald-600">edit</span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Password - Click to quick edit */}
-                      <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
-                        {editingCell?.id === record.id && editingCell?.field === 'password' ? (
-                          <input
-                            type="text"
-                            value={inlineValue}
-                            onChange={(e) => setInlineEditValue(e.target.value)}
-                            onBlur={() => handleSaveInlineCell(record, 'password')}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'password')}
-                            autoFocus
-                            className="px-2 py-0.5 text-xs font-mono rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1 group/field">
-                            <span
-                              onClick={(e) => handleStartInlineEdit(record, 'password', e)}
-                              className="cursor-pointer hover:text-emerald-700"
-                              title="คลิกเพื่อแก้ไขด่วน"
-                            >
-                              {record.password || '-'}
-                            </span>
-                            {record.password && (
-                              <button
-                                type="button"
-                                onClick={(e) => copyToClipboard(record.password, 'รหัสผ่าน', `pass-${record.id}`, e)}
-                                title="คัดลอกรหัสผ่าน"
-                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 text-[#71717a] hover:text-[#18181b] transition-all cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[13px]">
-                                  {copiedId === `pass-${record.id}` ? 'check' : 'content_copy'}
-                                </span>
-                              </button>
-                            )}
+                      <td className="py-3 px-4 font-mono text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          <span>{item.taxId || '-'}</span>
+                          {item.taxId && (
                             <button
                               type="button"
-                              onClick={(e) => handleStartInlineEdit(record, 'password', e)}
-                              className="opacity-0 group-hover:opacity-100 p-0.5 text-emerald-600 hover:text-emerald-800"
-                              title="แก้ไขรหัสผ่านด่วน"
+                              onClick={(e) => copyToClipboard(item.taxId, 'เลขผู้เสียภาษี', `tax-${item.id}`, e)}
+                              className="text-zinc-400 hover:text-blue-600 transition-colors"
+                              title="คัดลอกเลขผู้เสียภาษี"
                             >
-                              <span className="material-symbols-outlined text-[13px]">edit</span>
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
-
-                      {/* eFilingCode - Click to quick edit */}
-                      <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
-                        {editingCell?.id === record.id && editingCell?.field === 'eFilingCode' ? (
-                          <input
-                            type="text"
-                            value={inlineValue}
-                            onChange={(e) => setInlineEditValue(e.target.value)}
-                            onBlur={() => handleSaveInlineCell(record, 'eFilingCode')}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveInlineCell(record, 'eFilingCode')}
-                            autoFocus
-                            className="px-2 py-0.5 text-xs font-mono rounded border border-emerald-500 bg-white text-zinc-900 focus:outline-none w-24"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => handleStartInlineEdit(record, 'eFilingCode', e)}
-                            className="flex items-center gap-1 group/field cursor-pointer hover:text-emerald-700"
-                            title="คลิกเพื่อแก้ไขด่วน"
+                      <td className="py-3 px-4 font-mono text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate max-w-[140px]">{item.password || item.eFilingCode || '-'}</span>
+                          {(item.password || item.eFilingCode) && (
+                            <button
+                              type="button"
+                              onClick={(e) => copyToClipboard(item.password || item.eFilingCode, 'รหัสผ่าน', `pass-${item.id}`, e)}
+                              className="text-zinc-400 hover:text-blue-600 transition-colors"
+                              title="คัดลอกรหัสผ่าน"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={item.status}
+                            onChange={(e) => handleQuickStatusChange(item, e.target.value as BusinessStatus)}
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
+                              item.status === 'completed'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200'
+                                : item.status === 'in_progress'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200'
+                                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200'
+                            }`}
                           >
-                            <span>{record.eFilingCode || '-'}</span>
-                            <span className="material-symbols-outlined text-[12px] opacity-0 group-hover/field:opacity-100 text-emerald-600">edit</span>
-                          </div>
-                        )}
+                            <option value="pending">{config.statusPending || 'รอดำเนินการ'}</option>
+                            <option value="in_progress">{config.statusInProgress || 'กำลังทำ'}</option>
+                            <option value="completed">{config.statusCompleted || 'เสร็จสิ้น'}</option>
+                          </select>
+                        </div>
                       </td>
-
-                      {/* Status Tag */}
-                      <td className="py-2.5 px-3 relative" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => setOpenStatusRowId(isStatusMenuOpen ? null : record.id)}
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-                            record.status === 'completed'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                              : record.status === 'in_progress'
-                              ? 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                          }`}
-                          title="เปลี่ยนสถานะ"
-                        >
-                          <XpStatusSphere status={record.status} size={10} />
-                          <span>
-                            {record.status === 'completed'
-                              ? 'เสร็จสิ้น'
-                              : record.status === 'in_progress'
-                              ? 'กำลังทำ'
-                              : 'รอดำเนินการ'}
-                          </span>
-                        </button>
-
-                        {/* Quick Status Dropdown */}
-                        {isStatusMenuOpen && (
-                          <div className="absolute left-0 mt-1 w-32 bg-white rounded-xl shadow-xl border border-[#e4e4e7] py-1 z-30 animate-in fade-in zoom-in-95">
-                            <button
-                              type="button"
-                              onClick={(e) => handleQuickStatusChange(record, 'pending', e)}
-                              className="w-full px-3 py-1.5 text-left text-xs hover:bg-amber-50 flex items-center gap-2 text-amber-800"
-                            >
-                              <XpStatusSphere status="pending" size={10} />
-                              <span>รอดำเนินการ</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleQuickStatusChange(record, 'in_progress', e)}
-                              className="w-full px-3 py-1.5 text-left text-xs hover:bg-sky-50 flex items-center gap-2 text-sky-800"
-                            >
-                              <XpStatusSphere status="in_progress" size={10} />
-                              <span>กำลังทำ</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleQuickStatusChange(record, 'completed', e)}
-                              className="w-full px-3 py-1.5 text-left text-xs hover:bg-emerald-50 flex items-center gap-2 text-emerald-800"
-                            >
-                              <XpStatusSphere status="completed" size={10} />
-                              <span>เสร็จสิ้น</span>
-                            </button>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Action Buttons */}
-                      <td className="py-2.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
-                            onClick={() => setSelectedDetailRecord(record)}
+                            onClick={() => setSelectedDetailRecord(item)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
                             title="ดูรายละเอียด"
-                            className="p-1 rounded text-[#71717a] hover:text-[#18181b] hover:bg-neutral-200/60 transition-colors cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-[15px]">visibility</span>
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => onEditRecord(record)}
+                            onClick={() => onEditRecord(item)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                             title="แก้ไข"
-                            className="p-1 rounded text-[#71717a] hover:text-[#18181b] hover:bg-neutral-200/60 transition-colors cursor-pointer"
                           >
-                            <XpEditIcon size={14} />
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => onDeleteRecord(record.id)}
+                            onClick={() => onDeleteRecord(item.id)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                             title="ลบ"
-                            className="p-1 rounded text-[#71717a] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                           >
-                            <XpTrashIcon size={14} />
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
                           </button>
                         </div>
                       </td>
@@ -1010,88 +539,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </table>
         </div>
 
-        {/* Footer */}
-        <div className="p-3 bg-[#fafafa] border-t border-[#e4e4e7] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#71717a]">
-          <div className="flex items-center gap-3">
-            <span>
-              {filteredRecords.length === 0 ? 0 : (currentPage - 1) * effectiveItemsPerPage + 1} -{' '}
-              {Math.min(currentPage * effectiveItemsPerPage, filteredRecords.length)} จาก {filteredRecords.length.toLocaleString()} รายการ
+        {/* Pagination Footer */}
+        <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-500">
+          <span>
+            แสดง {(currentPage - 1) * itemsPerPage + 1} ถึง {Math.min(currentPage * itemsPerPage, sortedRecords.length)} จาก {sortedRecords.length} รายการ
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 disabled:opacity-40 cursor-pointer"
+            >
+              ก่อนหน้า
+            </button>
+            <span className="px-2 font-mono font-bold">
+              {currentPage} / {totalPages}
             </span>
-
-            <div className="flex items-center gap-1 pl-2 border-l border-[#e4e4e7]">
-              <span>แสดง:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-white border border-[#e4e4e7] rounded px-1.5 py-0.5 text-xs text-[#18181b] focus:outline-none cursor-pointer"
-              >
-                <option value={10}>10</option>
-                <option value={12}>12</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={-1}>ทั้งหมด</option>
-              </select>
-            </div>
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 disabled:opacity-40 cursor-pointer"
+            >
+              ถัดไป
+            </button>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-2 py-1 rounded border border-[#e4e4e7] bg-white text-[#18181b] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f4f4f5] cursor-pointer"
-              >
-                ก่อนหน้า
-              </button>
-              <span className="px-2 font-mono">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-2 py-1 rounded border border-[#e4e4e7] bg-white text-[#18181b] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f4f4f5] cursor-pointer"
-              >
-                ถัดไป
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Add Business Modal */}
+      {/* Modals */}
       {isAddModalOpen && (
         <AddBusinessModal
           allRecords={records}
-          nextSequenceNo={String(records.length + 1)}
-          onShowToast={(msg) => onShowToast(msg)}
           onClose={() => setIsAddModalOpen(false)}
-          onSave={(newRec) => {
-            onAddRecord(newRec);
-            setIsAddModalOpen(false);
-            onShowToast(`เพิ่มกิจการ "${newRec.companyName}" สำเร็จ`, 'บันทึกเรียบร้อย');
-          }}
+          onSave={onAddRecord}
+          onShowToast={onShowToast}
+          nextSequenceNo={String(records.length + 1)}
         />
       )}
 
-      {/* Detail Modal */}
       {selectedDetailRecord && (
         <BusinessDetailModal
           record={selectedDetailRecord}
           onClose={() => setSelectedDetailRecord(null)}
-          onEdit={(rec) => {
-            setSelectedDetailRecord(null);
-            onEditRecord(rec);
-          }}
-          onDelete={(id) => {
-            setSelectedDetailRecord(null);
-            onDeleteRecord(id);
-          }}
+          onEdit={onEditRecord}
+          onDelete={onDeleteRecord}
           onStatusChange={handleQuickStatusChange}
           onShowToast={onShowToast}
         />

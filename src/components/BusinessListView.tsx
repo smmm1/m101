@@ -8,12 +8,14 @@ import {
   XpEditIcon,
   XpTrashIcon,
 } from './ClassicIcons';
+import { useSystemConfig } from '../context/SystemConfigContext';
 
 interface BusinessListViewProps {
   records: BusinessRecord[];
   selectedYear?: string;
   onEditRecord?: (record: BusinessRecord) => void;
   onDeleteRecord?: (id: string) => void;
+  onDeleteMultiple?: (ids: string[]) => void;
   onShowToast?: (msg: string, title?: string) => void;
 }
 
@@ -22,8 +24,10 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
   selectedYear = '69',
   onEditRecord,
   onDeleteRecord,
+  onDeleteMultiple,
   onShowToast,
 }) => {
+  const { config } = useSystemConfig();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
@@ -32,6 +36,16 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
   const [viewLayout, setViewLayout] = useState<'grid' | 'table'>('table');
   const [selectedDetailRecord, setSelectedDetailRecord] = useState<BusinessRecord | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  const toggleSelectAll = () => {
+    if (selectedIds.length === paginatedRecords.length) setSelectedIds([]);
+    else setSelectedIds(paginatedRecords.map((r) => r.id));
+  };
+  const toggleSelectOne = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
 
   // Keep selectedDetailRecord in sync with updated records prop immediately
   React.useEffect(() => {
@@ -119,34 +133,41 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
       case 'completed':
         return {
           bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          label: 'เสร็จสิ้น',
+          label: config.statusCompleted || 'เสร็จสิ้น',
         };
       case 'in_progress':
         return {
           bg: 'bg-sky-50 text-sky-700 border-sky-200',
-          label: 'กำลังทำ',
+          label: config.statusInProgress || 'กำลังทำ',
         };
       case 'pending':
       default:
         return {
           bg: 'bg-amber-50 text-amber-700 border-amber-200',
-          label: 'รอดำเนินการ',
+          label: config.statusPending || 'รอดำเนินการ',
         };
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 lg:p-8 flex flex-col gap-5">
+    <div className="bg-[#f8f9fc] dark:bg-[#090a0f] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <XpFolderIcon size={22} />
-          <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            ทะเบียนกิจการทั้งหมด
-          </h1>
-          <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
-            ปี {selectedYear}
-          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
+                {config.businessListTitle || 'ทะเบียนกิจการทั้งหมด'}
+              </h1>
+              <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-md bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
+                ปี {selectedYear}
+              </span>
+            </div>
+            {config.businessListSubtitle && (
+              <p className="text-xs text-[#71717a] mt-0.5">{config.businessListSubtitle}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -217,13 +238,10 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
             }}
             className="appearance-none bg-white border border-[#e4e4e7] rounded-xl px-2.5 py-1.5 text-xs text-[#18181b] font-medium focus:outline-none focus:border-neutral-900 cursor-pointer shadow-2xs"
           >
-            <option value="all">ทุกสถานะ</option>
+            <option value="all">สถานะทั้งหมด</option>
             <option value="pending">รอดำเนินการ</option>
             <option value="in_progress">กำลังทำ</option>
             <option value="completed">เสร็จสิ้น</option>
-            <option value="company">บริษัทจำกัด</option>
-            <option value="partnership">ห้างหุ้นส่วน</option>
-            <option value="individual">บุคคลธรรมดา</option>
           </select>
 
           <select
@@ -239,6 +257,17 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
             <option value="taxId">เรียงตามเลขภาษี</option>
             <option value="recent">อัปเดตล่าสุด</option>
           </select>
+
+          {selectedIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onDeleteMultiple?.(selectedIds)}
+              className="h-8 px-3 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-rose-200"
+            >
+              <span className="material-symbols-outlined text-[16px]">delete</span>
+              <span>ลบที่เลือก ({selectedIds.length})</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -268,7 +297,7 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
                 <div
                   key={record.id}
                   onClick={() => setSelectedDetailRecord(record)}
-                  className="p-4 bg-white border border-[#e4e4e7] hover:border-neutral-400 rounded-xl shadow-2xs transition-all flex flex-col justify-between cursor-pointer group"
+                  className="p-4 bg-transparent border border-transparent hover:bg-white/60 dark:hover:bg-zinc-800/40 hover:border-zinc-200 dark:hover:border-zinc-800 rounded-xl transition-all flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
@@ -285,7 +314,7 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
                       {record.companyName}
                     </h3>
 
-                    <div className="space-y-1 text-xs bg-[#fafafa] p-2.5 rounded-lg border border-[#f4f4f5]">
+                    <div className="space-y-1 text-xs bg-zinc-100/50 dark:bg-zinc-800/30 p-2.5 rounded-lg">
                       <div className="flex items-center justify-between">
                         <span className="text-[#71717a]">เลขภาษี:</span>
                         <span className="font-mono font-medium text-[#18181b]">{record.taxId || '-'}</span>
@@ -293,6 +322,10 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="text-[#71717a]">e-Filing:</span>
                         <span className="font-mono text-[#52525b]">{record.eFilingCode || '-'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#71717a]">รหัสผ่าน:</span>
+                        <span className="font-mono text-[#18181b] font-medium">{record.password || '-'}</span>
                       </div>
                     </div>
                   </div>
@@ -302,115 +335,125 @@ export const BusinessListView: React.FC<BusinessListViewProps> = ({
           )}
         </div>
       ) : (
-        <div className="border border-[#e4e4e7] rounded-xl bg-white overflow-hidden shadow-2xs flex flex-col">
+        <div className="overflow-hidden flex flex-col">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs border-transparent">
               <thead>
-                <tr className="border-b border-[#e4e4e7] bg-[#fafafa] text-[#71717a] font-medium">
-                  <th className="py-2.5 px-3 w-16">ลำดับ</th>
-                  <th className="py-2.5 px-3">ชื่อกิจการ</th>
-                  <th className="py-2.5 px-3 font-mono">เลขผู้เสียภาษี</th>
-                  <th className="py-2.5 px-3">ประเภท</th>
-                  <th className="py-2.5 px-3">แจ้งผู้สอบ</th>
-                  <th className="py-2.5 px-3 font-mono">รหัส e-Filing</th>
-                  <th className="py-2.5 px-3">สถานะ</th>
-                  <th className="py-2.5 px-3 text-right">การจัดการ</th>
+                <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="py-3.5 px-4 w-10"></th>
+                  <th className="py-3.5 px-3">ลำดับ</th>
+                  <th className="py-3.5 px-4">ชื่อกิจการ</th>
+                  <th className="py-3.5 px-4">เลขผู้เสียภาษี</th>
+                  <th className="py-3.5 px-4">รหัสผ่าน / e-Filing</th>
+                  <th className="py-3.5 px-4">สถานะ</th>
+                  <th className="py-3.5 px-4 text-right">การจัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f4f4f5]">
-                {paginatedRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-10 text-center text-[#71717a]">
-                      ไม่พบข้อมูลที่ตรงกับเงื่อนไข
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedRecords.map((record) => {
-                    const badge = getStatusBadge(record.status);
-
-                    return (
-                      <tr
-                        key={record.id}
-                        onClick={() => setSelectedDetailRecord(record)}
-                        className="hover:bg-[#fafafa] transition-colors cursor-pointer group"
-                      >
-                        <td className="py-2.5 px-3 font-mono text-[#71717a]">
-                          {record.sequenceNo}
-                        </td>
-                        <td className="py-2.5 px-3 font-medium text-[#18181b]">
-                          <span className="truncate max-w-64 block">{record.companyName}</span>
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-[#52525b]" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center gap-1">
-                            <span>{record.taxId || '-'}</span>
-                            {record.taxId && (
-                              <button
-                                type="button"
-                                onClick={(e) => copyToClipboard(record.taxId, 'เลขภาษี', `tax-${record.id}`, e)}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 text-[#71717a] hover:text-[#18181b] cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[13px]">
-                                  {copiedKey === `tax-${record.id}` ? 'check' : 'content_copy'}
-                                </span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-[#71717a]">
-                          {record.type === 'company'
-                            ? 'บริษัทจำกัด'
-                            : record.type === 'partnership'
-                            ? 'ห้างหุ้นส่วน'
-                            : 'บุคคลธรรมดา'}
-                        </td>
-                        <td className="py-2.5 px-3 text-[#71717a]">
-                          {record.auditorDate || '-'}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-[#52525b]">
-                          {record.eFilingCode || '-'}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${badge.bg}`}>
-                            <XpStatusSphere status={record.status} size={10} />
-                            <span>{badge.label}</span>
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+                {paginatedRecords.map((item) => {
+                  const badge = getStatusBadge(item.status);
+                  return (
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedDetailRecord(item)}
+                      className="transition-colors cursor-pointer hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30"
+                    >
+                      <td className="py-3 px-4"></td>
+                      <td className="py-3 px-3 font-mono font-bold text-zinc-500">{item.sequenceNo}</td>
+                      <td className="py-3 px-4 font-semibold text-zinc-900 dark:text-zinc-100">
+                        <div className="flex items-center gap-2">
+                          <span>{item.companyName}</span>
+                          {item.type === 'company' ? (
+                            <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200/50">
+                              บจ.
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-semibold border border-purple-200/50">
+                              หจก.
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          <span>{item.taxId || '-'}</span>
+                          {item.taxId && (
                             <button
                               type="button"
-                              onClick={() => setSelectedDetailRecord(record)}
-                              className="p-1 text-[#71717a] hover:text-[#18181b] hover:bg-neutral-200/60 rounded cursor-pointer"
-                              title="ดูรายละเอียด"
+                              onClick={(e) => copyToClipboard(item.taxId, 'เลขผู้เสียภาษี', `tax-${item.id}`, e)}
+                              className="text-zinc-400 hover:text-blue-600 transition-colors"
                             >
-                              <span className="material-symbols-outlined text-[15px]">visibility</span>
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
                             </button>
-                            {onEditRecord && (
-                              <button
-                                type="button"
-                                onClick={() => onEditRecord(record)}
-                                className="p-1 text-[#71717a] hover:text-[#18181b] hover:bg-neutral-200/60 rounded cursor-pointer"
-                                title="แก้ไข"
-                              >
-                                <XpEditIcon size={14} />
-                              </button>
-                            )}
-                            {onDeleteRecord && (
-                              <button
-                                type="button"
-                                onClick={() => onDeleteRecord(record.id)}
-                                className="p-1 text-[#71717a] hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer"
-                                title="ลบ"
-                              >
-                                <XpTrashIcon size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate max-w-[140px]">{item.password || item.eFilingCode || '-'}</span>
+                          {(item.password || item.eFilingCode) && (
+                            <button
+                              type="button"
+                              onClick={(e) => copyToClipboard(item.password || item.eFilingCode, 'รหัสผ่าน', `pass-${item.id}`, e)}
+                              className="text-zinc-400 hover:text-blue-600 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={item.status}
+                            onChange={(e) => handleQuickStatusChange(item, e.target.value as BusinessStatus)}
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
+                              item.status === 'completed'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200'
+                                : item.status === 'in_progress'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200'
+                                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200'
+                            }`}
+                          >
+                            <option value="pending">{config.statusPending || 'รอดำเนินการ'}</option>
+                            <option value="in_progress">{config.statusInProgress || 'กำลังทำ'}</option>
+                            <option value="completed">{config.statusCompleted || 'เสร็จสิ้น'}</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailRecord(item)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                            title="ดูรายละเอียด"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onEditRecord?.(item)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                            title="แก้ไข"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                          </button>
+                          {onDeleteRecord && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteRecord(item.id)}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                              title="ลบ"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

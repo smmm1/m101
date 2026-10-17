@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { BusinessRecord } from '../types';
-import { useCursor, CursorMode } from '../context/CursorContext';
+import { useSystemConfig } from '../context/SystemConfigContext';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -21,18 +21,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSwitchAccount,
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
-  const { cursorMode, setCursorMode } = useCursor();
-
-  const handleSelectCursor = (mode: CursorMode) => {
-    setCursorMode(mode);
-    const label =
-      mode === 'classic'
-        ? 'เมาส์ Windows XP คลาสสิก'
-        : mode === 'modern'
-        ? 'เมาส์โมเดิร์น แม่นยำ'
-        : 'เมาส์ปกติของระบบ';
-    onShowToast(`เปลี่ยนรูปแบบตัวชี้เมาส์เป็น "${label}" แล้ว`, 'เปลี่ยนเมาส์สำเร็จ');
-  };
 
   // Export JSON Backup
   const handleBackupDatabase = () => {
@@ -79,18 +67,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     e.target.value = '';
   };
 
+  const { config } = useSystemConfig();
   const handleLogoutAction = onLogout || onSwitchAccount;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 lg:p-8 flex flex-col gap-5">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-[#f8f9fc] dark:bg-[#090a0f] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#18181b] font-headline tracking-tight">
-            การตั้งค่าระบบ
+            {config.settingsTitle || 'การตั้งค่าระบบ'}
           </h1>
           <p className="text-xs text-[#71717a] mt-0.5">
-            ปรับแต่งรูปแบบการแสดงผลและจัดการสำรองข้อมูลระบบ
+            {config.settingsSubtitle || 'ปรับแต่งรูปแบบการแสดงผลและจัดการสำรองข้อมูลระบบ'}
           </p>
         </div>
 
@@ -107,126 +96,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 max-w-4xl">
-        {/* Mouse Pointer Style Card */}
-        <div className="border border-[#e4e4e7] rounded-xl p-5 bg-white flex flex-col gap-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xs font-bold text-[#18181b]">
-                รูปแบบตัวชี้เมาส์ (Mouse Pointer Style)
-              </h2>
-              <p className="text-[11.5px] text-[#71717a] mt-0.5">
-                เลือกรูปแบบเคอร์เซอร์เมาส์ที่ต้องการให้แสดงผลบนหน้าเว็บไซต์
-              </p>
-            </div>
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-[#f4f4f5] text-[#18181b] border border-[#e4e4e7]">
-              {cursorMode === 'classic'
-                ? '🖱️ เมาส์ XP คลาสสิก'
-                : cursorMode === 'modern'
-                ? '🎯 เมาส์โมเดิร์น'
-                : '⚙️ เมาส์ระบบปกติ'}
-            </span>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            {/* Windows XP Classic Cursor Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectCursor('classic')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                cursorMode === 'classic'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  {/* Classic XP Cursor Icon Preview */}
-                  <svg width="22" height="22" viewBox="0 0 24 24" className="shrink-0 drop-shadow-xs">
-                    <path
-                      d="M2 2 L2 18.5 L6.5 14.5 L9.8 21.2 L12.5 19.8 L9.3 13.2 L14.5 13.2 Z"
-                      fill="#ffffff"
-                      stroke="#000000"
-                      strokeWidth="1.4"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-xs font-bold text-[#18181b]">Windows XP คลาสสิก</span>
-                </div>
-                {cursorMode === 'classic' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                หัวลูกศรสีขาวขอบดำ สไตล์วินโดวส์คลาสสิก พร้อมมือชี้ปุ่มกดเรโทร
-              </p>
-            </button>
-
-            {/* Modern Precision Cursor Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectCursor('modern')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                cursorMode === 'modern'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  {/* Modern Precision Cursor Preview */}
-                  <svg width="22" height="22" viewBox="0 0 22 22" className="shrink-0 drop-shadow-xs">
-                    <path
-                      d="M3 2 L3 17 L7.5 13 L11.5 19 L13.5 17.8 L9.5 11.8 L15 11.8 Z"
-                      fill="#0f172a"
-                      stroke="#ffffff"
-                      strokeWidth="1.4"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-xs font-bold text-[#18181b]">โมเดิร์น แม่นยำ</span>
-                </div>
-                {cursorMode === 'modern' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                หัวลูกศรสีดำเข้มเฉียบคม ขอบขาว พร้อมจุดเล็งสีฟ้าเมื่อชี้ปุ่ม
-              </p>
-            </button>
-
-            {/* Default System Cursor Button */}
-            <button
-              type="button"
-              onClick={() => handleSelectCursor('default')}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2.5 ${
-                cursorMode === 'default'
-                  ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 font-medium'
-                  : 'border-[#e4e4e7] hover:border-neutral-400 bg-white'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[20px] text-[#52525b]">
-                    near_me
-                  </span>
-                  <span className="text-xs font-bold text-[#18181b]">เมาส์ปกติของระบบ</span>
-                </div>
-                {cursorMode === 'default' && (
-                  <span className="material-symbols-outlined text-[16px] text-blue-600 font-bold">
-                    check_circle
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-[#71717a]">
-                ใช้รูปแบบตัวชี้เมาส์มาตรฐานตามการตั้งค่าของระบบปฏิบัติการของคุณ
-              </p>
-            </button>
-          </div>
-        </div>
 
         {/* Database & Backup */}
         <div className="border border-[#e4e4e7] rounded-xl p-5 bg-white flex flex-col gap-4 shadow-2xs">

@@ -14,6 +14,7 @@ import { BusinessListView } from './components/BusinessListView';
 import { EditBusinessModal } from './components/EditBusinessModal';
 import { AddBusinessModal } from './components/AddBusinessModal';
 import { SettingsView } from './components/SettingsView';
+import { AdminBackendView } from './components/AdminBackendView';
 
 import { YearManageModal } from './components/YearManageModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -25,6 +26,7 @@ import {
 } from './components/ImportConflictModal';
 import { ThemeProvider } from './context/ThemeContext';
 import { CursorProvider } from './context/CursorContext';
+import { SystemConfigProvider, useSystemConfig } from './context/SystemConfigContext';
 
 const STORAGE_KEY_YEARS = 'directory_years_v1';
 const STORAGE_KEY_SELECTED_YEAR = 'directory_selected_year_v1';
@@ -35,9 +37,11 @@ const STORAGE_KEY_USER = 'app_directory_user_v1';
 export default function App() {
   return (
     <ThemeProvider>
-      <CursorProvider>
-        <AppContent />
-      </CursorProvider>
+      <SystemConfigProvider>
+        <CursorProvider>
+          <AppContent />
+        </CursorProvider>
+      </SystemConfigProvider>
     </ThemeProvider>
   );
 }
@@ -62,7 +66,7 @@ function AppContent() {
       setIsLoggedIn(true);
     };
     void checkSession();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (!session) { setIsLoggedIn(false); setCloudReady(false); }
     });
     return () => { active = false; listener.subscription.unsubscribe(); };
@@ -315,7 +319,7 @@ function AppContent() {
       return;
     }
 
-    void supabase.from('directory_year_data').delete().eq('fiscal_year', yearToDelete).then(({ error }) => {
+    void supabase.from('directory_year_data').delete().eq('fiscal_year', yearToDelete).then(({ error }: { error?: any }) => {
       if (error) setCloudError('ลบรอบปีในฐานข้อมูลไม่สำเร็จ: ' + error.message);
     });
     const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
@@ -547,7 +551,7 @@ function AppContent() {
   if (!cloudReady) return <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#fafafa] text-sm text-[#52525b]"><div className="font-semibold">กำลังโหลดข้อมูลที่ได้รับอนุญาตจากฐานข้อมูล…</div>{cloudError && <div className="max-w-xl px-4 text-center text-rose-600">{cloudError}</div>}<button className="rounded-lg border px-3 py-2" onClick={handleLogout}>ออกจากระบบ</button></div>;
 
   return (
-    <div className="bg-white text-[#18181b] font-body antialiased flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden bg-white text-[#18181b] font-body antialiased">
       {cloudError && <div role="alert" className="fixed top-3 right-3 z-[100] max-w-lg rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs text-rose-800 shadow-lg">{cloudError}</div>}
       {/* Sidebar Navigation */}
       <Sidebar
@@ -561,7 +565,7 @@ function AppContent() {
       />
 
       {/* Main Content Workspace */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+      <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         {/* Top Header Bar with Year Switcher */}
         <Header
           currentScreen={currentScreen}
@@ -602,6 +606,7 @@ function AppContent() {
             selectedYear={selectedYear}
             onEditRecord={setEditingRecord}
             onDeleteRecord={handleDeleteRecord}
+            onDeleteMultiple={handleDeleteMultiple}
             onShowToast={showToast}
           />
         )}
@@ -614,6 +619,37 @@ function AppContent() {
             onRestoreRecords={(newRecords) => {
               updateActiveYearRecords(() => newRecords);
             }}
+          />
+        )}
+
+        {currentScreen === 'backend-admin' && (
+          <AdminBackendView
+            recordsByYear={recordsByYear}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onSelectYear={handleSelectYear}
+            onUpdateYearRecords={(year, newRecords) => {
+              setRecordsByYear((prev) => ({
+                ...prev,
+                [year]: newRecords,
+              }));
+              if (!availableYears.includes(year)) {
+                setAvailableYears((prev) => [...prev, year].sort());
+              }
+            }}
+            onUpdateAllYearsData={(data) => {
+              setRecordsByYear(data);
+              const years = Object.keys(data).sort();
+              if (years.length > 0) {
+                setAvailableYears(years);
+                if (!data[selectedYear]) {
+                  setSelectedYear(years[0]);
+                }
+              }
+            }}
+            onShowToast={showToast}
+            onNavigateHome={() => setCurrentScreen('dashboard')}
+            currentUserName={userName}
           />
         )}
 

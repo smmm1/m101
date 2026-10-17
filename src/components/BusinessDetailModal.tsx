@@ -10,6 +10,7 @@ import {
   XpCalendarIcon,
   XpBuildingIcon,
 } from './ClassicIcons';
+import { useSystemConfig } from '../context/SystemConfigContext';
 
 interface BusinessDetailModalProps {
   record: BusinessRecord | null;
@@ -28,6 +29,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
   onStatusChange,
   onShowToast,
 }) => {
+  const { config } = useSystemConfig();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -47,18 +49,18 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
       case 'completed':
         return {
           bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          label: 'เสร็จสิ้น',
+          label: config.statusCompleted || 'เสร็จสิ้น',
         };
       case 'in_progress':
         return {
           bg: 'bg-sky-50 text-sky-700 border-sky-200',
-          label: 'กำลังดำเนินการ',
+          label: config.statusInProgress || 'กำลังทำ',
         };
       case 'pending':
       default:
         return {
           bg: 'bg-amber-50 text-amber-700 border-amber-200',
-          label: 'รอดำเนินการ',
+          label: config.statusPending || 'รอดำเนินการ',
         };
     }
   };
@@ -120,35 +122,35 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onStatusChange(record, 'pending')}
-                className={`px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   record.status === 'pending'
-                    ? 'bg-amber-600 text-white font-medium shadow-2xs'
+                    ? 'bg-amber-600 text-white shadow-2xs'
                     : 'bg-white border border-[#e4e4e7] text-[#71717a] hover:bg-amber-50'
                 }`}
               >
-                รอดำเนินการ
+                {config.statusPending || 'รอดำเนินการ'}
               </button>
               <button
                 type="button"
                 onClick={() => onStatusChange(record, 'in_progress')}
-                className={`px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   record.status === 'in_progress'
-                    ? 'bg-sky-600 text-white font-medium shadow-2xs'
+                    ? 'bg-sky-600 text-white shadow-2xs'
                     : 'bg-white border border-[#e4e4e7] text-[#71717a] hover:bg-sky-50'
                 }`}
               >
-                กำลังทำ
+                {config.statusInProgress || 'กำลังทำ'}
               </button>
               <button
                 type="button"
                 onClick={() => onStatusChange(record, 'completed')}
-                className={`px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   record.status === 'completed'
-                    ? 'bg-emerald-600 text-white font-medium shadow-2xs'
+                    ? 'bg-emerald-600 text-white shadow-2xs'
                     : 'bg-white border border-[#e4e4e7] text-[#71717a] hover:bg-emerald-50'
                 }`}
               >
-                เสร็จสิ้น
+                {config.statusCompleted || 'เสร็จสิ้น'}
               </button>
             </div>
           </div>
@@ -229,20 +231,49 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
 
             {/* Password */}
             <div className="p-3 rounded-xl border border-[#e4e4e7] bg-white flex flex-col justify-between">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#71717a]">
-                <XpKeyIcon size={14} />
-                <span>รหัสผ่าน</span>
+              <div className="flex items-center justify-between text-[11px] text-[#71717a]">
+                <div className="flex items-center gap-1.5">
+                  <XpKeyIcon size={14} />
+                  <span>รหัสผ่าน</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between gap-1 mt-1">
-                <span className="font-mono text-xs font-semibold text-[#18181b]">
-                  {record.password ? (showPassword ? record.password : '••••••••') : '-'}
-                </span>
+
+              {/* Tax ID above password */}
+              <div className="mt-1.5 py-1 px-2 rounded-lg bg-[#fafafa] border border-[#f4f4f5] flex items-center justify-between">
+                <span className="text-[10px] text-[#71717a]">เลขภาษี:</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-xs font-semibold text-[#18181b]">
+                    {record.taxId || '-'}
+                  </span>
+                  {record.taxId && (
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(record.taxId, 'เลขผู้เสียภาษี', 'modal-tax-above')}
+                      className="p-0.5 rounded hover:bg-[#ebebeb] text-[#71717a] hover:text-[#18181b] cursor-pointer"
+                      title="คัดลอกเลขภาษี"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">
+                        {copiedKey === 'modal-tax-above' ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-1 mt-1.5">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[#71717a]">รหัส:</span>
+                  <span className="font-mono text-xs font-semibold text-[#18181b]">
+                    {record.password ? (showPassword ? record.password : '••••••••') : '-'}
+                  </span>
+                </div>
                 {record.password && (
                   <div className="flex items-center">
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="p-1 rounded hover:bg-[#f4f4f5] text-[#71717a] hover:text-[#18181b] cursor-pointer"
+                      title={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
                     >
                       <span className="material-symbols-outlined text-[14px]">
                         {showPassword ? 'visibility_off' : 'visibility'}
@@ -252,6 +283,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                       type="button"
                       onClick={() => copyToClipboard(record.password, 'รหัสผ่าน', 'password')}
                       className="p-1 rounded hover:bg-[#f4f4f5] text-[#71717a] hover:text-[#18181b] cursor-pointer"
+                      title="คัดลอกรหัสผ่าน"
                     >
                       <span className="material-symbols-outlined text-[14px]">
                         {copiedKey === 'password' ? 'check' : 'content_copy'}

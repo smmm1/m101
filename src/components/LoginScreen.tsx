@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { supabase } from '../lib/supabase';
+import { useSystemConfig } from '../context/SystemConfigContext';
 
 interface LoginScreenProps {
   onLogin: (userName: string) => void;
@@ -8,6 +9,7 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+  const { config } = useSystemConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -23,7 +25,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       .maybeSingle();
     if (error || !allowed) {
       await supabase.auth.signOut();
-      setErrorMessage('บัญชีนี้ยังไม่ได้รับอนุญาตให้เข้าถึง Mustang Directory กรุณาติดต่อผู้ดูแลระบบ');
+      setErrorMessage('บัญชีนี้ยังไม่ได้รับอนุญาตให้เข้าถึงระบบ กรุณาติดต่อผู้ดูแลระบบ');
       return false;
     }
     onLogin(normalizedEmail);
@@ -65,36 +67,125 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] flex items-center justify-center p-4 font-body relative">
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6"><ThemeToggleButton /></div>
-      <div className="w-full max-w-sm bg-white dark:bg-[#121215] border border-[#e4e4e7] dark:border-[#27272a] rounded-2xl p-6 sm:p-7 shadow-xl flex flex-col gap-5">
-        <div className="flex items-center gap-3 pb-4 border-b border-[#f4f4f5] dark:border-[#27272a]">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 via-blue-600 to-indigo-800 text-white font-bold flex items-center justify-center">M</div>
+    <div className="min-h-screen bg-[#fafaf9] dark:bg-[#090a0f] flex items-center justify-center p-4 sm:p-6 font-body relative transition-colors">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <ThemeToggleButton />
+      </div>
+
+      <div className="w-full max-w-sm bg-white dark:bg-[#11131a] border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl dark:shadow-2xl flex flex-col gap-6">
+        {/* Brand Monogram & Title */}
+        <div className="flex flex-col items-center text-center gap-2.5 pb-2">
+          <div
+            style={{ backgroundColor: config.primaryColor }}
+            className="w-11 h-11 rounded-xl text-white font-bold flex items-center justify-center text-base shadow-sm font-headline tracking-tight"
+          >
+            {config.appInitial || 'M'}
+          </div>
           <div>
-            <h1 className="text-base font-bold text-[#111827] dark:text-white">Mustang Directory</h1>
-            <p className="text-xs text-[#71717a] dark:text-[#a1a1aa]">ระบบสำหรับทีมงานที่ได้รับอนุญาต</p>
+            <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-headline tracking-tight">
+              {config.appName || 'Mustang Directory'}
+            </h1>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+              {config.appTagline || 'ระบบบริหารจัดการนิติบุคคลและทะเบียนกิจการ'}
+            </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#f4f4f5] dark:bg-[#18181b] p-1">
-          <button type="button" onClick={() => {setMode('login');setErrorMessage('');setNotice('');}} className={`rounded-lg py-2 text-xs font-semibold ${mode==='login'?'bg-white dark:bg-[#27272a] shadow-sm':'text-[#71717a]'}`}>เข้าสู่ระบบ</button>
-          <button type="button" onClick={() => {setMode('signup');setErrorMessage('');setNotice('');}} className={`rounded-lg py-2 text-xs font-semibold ${mode==='signup'?'bg-white dark:bg-[#27272a] shadow-sm':'text-[#71717a]'}`}>สร้างบัญชีที่ได้รับอนุญาต</button>
+
+        {/* Mode Switcher */}
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 p-1">
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setErrorMessage(''); setNotice(''); }}
+            className={`rounded-lg py-2 text-xs font-semibold transition-all cursor-pointer ${
+              mode === 'login'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            เข้าสู่ระบบ
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('signup'); setErrorMessage(''); setNotice(''); }}
+            className={`rounded-lg py-2 text-xs font-semibold transition-all cursor-pointer ${
+              mode === 'signup'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            สร้างบัญชี
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+
+        {/* Login / Signup Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-email" className="text-xs font-medium text-[#52525b] dark:text-[#d4d4d8]">อีเมลทีมงาน</label>
-            <input id="login-email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" className="w-full h-10 px-3.5 bg-white dark:bg-[#18181b] border border-[#e4e4e7] dark:border-[#27272a] rounded-xl text-sm text-[#18181b] dark:text-white focus:outline-none focus:border-blue-500" />
+            <label htmlFor="login-email" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              อีเมลสำหรับเข้าใช้งาน
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@company.com"
+              className="w-full h-10 px-3.5 bg-zinc-50/50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-400 transition-colors"
+            />
           </div>
+
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-password" className="text-xs font-medium text-[#52525b] dark:text-[#d4d4d8]">รหัสผ่าน</label>
-            <input id="login-password" type="password" autoComplete={mode==='login'?'current-password':'new-password'} minLength={8} required value={password} onChange={e => setPassword(e.target.value)} placeholder={mode==='login'?'รหัสผ่านบัญชีของคุณ':'อย่างน้อย 8 ตัวอักษร'} className="w-full h-10 px-3.5 bg-white dark:bg-[#18181b] border border-[#e4e4e7] dark:border-[#27272a] rounded-xl text-sm text-[#18181b] dark:text-white focus:outline-none focus:border-blue-500" />
+            <label htmlFor="login-password" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              รหัสผ่าน
+            </label>
+            <input
+              id="login-password"
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              minLength={8}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === 'login' ? 'รหัสผ่านของคุณ' : 'อย่างน้อย 8 ตัวอักษร'}
+              className="w-full h-10 px-3.5 bg-zinc-50/50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-400 transition-colors"
+            />
           </div>
-          {errorMessage && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900 px-3 py-2.5 text-xs text-rose-700 dark:text-rose-300">{errorMessage}</div>}
-          {notice && <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900 px-3 py-2.5 text-xs text-emerald-800 dark:text-emerald-300">{notice}</div>}
-          <button type="submit" disabled={loading} className="w-full h-10 rounded-xl text-sm font-semibold bg-[#18181b] hover:bg-black dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-white transition-colors disabled:opacity-50">
-            {loading ? 'กำลังตรวจสอบสิทธิ์…' : mode==='login'?'เข้าสู่ระบบ':'สร้างบัญชี'}
+
+          {errorMessage && (
+            <div role="alert" className="rounded-xl border border-rose-200/80 dark:border-rose-900/80 bg-rose-50/80 dark:bg-rose-950/40 p-3 text-xs text-rose-700 dark:text-rose-300">
+              {errorMessage}
+            </div>
+          )}
+
+          {notice && (
+            <div role="status" className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/80 bg-emerald-50/80 dark:bg-emerald-950/40 p-3 text-xs text-emerald-800 dark:text-emerald-300">
+              {notice}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ backgroundColor: config.primaryColor }}
+            className="w-full h-10 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-98 disabled:opacity-50 shadow-xs cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+          >
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>กำลังดำเนินการ…</span>
+              </span>
+            ) : mode === 'login' ? (
+              'เข้าสู่ระบบ'
+            ) : (
+              'สร้างบัญชี'
+            )}
           </button>
         </form>
-        <p className="text-[11px] leading-5 text-[#71717a] dark:text-[#a1a1aa]">การสร้างบัญชีไม่ทำให้เข้าถึงข้อมูลได้เอง อีเมลต้องอยู่ในรายชื่อผู้ได้รับอนุญาตที่ผู้ดูแลกำหนดไว้ก่อน</p>
+
+        <p className="text-[11px] leading-relaxed text-zinc-400 dark:text-zinc-500 text-center">
+          ระบบความปลอดภัยขั้นสูง: การเข้าใช้งานจำกัดเฉพาะผู้ใช้งานที่ได้รับอนุญาตในระบบเท่านั้น
+        </p>
       </div>
     </div>
   );
