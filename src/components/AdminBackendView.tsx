@@ -409,7 +409,7 @@ export const AdminBackendView: React.FC<AdminBackendViewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('visual-editor')}
-          className={\`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap \${activeTab === 'visual-editor' ? 'bg-blue-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}\`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${activeTab === 'visual-editor' ? 'bg-blue-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
         >
           <span className="material-symbols-outlined text-[16px]">design_services</span>
           <span>Visual Builder</span>
