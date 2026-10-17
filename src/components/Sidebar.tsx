@@ -11,6 +11,8 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
   onLogout: () => void;
+  isAdmin?: boolean;
+  siteName?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,6 +22,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
   onLogout,
+  isAdmin = false,
+  siteName = 'Mustang',
 }) => {
   return (
     <>
@@ -44,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 M
               </div>
               <span className="text-xs font-bold text-zinc-900 font-headline tracking-tight">
-                Mustang
+                {siteName}
               </span>
             </div>
           </div>
@@ -83,6 +87,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <XpFolderIcon size={16} />
                 <span>ทะเบียนกิจการ</span>
               </button>
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigate('cms');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
+                    currentScreen === 'cms'
+                      ? 'bg-zinc-900 text-white font-semibold shadow-sm'
+                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60 font-medium'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">edit_document</span>
+                  <span>จัดการเนื้อหา</span>
+                </button>
+              )}
 
               <button
                 type="button"
