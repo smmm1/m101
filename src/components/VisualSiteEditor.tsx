@@ -79,7 +79,8 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, c
       if (error && error.code !== 'PGRST116') {
         setErrorMessage('โหลดค่าจากฐานข้อมูลไม่ได้: ' + error.message);
       }
-      const savedDraft = data?.draft_content || data?.published_content || {};
+      const rawDraft = data?.draft_content || data?.published_content || {};
+      const savedDraft = rawDraft.systemConfig || rawDraft;
       setDraft({ ...currentConfig, ...savedDraft });
       setPublishedAt(data?.published_at || null);
       setLoading(false);
@@ -102,14 +103,20 @@ export const VisualSiteEditor: React.FC<VisualSiteEditorProps> = ({ userEmail, c
     setSaving(true);
     setErrorMessage('');
     const now = new Date().toISOString();
+    const { data: existing, error: loadError } = await supabase.from('site_content').select('draft_content, published_content').eq('id', true).maybeSingle();
+    if (loadError) {
+      setSaving(false);
+      setErrorMessage('อ่านข้อมูลเดิมก่อนบันทึกไม่ได้: ' + loadError.message);
+      return;
+    }
     const payload: Record<string, unknown> = {
       id: true,
-      draft_content: draft,
+      draft_content: { ...(existing?.draft_content || {}), systemConfig: draft },
       updated_at: now,
       updated_by: userEmail,
     };
     if (publish) {
-      payload.published_content = draft;
+      payload.published_content = { ...(existing?.published_content || {}), systemConfig: draft };
       payload.published_at = now;
     }
     const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'id' });
