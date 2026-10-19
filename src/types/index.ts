@@ -26,4 +26,4 @@ export type ViewMode = 'table' | 'cards';
 
 export type FilterStatus = 'all' | 'company' | 'partnership' | 'individual' | 'pending' | 'in_progress' | 'completed';
 
-export type ActiveScreen = 'login' | 'dashboard' | 'settings' | 'add-business' | 'business-list' | 'backend-admin';
+export type ActiveScreen = 'dashboard' | 'business-list' | 'import-docs' | 'settings' | 'add-business';
