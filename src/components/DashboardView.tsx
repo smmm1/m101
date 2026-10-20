@@ -224,8 +224,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
-      <LiveStatsBar />
-      
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -488,6 +486,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </nav>
+
+      <LiveStatsBar />
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div className="flex-1 overflow-hidden flex flex-col p-5">
