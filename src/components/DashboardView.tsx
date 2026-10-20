@@ -8,6 +8,7 @@ import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
+import { parseDocumentFile } from '../utils/excelHelper';
 
 interface ActivityLogItem {
   id: string;
@@ -140,41 +141,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     onShowToast(`คัดลอก ${label} เรียบร้อย`, 'คัดลอกสำเร็จ', 'success');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onImportRecords) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const buffer = event.target?.result;
-          const wb = XLSX.read(buffer, { type: 'binary' });
-          const wsname = wb.SheetNames[0];
-          const ws = wb.Sheets[wsname];
-          const data = XLSX.utils.sheet_to_json<any>(ws);
-          if (data.length > 0) {
-            const mapped = data.map((item, idx) => ({
-              sequenceNo: String(item['ลำดับ'] || idx + 1).padStart(2, '0'),
-              taxId: String(item['เลขประจำตัวผู้เสียภาษี'] || item['เลขภาษี'] || '').trim(),
-              companyName: String(item['ชื่อกิจการ'] || item['ชื่อบริษัท'] || '').trim(),
-              type: String(item['ประเภท'] || '').includes('หจก') ? ('partnership' as BusinessType) : ('company' as BusinessType),
-              password: String(item['รหัสผ่าน'] || 'M0b!z2569').trim(),
-              eFilingCode: String(item['e-Filing'] || item['รหัสผู้ใช้'] || '').trim(),
-              auditorDate: String(item['ผู้ตรวจสอบ/วันที่'] || item['แจ้งผู้สอบบัญชี'] || '').trim(),
-              remark: String(item['หมายเหตุ'] || '').trim(),
-              status: 'pending' as BusinessStatus,
-            }));
-            onImportRecords(mapped);
-            logActivity('import', `นำเข้าไฟล์จำนวน ${mapped.length} รายการ (${file.name})`);
-            onShowToast(`นำเข้าไฟล์สำเร็จ ${mapped.length} รายการ`, 'นำเข้าสำเร็จ', 'success');
-            setActiveTab('directory');
-          } else {
-            onShowToast('ไม่พบข้อมูลในไฟล์ Excel', 'แจ้งเตือน', 'error');
-          }
-        } catch {
-          onShowToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel', 'ข้อผิดพลาด', 'error');
-        }
-      };
-      reader.readAsBinaryString(file);
+    if (!file) return;
+    try {
+      onShowToast(`กำลังอ่านไฟล์ ${file.name}...`, 'นำเข้าข้อมูล', 'info');
+      const parsed = await parseDocumentFile(file, file.name);
+      if (parsed.length > 0 && onImportRecords) {
+        onImportRecords(parsed);
+        logActivity('import', `นำเข้าไฟล์จำนวน ${parsed.length} รายการ (${file.name})`);
+        setActiveTab('directory');
+      } else {
+        onShowToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'error');
+      }
+    } catch {
+      onShowToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
     }
     e.target.value = '';
   };
