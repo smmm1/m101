@@ -144,10 +144,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
-          const matchName = (r.companyName || '').toLowerCase().includes(q);
-          const matchTax = (r.taxId || '').toLowerCase().includes(q);
-          const matchSeq = (r.sequenceNo || '').toLowerCase().includes(q);
-          if (!matchName && !matchTax && !matchSeq) return false;
+          const searchableFields = [
+            r.companyName,
+            r.taxId,
+            r.sequenceNo,
+            r.eFilingCode,
+            r.ssoCode,
+            r.remark,
+            r.topic,
+            r.auditorDate,
+            r.type === 'partnership' ? 'หจก ห้างหุ้นส่วน partnership' : 'บจก บริษัท company',
+            r.status === 'completed' ? 'เสร็จสิ้น completed' : r.status === 'in_progress' ? 'กำลังทำ กำลังดำเนินการ in progress' : 'รอดำเนินการ pending',
+          ];
+          const matches = searchableFields.some((field) =>
+            String(field ?? '').toLocaleLowerCase('th-TH').includes(q)
+          );
+          if (!matches) return false;
         }
         return true;
       })
@@ -204,11 +216,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((r) => {
         if (!overviewSearch.trim()) return true;
         const q = overviewSearch.toLowerCase().trim();
-        return (
-          r.companyName.toLowerCase().includes(q) ||
-          r.taxId.toLowerCase().includes(q) ||
-          (r.sequenceNo || '').toLowerCase().includes(q)
-        );
+        return [
+          r.companyName,
+          r.taxId,
+          r.sequenceNo,
+          r.eFilingCode,
+          r.ssoCode,
+          r.remark,
+          r.topic,
+          r.auditorDate,
+          r.type === 'partnership' ? 'หจก ห้างหุ้นส่วน partnership' : 'บจก บริษัท company',
+          r.status === 'completed' ? 'เสร็จสิ้น completed' : r.status === 'in_progress' ? 'กำลังทำ กำลังดำเนินการ in progress' : 'รอดำเนินการ pending',
+        ].some((field) => String(field ?? '').toLocaleLowerCase('th-TH').includes(q));
       })
       .sort((a, b) => {
         const numA = parseInt((a.sequenceNo || '').replace(/\D/g, '') || '0', 10);
@@ -218,7 +237,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [records, overviewSearch]);
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
+    <div className="flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
       
       {/* Hidden file input */}
       <input
@@ -243,9 +262,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
-      <nav className="h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-6 flex items-center justify-between shrink-0 z-30 shadow-2xs">
+      <nav className="min-h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 shadow-2xs">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
@@ -287,7 +306,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Right Controls: Fiscal Year + Activity Log + Dark Mode + Profile */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
@@ -475,12 +494,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="flex-1 overflow-hidden flex flex-col p-5">
+      <div className="flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
-            <div className="flex-1 lg:w-[72%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="flex-1 lg:w-[72%] min-h-[50vh] lg:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
               
               {/* Header & Total Counter + Add & Import Buttons */}
               <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0">
@@ -547,7 +566,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ค้นหากิจการ หรือเลขภาษี"
+                    placeholder="ค้นหาชื่อ เลขภาษี ลำดับ รหัส E-Filing / SSO สถานะ หรือหมายเหตุ"
                     className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-2xs"
                   />
                 </div>
@@ -563,7 +582,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Filter Tabs */}
-              <div className="px-5 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 shrink-0">
+              <div className="px-3 sm:px-5 py-2.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2 shrink-0">
                 {[
                   { id: 'all', label: 'ทั้งหมด' },
                   { id: 'has_efiling', label: 'มีรหัส E-Filing' },
