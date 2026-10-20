@@ -844,6 +844,8 @@ function AppContent() {
           }));
         }}
         isLoggedIn={isLoggedIn}
+        isVisitor={isVisitor}
+        onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
           void supabase?.auth.signOut().then(({ error }) => {
             if (error) showToast('ออกจากระบบไม่สำเร็จ กรุณาลองใหม่', 'ข้อผิดพลาด', 'error');
