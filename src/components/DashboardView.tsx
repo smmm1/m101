@@ -35,6 +35,7 @@ interface DashboardViewProps {
   onAddYear?: (year: string) => void;
   onDeleteYear?: (year: string) => void;
   isLoggedIn: boolean;
+  isAdmin?: boolean;
   isVisitor?: boolean;
   onReturnToLogin?: () => void;
   onToggleLogin: () => void;
@@ -59,6 +60,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDeleteYear,
   onRestoreRecords,
   isLoggedIn,
+  isAdmin = false,
   isVisitor = false,
   onReturnToLogin,
   onToggleLogin,
@@ -1105,6 +1107,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onShowToast={onShowToast}
             onRestoreRecords={onRestoreRecords}
             isLoggedIn={isLoggedIn}
+            isAdmin={isAdmin}
             onToggleLogin={onToggleLogin}
           />
         )}
