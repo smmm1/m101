@@ -23,7 +23,6 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-
     setFileName(file.name);
     try {
       const rows = await parseDocumentFile(file, `ไฟล์: ${file.name}`);
@@ -34,7 +33,6 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
       onShowToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
       setParsedRows([]);
     } finally {
-
       e.target.value = '';
     }
   };
