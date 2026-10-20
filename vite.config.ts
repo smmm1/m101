@@ -21,12 +21,6 @@ export default defineConfig(() => {
               if (id.includes('xlsx')) {
                 return 'vendor-xlsx';
               }
-              if (id.includes('lucide-react')) {
-                return 'vendor-icons';
-              }
-              if (id.includes('motion')) {
-                return 'vendor-motion';
-              }
               if (id.includes('react') || id.includes('react-dom')) {
                 return 'vendor-react';
               }
@@ -44,3 +38,4 @@ export default defineConfig(() => {
     },
   };
 });
+
