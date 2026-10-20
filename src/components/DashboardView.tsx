@@ -144,10 +144,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
-          const matchName = (r.companyName || '').toLowerCase().includes(q);
-          const matchTax = (r.taxId || '').toLowerCase().includes(q);
-          const matchSeq = (r.sequenceNo || '').toLowerCase().includes(q);
-          if (!matchName && !matchTax && !matchSeq) return false;
+          const searchableFields = [
+            r.companyName,
+            r.taxId,
+            r.sequenceNo,
+            r.eFilingCode,
+            r.ssoCode,
+            r.remark,
+            r.topic,
+            r.auditorDate,
+            r.type === 'partnership' ? 'หจก ห้างหุ้นส่วน partnership' : 'บจก บริษัท company',
+            r.status === 'completed' ? 'เสร็จสิ้น completed' : r.status === 'in_progress' ? 'กำลังทำ กำลังดำเนินการ in progress' : 'รอดำเนินการ pending',
+          ];
+          const matches = searchableFields.some((field) =>
+            String(field ?? '').toLocaleLowerCase('th-TH').includes(q)
+          );
+          if (!matches) return false;
         }
         return true;
       })
@@ -204,11 +216,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((r) => {
         if (!overviewSearch.trim()) return true;
         const q = overviewSearch.toLowerCase().trim();
-        return (
-          r.companyName.toLowerCase().includes(q) ||
-          r.taxId.toLowerCase().includes(q) ||
-          (r.sequenceNo || '').toLowerCase().includes(q)
-        );
+        return [
+          r.companyName,
+          r.taxId,
+          r.sequenceNo,
+          r.eFilingCode,
+          r.ssoCode,
+          r.remark,
+          r.topic,
+          r.auditorDate,
+          r.type === 'partnership' ? 'หจก ห้างหุ้นส่วน partnership' : 'บจก บริษัท company',
+          r.status === 'completed' ? 'เสร็จสิ้น completed' : r.status === 'in_progress' ? 'กำลังทำ กำลังดำเนินการ in progress' : 'รอดำเนินการ pending',
+        ].some((field) => String(field ?? '').toLocaleLowerCase('th-TH').includes(q));
       })
       .sort((a, b) => {
         const numA = parseInt((a.sequenceNo || '').replace(/\D/g, '') || '0', 10);
@@ -547,7 +566,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ค้นหากิจการ หรือเลขภาษี"
+                    placeholder="ค้นหาชื่อ เลขภาษี ลำดับ รหัส E-Filing / SSO สถานะ หรือหมายเหตุ"
                     className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-2xs"
                   />
                 </div>
