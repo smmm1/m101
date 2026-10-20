@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { BusinessRecord } from './types';
 import { DashboardView } from './components/DashboardView';
 import { YearManageModal } from './components/YearManageModal';
@@ -42,6 +44,19 @@ export default function App() {
 
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sessionUser, setSessionUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [accessReady, setAccessReady] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
+  const [dataError, setDataError] = useState('');
+  const remoteYearsRef = useRef<Set<string>>(new Set());
+  const pendingDatabaseWriteRef = useRef(false);
+  const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return initCuteClickSound();
@@ -120,42 +135,270 @@ function AppContent() {
   // Active records for currently selected fiscal year
   const currentRecords = recordsByYear[selectedYear] || [];
 
-  // Persist records to local storage
+  // Keep a local cache only after Supabase has loaded successfully.
   useEffect(() => {
+    if (!dataReady) return;
     try {
       localStorage.setItem(STORAGE_KEY_RECORDS_BY_YEAR, JSON.stringify(recordsByYear));
     } catch {}
-  }, [recordsByYear]);
+  }, [recordsByYear, dataReady]);
 
   // Persist available years
   useEffect(() => {
+    if (!dataReady) return;
     try {
       localStorage.setItem(STORAGE_KEY_YEARS, JSON.stringify(availableYears));
     } catch {}
-  }, [availableYears]);
+  }, [availableYears, dataReady]);
 
   // Persist selected year
   useEffect(() => {
+    if (!dataReady) return;
     try {
       localStorage.setItem(STORAGE_KEY_SELECTED_YEAR, selectedYear);
     } catch {}
-  }, [selectedYear]);
+  }, [selectedYear, dataReady]);
 
-  // Auth state
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('mustang_logged_in');
-      return saved !== 'false';
-    } catch {
-      return true;
-    }
-  });
+  // Access is granted only by a real Supabase session and the database allowlist.
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('mustang_logged_in', String(isLoggedIn));
-    } catch {}
-  }, [isLoggedIn]);
+    if (!isSupabaseConfigured || !supabase) {
+      setAuthReady(true);
+      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Publishable Key ใน Vercel');
+      return;
+    }
+
+    let active = true;
+    const client = supabase;
+    client.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) setAuthError('ตรวจสอบเซสชันไม่สำเร็จ กรุณาลองใหม่');
+      setSessionUser(data.session?.user ?? null);
+      setAuthReady(true);
+    }).catch(() => {
+      if (active) {
+        setAuthError('เชื่อมต่อระบบยืนยันตัวตนไม่สำเร็จ');
+        setAuthReady(true);
+      }
+    });
+
+    const { data: authSubscription } = client.auth.onAuthStateChange((_event, session) => {
+      if (active) setSessionUser(session?.user ?? null);
+    });
+
+    return () => {
+      active = false;
+      authSubscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!sessionUser) {
+      setIsLoggedIn(false);
+      setAccessReady(true);
+      setDataReady(false);
+      return () => { active = false; };
+    }
+
+    setAccessReady(false);
+    setDataReady(false);
+    setAuthError('');
+    const checkAllowlist = async () => {
+      try {
+        if (!supabase || !sessionUser.email) throw new Error('บัญชีนี้ไม่มีอีเมลที่ตรวจสอบได้');
+        const { data, error } = await supabase
+          .from('allowed_users')
+          .select('email, role')
+          .eq('email', sessionUser.email.toLowerCase())
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) {
+          await supabase.auth.signOut();
+          if (active) {
+            setAuthError('บัญชีนี้ยังไม่ได้รับอนุญาตให้เข้าใช้งาน M101');
+            setIsLoggedIn(false);
+            setAccessReady(true);
+          }
+          return;
+        }
+        if (active) {
+          setUserName(sessionUser.email || 'Mustang Admin');
+          setIsLoggedIn(true);
+          setAccessReady(true);
+        }
+      } catch {
+        if (active) {
+          setAuthError('ตรวจสอบสิทธิ์ผู้ใช้ไม่สำเร็จ กรุณาลองใหม่');
+          setIsLoggedIn(false);
+          setAccessReady(true);
+        }
+      }
+    };
+    void checkAllowlist();
+    return () => { active = false; };
+  }, [sessionUser]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !accessReady || !sessionUser || !supabase) return;
+    let active = true;
+    setDataReady(false);
+    setDataError('');
+
+    const loadRemoteData = async () => {
+      try {
+        // Preserve a copy of all pre-Supabase local data before switching the app to the database.
+        const backupPairs: Array<[string, string]> = [
+          [STORAGE_KEY_YEARS, 'directory_years_v1_backup_before_supabase'],
+          [STORAGE_KEY_SELECTED_YEAR, 'directory_selected_year_v1_backup_before_supabase'],
+          [STORAGE_KEY_RECORDS_BY_YEAR, 'directory_records_by_year_v1_backup_before_supabase'],
+          [STORAGE_KEY_OLD_RECORDS, 'directory_records_v1_backup_before_supabase'],
+        ];
+        for (const [sourceKey, backupKey] of backupPairs) {
+          const existing = localStorage.getItem(sourceKey);
+          if (existing !== null && localStorage.getItem(backupKey) === null) {
+            localStorage.setItem(backupKey, existing);
+          }
+        }
+
+        const { data: rows, error } = await supabase
+          .from('directory_year_data')
+          .select('fiscal_year, records, updated_at')
+          .order('fiscal_year', { ascending: true });
+        if (error) throw error;
+        if (!active) return;
+
+        if (rows && rows.length > 0) {
+          const nextRecords: Record<string, BusinessRecord[]> = {};
+          for (const row of rows) {
+            const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
+            nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
+          }
+          remoteYearsRef.current = new Set(rows.map((row) => String(row.fiscal_year)));
+          const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
+          const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
+          setRecordsByYear(nextRecords);
+          setAvailableYears(years.length ? years : ['69']);
+          setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : (years[0] || '69'));
+        } else {
+          // Only migrate actual user-saved browser data when the remote table is empty.
+          let localRecords: Record<string, BusinessRecord[]> | null = null;
+          const savedByYear = localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR);
+          if (savedByYear) {
+            try {
+              const parsed = JSON.parse(savedByYear);
+              if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localRecords = parsed;
+            } catch {}
+          }
+          if (!localRecords) {
+            const legacy = localStorage.getItem(STORAGE_KEY_OLD_RECORDS);
+            if (legacy) {
+              try {
+                const parsed = JSON.parse(legacy);
+                if (Array.isArray(parsed) && parsed.length) localRecords = { '69': parsed };
+              } catch {}
+            }
+          }
+          if (!localRecords) localRecords = { '69': INITIAL_BUSINESS_RECORDS };
+          if (localRecords['2569'] && !localRecords['69']) {
+            localRecords['69'] = localRecords['2569'];
+            delete localRecords['2569'];
+          }
+          const savedYears = localStorage.getItem(STORAGE_KEY_YEARS);
+          let years = Object.keys(localRecords);
+          if (savedYears) {
+            try {
+              const parsed = JSON.parse(savedYears);
+              if (Array.isArray(parsed)) years = Array.from(new Set([...years, ...parsed.map((y: string) => y === '2569' ? '69' : String(y))]));
+            } catch {}
+          }
+          years = years.length ? years.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : ['69'];
+          const migrationRows = years.map((year) => ({
+            fiscal_year: year,
+            records: Array.isArray(localRecords?.[year]) ? localRecords[year] : [],
+            updated_by: sessionUser.id,
+            updated_at: new Date().toISOString(),
+          }));
+          const { error: migrateError } = await supabase
+            .from('directory_year_data')
+            .upsert(migrationRows, { onConflict: 'fiscal_year' });
+          if (migrateError) throw migrateError;
+          if (!active) return;
+          remoteYearsRef.current = new Set(years);
+          setRecordsByYear(Object.fromEntries(years.map((year) => [year, Array.isArray(localRecords?.[year]) ? localRecords[year] : []])));
+          setAvailableYears(years);
+          const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
+          const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
+          setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : years[0]);
+        }
+        if (active) setDataReady(true);
+      } catch (error) {
+        if (active) {
+          setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลจาก Supabase ไม่สำเร็จ');
+          setDataReady(false);
+        }
+      }
+    };
+
+    void loadRemoteData();
+    return () => { active = false; };
+  }, [isLoggedIn, accessReady, sessionUser]);
+
+  // Persist each fiscal-year document to Supabase. The local cache is never treated as authoritative.
+  useEffect(() => {
+    if (!dataReady || !isLoggedIn || !sessionUser || !supabase) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const client = supabase;
+      const currentYears = Array.from(new Set([...availableYears, ...Object.keys(recordsByYear)]))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const rowsToSave = currentYears.map((year) => ({
+        fiscal_year: year,
+        records: Array.isArray(recordsByYear[year]) ? recordsByYear[year] : [],
+        updated_by: sessionUser.id,
+        updated_at: new Date().toISOString(),
+      }));
+      void (async () => {
+        try {
+          const { error: saveError } = await client
+            .from('directory_year_data')
+            .upsert(rowsToSave, { onConflict: 'fiscal_year' });
+          if (saveError) throw saveError;
+          const removedYears = Array.from(remoteYearsRef.current).filter((year) => !currentYears.includes(year));
+          if (removedYears.length) {
+            const { error: deleteError } = await client
+              .from('directory_year_data')
+              .delete()
+              .in('fiscal_year', removedYears);
+            if (deleteError) throw deleteError;
+          }
+          remoteYearsRef.current = new Set(currentYears);
+          pendingDatabaseWriteRef.current = false;
+          const queued = pendingSuccessToastsRef.current.splice(0);
+          queued.forEach((item) => showToast(item.message, item.title, 'success'));
+        } catch (error) {
+          // Keep failed edits recoverable locally; do not announce success.
+          try {
+            localStorage.setItem('directory_records_by_year_v1_unsynced_backup', JSON.stringify(recordsByYear));
+            localStorage.setItem('directory_years_v1_unsynced_backup', JSON.stringify(availableYears));
+          } catch {}
+          pendingDatabaseWriteRef.current = false;
+          pendingSuccessToastsRef.current = [];
+          showToast(
+            error instanceof Error ? `บันทึก Supabase ไม่สำเร็จ: ${error.message}` : 'บันทึก Supabase ไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ',
+            'ข้อมูลยังไม่ซิงก์',
+            'error'
+          );
+        }
+      })();
+    }, 600);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears]);
 
   // Modals state
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
@@ -175,6 +418,10 @@ function AppContent() {
     title?: string,
     type: 'success' | 'error' | 'info' = 'success'
   ) => {
+    if (type === 'success' && pendingDatabaseWriteRef.current) {
+      pendingSuccessToastsRef.current.push({ message, title });
+      return;
+    }
     const id = `${Date.now()}-${Math.random()}`;
     setToasts([{ id, title, message, type }]);
     setTimeout(() => {
@@ -204,6 +451,7 @@ function AppContent() {
       return;
     }
 
+    pendingDatabaseWriteRef.current = true;
     const updatedYears = [...availableYears, newYear].sort();
     setAvailableYears(updatedYears);
 
@@ -243,6 +491,7 @@ function AppContent() {
       return;
     }
 
+    pendingDatabaseWriteRef.current = true;
     const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
     setAvailableYears(nextAvailable);
 
@@ -261,6 +510,7 @@ function AppContent() {
 
   // Record CRUD for the Active Year
   const updateActiveYearRecords = (updater: (prev: BusinessRecord[]) => BusinessRecord[]) => {
+    pendingDatabaseWriteRef.current = true;
     setRecordsByYear((prev) => {
       const currentList = prev[selectedYear] || [];
       const updatedList = updater(currentList);
@@ -463,6 +713,57 @@ function AppContent() {
     e.target.value = '';
   };
 
+  const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !isSupabaseConfigured) {
+      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Publishable Key');
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError('');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authEmail.trim().toLowerCase(),
+        password: authPassword,
+      });
+      if (error) setAuthError('เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน');
+    } catch {
+      setAuthError('เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  if (!authReady) {
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
+  }
+
+  if (!isSupabaseConfigured || !supabase) {
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">ยังไม่ได้ตั้งค่า Supabase</h1><p className="mt-3 text-sm text-slate-600">ตรวจสอบ VITE_SUPABASE_URL และ VITE_SUPABASE_PUBLISHABLE_KEY ใน Vercel แล้ว Deploy ใหม่</p></div></div>;
+  }
+
+  if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setAccessReady(false); setAccessReady(true); setIsLoggedIn(false); void supabase.auth.getSession().then(({ data }) => setSessionUser(data.session?.user ?? null)); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Supabase…'}</div>;
+  }
+
+  if (!sessionUser || !isLoggedIn) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6">
+        <form onSubmit={handleLoginSubmit} className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+          <div className="mb-6 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-400 text-xl font-black text-slate-900">M</div><div><h1 className="text-2xl font-extrabold text-slate-900">M101</h1><p className="text-sm text-slate-500">Mustang Directory</p></div></div>
+          <h2 className="text-lg font-bold text-slate-900">เข้าสู่ระบบ</h2>
+          <p className="mb-5 mt-1 text-sm text-slate-500">ใช้บัญชีที่ได้รับอนุญาตใน Supabase เพื่อเข้าถึงข้อมูล</p>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">อีเมล</label>
+          <input type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-amber-400" />
+          <label className="mb-1 block text-sm font-semibold text-slate-700">รหัสผ่าน</label>
+          <input type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-amber-400" />
+          {authError && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{authError}</p>}
+          <button type="submit" disabled={authBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60">{authBusy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบอย่างปลอดภัย'}</button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
       <DashboardView
@@ -484,13 +785,18 @@ function AppContent() {
         onAddYear={(yr) => handleAddYear(yr)}
         onDeleteYear={(yr) => handleDeleteYear(yr)}
         onRestoreRecords={(newRecords) => {
+          pendingDatabaseWriteRef.current = true;
           setRecordsByYear((prev) => ({
             ...prev,
             [selectedYear]: newRecords,
           }));
         }}
         isLoggedIn={isLoggedIn}
-        onToggleLogin={() => setIsLoggedIn(!isLoggedIn)}
+        onToggleLogin={() => {
+          void supabase?.auth.signOut().then(({ error }) => {
+            if (error) showToast('ออกจากระบบไม่สำเร็จ กรุณาลองใหม่', 'ข้อผิดพลาด', 'error');
+          });
+        }}
       />
 
       {/* Year Manage Modal */}
