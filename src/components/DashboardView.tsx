@@ -367,7 +367,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {isLoggedIn && (
-                {/* Add new year inline */}
                 <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <input
                     type="text"
