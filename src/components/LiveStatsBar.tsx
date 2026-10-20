@@ -38,9 +38,14 @@ export function LiveStatsBar() {
 
     const visitorId = getVisitorId();
     if (visitorId) {
-      void supabase.rpc('record_m101_page_visit', { p_visitor_id: visitorId })
-        .then(() => loadStats())
-        .catch(() => loadStats());
+      void (async () => {
+        try {
+          await supabase.rpc('record_m101_page_visit', { p_visitor_id: visitorId });
+        } catch {
+          // Stats remain optional; a tracking failure must not affect the directory.
+        }
+        await loadStats();
+      })();
     } else {
       void loadStats();
     }
