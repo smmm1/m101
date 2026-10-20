@@ -277,7 +277,7 @@ function AppContent() {
             const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
             nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
           }
-          remoteYearsRef.current = new Set(rows.map((row) => String(row.fiscal_year)));
+          remoteYearsRef.current = new Set(rows.map((row) => row.fiscal_year === '2569' ? '69' : String(row.fiscal_year)));
           const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
           const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
           const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
@@ -347,9 +347,6 @@ function AppContent() {
     void loadRemoteData();
     return () => { active = false; };
   }, [isLoggedIn, accessReady, sessionUser, dataReloadKey]);
-
-
-dy, sessionUser, dataReloadKey]);
 
 
   // Visitors use a database view that masks sensitive fields before data reaches the browser.
