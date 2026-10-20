@@ -53,6 +53,7 @@ function AppContent() {
   const [authBusy, setAuthBusy] = useState(false);
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
+  const [dataReloadKey, setDataReloadKey] = useState(0);
   const remoteYearsRef = useRef<Set<string>>(new Set());
   const pendingDatabaseWriteRef = useRef(false);
   const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
@@ -344,7 +345,7 @@ function AppContent() {
 
     void loadRemoteData();
     return () => { active = false; };
-  }, [isLoggedIn, accessReady, sessionUser]);
+  }, [isLoggedIn, accessReady, sessionUser, dataReloadKey]);
 
   // Persist each fiscal-year document to Supabase. The local cache is never treated as authoritative.
   useEffect(() => {
@@ -743,7 +744,7 @@ function AppContent() {
   }
 
   if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setAccessReady(false); setAccessReady(true); setIsLoggedIn(false); void supabase.auth.getSession().then(({ data }) => setSessionUser(data.session?.user ?? null)); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Supabase…'}</div>;
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Supabase…'}</div>;
   }
 
   if (!sessionUser || !isLoggedIn) {
