@@ -161,6 +161,7 @@ function AppContent() {
 
   // Access is granted only by a real Supabase session and the database allowlist.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
   const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
@@ -198,6 +199,7 @@ function AppContent() {
     let active = true;
     if (!sessionUser) {
       setIsLoggedIn(false);
+      setUserRole('member');
       setAccessReady(true);
       setDataReady(false);
       return () => { active = false; };
@@ -226,6 +228,7 @@ function AppContent() {
         }
         if (active) {
           setUserName(sessionUser.email || 'Mustang Admin');
+          setUserRole(data.role === 'admin' ? 'admin' : 'member');
           setIsLoggedIn(true);
           setAccessReady(true);
         }
@@ -275,6 +278,9 @@ function AppContent() {
           const nextRecords: Record<string, BusinessRecord[]> = {};
           for (const row of rows) {
             const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
+            if (Object.prototype.hasOwnProperty.call(nextRecords, year)) {
+              throw new Error(`พบข้อมูลปีบัญชีซ้ำหลังปรับรูปแบบเป็น ${year} กรุณาตรวจสอบข้อมูลในฐานข้อมูลก่อนแก้ไขต่อ`);
+            }
             nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
           }
           remoteYearsRef.current = new Set(rows.map((row) => row.fiscal_year === '2569' ? '69' : String(row.fiscal_year)));
@@ -498,7 +504,7 @@ function AppContent() {
     }
 
     pendingDatabaseWriteRef.current = true;
-    const updatedYears = [...availableYears, newYear].sort();
+    const updatedYears = [...availableYears, newYear].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     setAvailableYears(updatedYears);
 
     let initialDataForNewYear: BusinessRecord[] = [];
@@ -901,6 +907,7 @@ function AppContent() {
           }));
         }}
         isLoggedIn={isLoggedIn}
+        isAdmin={userRole === 'admin'}
         isVisitor={isVisitor}
         onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
