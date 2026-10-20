@@ -11,6 +11,7 @@ interface SettingsViewProps {
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   onResetToDemoData?: () => void;
   isLoggedIn: boolean;
+  isAdmin: boolean;
   onToggleLogin: () => void;
 }
 
@@ -21,6 +22,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onRestoreRecords,
   onResetToDemoData,
   isLoggedIn,
+  isAdmin,
   onToggleLogin,
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +53,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       onShowToast(`สำรองข้อมูลปี ${selectedYear} จำนวน ${records.length} รายการแล้ว`, 'สำรองข้อมูลสำเร็จ');
     } catch {
       onShowToast('เกิดข้อผิดพลาดในการสำรองข้อมูล', 'ข้อผิดพลาด', 'error');
@@ -63,12 +65,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      onShowToast('ไฟล์สำรองใหญ่เกินไป (จำกัด 10 MB)', 'ไฟล์ใหญ่เกินไป', 'error');
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
         const parsed = JSON.parse(text);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0 &&
+          parsed.every((item) =>
+            item !== null &&
+            typeof item === 'object' &&
+            !Array.isArray(item) &&
+            typeof item.companyName === 'string' &&
+            item.companyName.trim().length > 0
+          )
+        ) {
           if (onRestoreRecords) {
             onRestoreRecords(parsed);
             onShowToast(`กู้คืนข้อมูล ${parsed.length} รายการสำเร็จ`, 'กู้คืนสำเร็จ');
@@ -79,6 +97,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       } catch {
         onShowToast('เกิดข้อผิดพลาดในการอ่านไฟล์สำรอง', 'ข้อผิดพลาด', 'error');
       }
+    };
+    reader.onerror = () => {
+      onShowToast('อ่านไฟล์สำรองไม่สำเร็จ กรุณาลองใหม่', 'ข้อผิดพลาด', 'error');
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -160,7 +181,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
                 placeholder="SchoolHub"
-                disabled={!isLoggedIn}
+                disabled={!isLoggedIn || !isAdmin}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
               />
             </div>
@@ -179,7 +200,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               />
             </div>
 
-            {isLoggedIn && (
+            {isLoggedIn && isAdmin && (
               <div className="pt-2">
                 <button
                   type="button"
