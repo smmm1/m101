@@ -1,3 +1,5 @@
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { BusinessRecord } from '../types';
 
 const HEADER_MAPS = {
@@ -82,12 +84,11 @@ function findMappedKey(header: any): string | null {
   return null;
 }
 
-export async function parseDocumentFile(file: File, topicName: string): Promise<Partial<BusinessRecord>[]> {
-  const isCsv = file.name.toLowerCase().endsWith('.csv');
+export function parseDocumentFile(file: File, topicName: string): Promise<Partial<BusinessRecord>[]> {
+  return new Promise((resolve, reject) => {
+    const isCsv = file.name.endsWith('.csv');
 
-  if (isCsv) {
-    const Papa = (await import('papaparse')).default;
-    return new Promise((resolve, reject) => {
+    if (isCsv) {
       Papa.parse(file, {
         header: false, // อ่านแบบ 2D Array เพื่อสแกนหาหัวข้อแบบแนวตั้งก่อน
         skipEmptyLines: true,
@@ -103,19 +104,32 @@ export async function parseDocumentFile(file: File, topicName: string): Promise<
           reject(err);
         }
       });
-    });
-  }
-
-  const XLSX = await import('xlsx');
-  const data = new Uint8Array(await file.arrayBuffer());
-  const workbook = XLSX.read(data, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  const rawRows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, raw: false, defval: '' });
-  return process2DArray(rawRows, topicName, XLSX);
+    } else {
+      // Excel parse (.xlsx, .xls)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // ดึงข้อมูลเป็น 2D Array เพื่อสแกนหาตำแหน่งแถวที่เป็นหัวตารางที่แม่นยำที่สุด
+          // ตั้งค่า raw: false เพื่อใช้ตัวฟอร์แมตเตอร์ของ Excel (รักษารูปแบบ 0 นำหน้า และค่าวันที่ที่แสดงจริง)
+          const rawRows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, raw: false, defval: '' });
+          const parsedData = process2DArray(rawRows, topicName);
+          resolve(parsedData);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(file);
+    }
+  });
 }
 
-function process2DArray(rows: any[][], topicName: string, XLSX?: typeof import('xlsx')): Partial<BusinessRecord>[] {
+function process2DArray(rows: any[][], topicName: string): Partial<BusinessRecord>[] {
   if (!rows || rows.length === 0) return [];
 
   // 1. สแกนหาแถวที่มีโอกาสเป็น "หัวข้อ / หัวตาราง" (Header Row) มากที่สุด
@@ -188,7 +202,7 @@ function process2DArray(rows: any[][], topicName: string, XLSX?: typeof import('
           // หากเป็นค่าวันที่ใน Excel ที่เป็นตัวเลข ให้แปลงให้อ่านเข้าใจง่าย
           if (fieldKey === 'auditorDate' && typeof cell === 'number' && cell > 30000 && cell < 60000) {
             try {
-              const dateObj = XLSX?.SSF.parse_date_code(cell);
+              const dateObj = XLSX.SSF.parse_date_code(cell);
               if (dateObj) {
                 const day = String(dateObj.d).padStart(2, '0');
                 const month = String(dateObj.m).padStart(2, '0');
@@ -248,4 +262,3 @@ function process2DArray(rows: any[][], topicName: string, XLSX?: typeof import('
 
   return parsedRecords;
 }
-

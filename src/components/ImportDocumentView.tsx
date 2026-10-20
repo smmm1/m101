@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { parseDocumentFile } from '../utils/excelHelper';
 
@@ -339,4 +340,3 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
     </div>
   );
 };
-

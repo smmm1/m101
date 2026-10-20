@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
@@ -10,6 +11,8 @@ interface SettingsViewProps {
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   onResetToDemoData?: () => void;
   userName?: string;
+  isLoggedIn: boolean;
+  onToggleLogin: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -19,6 +22,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onRestoreRecords,
   onResetToDemoData,
   userName = 'Admin User',
+  isLoggedIn,
+  onToggleLogin,
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
   const { config, updateConfig } = useSystemConfig();
@@ -82,13 +87,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // Export all to Excel
-  const handleExportExcel = async () => {
+  const handleExportExcel = () => {
     try {
       if (records.length === 0) {
         onShowToast('ไม่มีข้อมูลสำหรับส่งออก', 'แจ้งเตือน', 'info');
         return;
       }
-      const XLSX = await import('xlsx');
       const rows = records.map((r, idx) => ({
         ลำดับ: r.sequenceNo || idx + 1,
         ชื่อกิจการ: r.companyName,
@@ -158,7 +162,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
                 placeholder="SchoolHub"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={!isLoggedIn}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
               />
             </div>
 
@@ -171,20 +176,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={appTagline}
                 onChange={(e) => setAppTagline(e.target.value)}
                 placeholder="ระบบบริหารจัดการทะเบียนข้อมูลและสถานประกอบการ"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={!isLoggedIn}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
               />
             </div>
 
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleSaveConfig}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
-              >
-                <span className="material-symbols-outlined text-[16px]">save</span>
-                <span>บันทึกข้อมูลระบบ</span>
-              </button>
-            </div>
+            {isLoggedIn && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleSaveConfig}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">save</span>
+                  <span>บันทึกข้อมูลระบบ</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -211,47 +219,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={handleRestoreDatabase}
             />
 
-            <button
-              type="button"
-              onClick={handleBackupDatabase}
-              className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
-                  download
-                </span>
-                <span>สำรองข้อมูล JSON (Backup)</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">.json</span>
-            </button>
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={handleBackupDatabase}
+                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
+                    download
+                  </span>
+                  <span>สำรองข้อมูล JSON (Backup)</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">.json</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={() => fileRestoreInputRef.current?.click()}
-              className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
-                  upload
-                </span>
-                <span>กู้คืนข้อมูล JSON (Restore)</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">นำเข้าไฟล์</span>
-            </button>
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={() => fileRestoreInputRef.current?.click()}
+                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
+                    upload
+                  </span>
+                  <span>กู้คืนข้อมูล JSON (Restore)</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">นำเข้าไฟล์</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-emerald-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px] text-emerald-600 group-hover:scale-110 transition-transform">
-                  table_chart
-                </span>
-                <span>ส่งออกไฟล์ Excel ทั้งหมด (.xlsx)</span>
-              </div>
-              <span className="text-[10px] text-emerald-600 font-mono font-bold">.xlsx</span>
-            </button>
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-emerald-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px] text-emerald-600 group-hover:scale-110 transition-transform">
+                    table_chart
+                  </span>
+                  <span>ส่งออกไฟล์ Excel ทั้งหมด (.xlsx)</span>
+                </div>
+                <span className="text-[10px] text-emerald-600 font-mono font-bold">.xlsx</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -272,46 +286,86 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between gap-3">
+            {isLoggedIn && (
+              <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-white">
+                    โหลดข้อมูลตัวอย่างเริ่มต้น (69 รายการ)
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    เติมข้อมูลนิติบุคคลและสถานประกอบการชุดมาตรฐานลงในรอบปีปัจจุบัน
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onResetToDemoData) {
+                      onResetToDemoData();
+                    } else if (onRestoreRecords) {
+                      onRestoreRecords(INITIAL_BUSINESS_RECORDS);
+                      onShowToast('โหลดข้อมูลตัวอย่าง 69 รายการเรียบร้อยแล้ว', 'สำเร็จ');
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-200 dark:border-indigo-800 cursor-pointer transition-colors w-fit"
+                >
+                  โหลดข้อมูลตัวอย่าง 69 รายการ
+                </button>
+              </div>
+            )}
+
+            {isLoggedIn && (
+              <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                    ล้างข้อมูลรอบปีนี้
+                  </h4>
+                  <p className="text-[11px] text-rose-600/80 dark:text-rose-400 mt-1">
+                    ลบรายการข้อมูลทั้งหมดเฉพาะรอบปี {selectedYear}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors w-fit"
+                >
+                  ล้างข้อมูลรอบปี {selectedYear}
+                </button>
+              </div>
+            )}
+
+            {/* Login / Auth Status Card */}
+            <div className="p-4 rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3 sm:col-span-2">
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-white">
-                  โหลดข้อมูลตัวอย่างเริ่มต้น (69 รายการ)
+                <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-amber-500">lock_person</span>
+                  สถานะการเข้าสู่ระบบผู้ดูแล (Admin Login Mode)
                 </h4>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  เติมข้อมูลนิติบุคคลและสถานประกอบการชุดมาตรฐานลงในรอบปีปัจจุบัน
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1">
+                  {isLoggedIn
+                    ? 'คุณกำลังเข้าสู่ระบบเป็นผู้ดูแลระบบ (เปิดใช้งานปากกาพิเศษแก้ไขหัวข้อและชื่อระบบ)'
+                    : 'คุณอยู่ในสถานะผู้เยี่ยมชมทั่วไป (ซ่อนปากกาพิเศษ แสดงหน้าเว็บแบบมาตรฐานเดิม)'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (onResetToDemoData) {
-                    onResetToDemoData();
-                  } else if (onRestoreRecords) {
-                    onRestoreRecords(INITIAL_BUSINESS_RECORDS);
-                    onShowToast('โหลดข้อมูลตัวอย่าง 69 รายการเรียบร้อยแล้ว', 'สำเร็จ');
-                  }
+                  onToggleLogin();
+                  onShowToast(
+                    isLoggedIn ? 'ออกจากระบบผู้ดูแลแล้ว (ซ่อนปากกาพิเศษ)' : 'เข้าสู่ระบบผู้ดูแลแล้ว (แสดงปากกาพิเศษ)',
+                    'สถานะผู้ใช้',
+                    'success'
+                  );
                 }}
-                className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-200 dark:border-indigo-800 cursor-pointer transition-colors w-fit"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors w-fit flex items-center gap-1.5 ${
+                  isLoggedIn
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
               >
-                โหลดข้อมูลตัวอย่าง 69 รายการ
-              </button>
-            </div>
-
-            <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3">
-              <div>
-                <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300">
-                  ล้างข้อมูลรอบปีนี้
-                </h4>
-                <p className="text-[11px] text-rose-600/80 dark:text-rose-400 mt-1">
-                  ลบรายการข้อมูลทั้งหมดเฉพาะรอบปี {selectedYear}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(true)}
-                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors w-fit"
-              >
-                ล้างข้อมูลรอบปี {selectedYear}
+                <span className="material-symbols-outlined text-[16px]">
+                  {isLoggedIn ? 'logout' : 'login'}
+                </span>
+                <span>{isLoggedIn ? 'ออกจากระบบ (Log Out)' : 'เข้าสู่ระบบ Admin (Log In)'}</span>
               </button>
             </div>
           </div>
@@ -362,4 +416,3 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
-

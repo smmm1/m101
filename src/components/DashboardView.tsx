@@ -1,14 +1,14 @@
-import React, { lazy, Suspense, useDeferredValue, useMemo, useRef, useState } from 'react';
-import { BusinessRecord } from '../types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import * as XLSX from 'xlsx';
+import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
+import { SettingsView } from './SettingsView';
+import { ImportDocumentView } from './ImportDocumentView';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
 import { parseDocumentFile } from '../utils/excelHelper';
-
-const SettingsView = lazy(() => import('./SettingsView').then(({ SettingsView }) => ({ default: SettingsView })));
-const ImportDocumentView = lazy(() => import('./ImportDocumentView').then(({ ImportDocumentView }) => ({ default: ImportDocumentView })));
 
 interface ActivityLogItem {
   id: string;
@@ -23,6 +23,7 @@ interface DashboardViewProps {
   selectedYear?: string;
   availableYears?: string[];
   recordsByYear?: Record<string, BusinessRecord[]>;
+  onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onEditRecord: (record: BusinessRecord) => void;
@@ -35,8 +36,8 @@ interface DashboardViewProps {
   onOpenYearModal?: () => void;
   onAddYear?: (year: string) => void;
   onDeleteYear?: (year: string) => void;
-  onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
-  onLogout?: () => void;
+  isLoggedIn: boolean;
+  onToggleLogin: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -44,6 +45,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   userName = 's2mth... Admin',
   selectedYear = '69',
   availableYears = ['69'],
+  recordsByYear = {},
   searchQuery: externalSearchQuery,
   onSearchChange: externalOnSearchChange,
   onEditRecord,
@@ -57,13 +59,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onAddYear,
   onDeleteYear,
   onRestoreRecords,
-  onLogout,
+  isLoggedIn,
+  onToggleLogin,
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
-  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import'>('directory');
@@ -73,6 +75,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Selected record for Detail Card View
   const [selectedId, setSelectedId] = useState<string>(() => (records.length > 0 ? records[0].id : ''));
+  const [inlineConfirmDelete, setInlineConfirmDelete] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -80,7 +83,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [newYearInput, setNewYearInput] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync selectedId when records change or item is deleted
+  useEffect(() => {
+    setInlineConfirmDelete(false);
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (records.length > 0) {
+      setSelectedId((prev) => {
+        if (!prev || !records.some((r) => r.id === prev)) {
+          return records[0].id;
+        }
+        return prev;
+      });
+    } else {
+      setSelectedId('');
+    }
+  }, [records]);
 
   // Activity Log & Toast notification state (3 seconds auto dismiss with timer ref)
   const [activityLogs, setActivityLogs] = useState<ActivityLogItem[]>([]);
@@ -120,8 +142,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         if (filterTab === 'has_efiling' && (!r.eFilingCode || !r.eFilingCode.trim())) return false;
         if (filterTab === 'no_efiling' && r.eFilingCode && r.eFilingCode.trim()) return false;
 
-        if (deferredSearchQuery.trim()) {
-          const q = deferredSearchQuery.toLowerCase().trim();
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
           const matchName = (r.companyName || '').toLowerCase().includes(q);
           const matchTax = (r.taxId || '').toLowerCase().includes(q);
           const matchSeq = (r.sequenceNo || '').toLowerCase().includes(q);
@@ -130,13 +152,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         return true;
       })
       .sort((a, b) => {
-        const numA = parseInt(a.sequenceNo || '0', 10);
-        const numB = parseInt(b.sequenceNo || '0', 10);
+        const numA = parseInt((a.sequenceNo || '').replace(/\D/g, '') || '0', 10);
+        const numB = parseInt((b.sequenceNo || '').replace(/\D/g, '') || '0', 10);
         let comp = numA - numB;
         if (comp === 0) comp = (a.sequenceNo || '').localeCompare(b.sequenceNo || '');
         return sortOrder === 'asc' ? comp : -comp;
       });
-  }, [records, filterTab, deferredSearchQuery, sortOrder]);
+  }, [records, filterTab, searchQuery, sortOrder]);
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -189,8 +211,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         );
       })
       .sort((a, b) => {
-        const numA = parseInt(a.sequenceNo || '0', 10);
-        const numB = parseInt(b.sequenceNo || '0', 10);
+        const numA = parseInt((a.sequenceNo || '').replace(/\D/g, '') || '0', 10);
+        const numB = parseInt((b.sequenceNo || '').replace(/\D/g, '') || '0', 10);
         return numA - numB;
       });
   }, [records, overviewSearch]);
@@ -448,17 +470,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px]">{userName}</span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Admin</span>
             </div>
-            <button type="button" onClick={onLogout} aria-label="ออกจากระบบ" title="ออกจากระบบ" className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </button>
           </div>
         </div>
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-4">
+      <div className="flex-1 overflow-hidden flex flex-col p-5">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 h-[calc(100vh-88px)] max-w-[1700px] w-full mx-auto overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row gap-5 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
             <div className="flex-1 lg:w-[72%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -483,32 +502,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
 
                   {/* Add Item Button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer hover:scale-[1.02]"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">add</span>
-                    <span className="hidden sm:inline">เพิ่มรายการ</span>
-                  </button>
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer hover:scale-[1.02]"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">add</span>
+                      <span className="hidden sm:inline">เพิ่มรายการ</span>
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                    <span className="hidden sm:inline">นำเข้า</span>
-                  </button>
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                      <span className="hidden sm:inline">นำเข้า</span>
+                    </button>
+                  )}
                   
-                  <button
-                    type="button"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">delete</span>
-                    <span className="hidden sm:inline">ลบรายการ</span>
-                  </button>
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      <span className="hidden sm:inline">ลบรายการ</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -574,8 +599,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div
                         key={r.id}
                         onClick={() => setSelectedId(r.id)}
-                        style={{ contentVisibility: 'auto', containIntrinsicSize: '68px' }}
-                        className={`px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between cursor-pointer transition-colors group ${
+                        className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all group ${
                           isSelected
                             ? 'bg-[#0f172a] text-white dark:bg-slate-800 dark:ring-1 dark:ring-amber-500/50'
                             : 'bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-900 dark:text-slate-100'
@@ -602,7 +626,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                 isSelected ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'
                               }`}
                             >
-                              {r.taxId || '0000000000000'}
+                              {isLoggedIn ? (r.taxId || '0000000000000') : `${(r.taxId || '0000000000000').slice(0, 4)}*********`}
                             </span>
                           </div>
                         </div>
@@ -643,18 +667,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           </span>
 
                           {/* Quick Edit Button on the back of row */}
-                          <button
-                            type="button"
-                            onClick={() => setEditingRecord(r)}
-                            className={`p-2 rounded-xl transition-colors ${
-                              isSelected
-                                ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                                : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                            title="แก้ไขข้อมูล"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
+                          {isLoggedIn && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingRecord(r)}
+                              className={`p-2 rounded-xl transition-colors ${
+                                isSelected
+                                  ? 'text-slate-300 hover:text-white hover:bg-slate-700'
+                                  : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              }`}
+                              title="แก้ไขข้อมูล"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -711,16 +737,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono tracking-tight truncate">
-                        {activeRecord.taxId || '0994001000000'}
+                        {isLoggedIn 
+                          ? (activeRecord.taxId || '0994001000000') 
+                          : `${(activeRecord.taxId || '0994001000000').slice(0, 4)}*********`}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(activeRecord.taxId, 'เลขผู้เสียภาษี')}
-                        className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">content_copy</span>
-                        <span>คัดลอก</span>
-                      </button>
+                      {isLoggedIn && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(activeRecord.taxId, 'เลขผู้เสียภาษี')}
+                          className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">content_copy</span>
+                          <span>คัดลอก</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -731,57 +761,85 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono tracking-tight truncate">
-                        {activeRecord.password || activeRecord.eFilingCode || '90696285'}
+                        {isLoggedIn ? (activeRecord.password || activeRecord.eFilingCode || '90696285') : '********'}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyToClipboard(
-                            activeRecord.password || activeRecord.eFilingCode || '',
-                            'รหัสผ่าน / E-Filing'
-                          )
-                        }
-                        className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">content_copy</span>
-                        <span>คัดลอก</span>
-                      </button>
+                      {isLoggedIn && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              activeRecord.password || activeRecord.eFilingCode || '',
+                              'รหัสผ่าน / E-Filing'
+                            )
+                          }
+                          className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">content_copy</span>
+                          <span>คัดลอก</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
                   {/* Bottom Action Buttons */}
                   <div className="pt-1 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingRecord(activeRecord)}
-                      className="w-full py-2.5 rounded-2xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">edit</span>
-                      <span>แก้ไขข้อมูล</span>
-                    </button>
+                    {isLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingRecord(activeRecord)}
+                        className="w-full py-2.5 rounded-2xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                        <span>แก้ไขข้อมูล</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
                       onClick={() => setIsDetailModalOpen(true)}
-                      className="w-full py-2.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                      className="w-full py-2.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs hover:border-amber-400/60 dark:hover:border-amber-500/40"
                     >
-                      <span className="material-symbols-outlined text-[16px]">visibility</span>
+                      <span className="material-symbols-outlined text-[17px] text-amber-500">visibility</span>
                       <span>ดูรายละเอียด</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm(`ต้องการลบกิจการ "${activeRecord.companyName}" หรือไม่?`)) {
-                          onDeleteRecord(activeRecord.id);
-                          onShowToast(`ลบ ${activeRecord.companyName} เรียบร้อย`, 'ลบสำเร็จ', 'success');
-                        }
-                      }}
-                      className="w-full py-2 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                      <span>ลบกิจการนี้</span>
-                    </button>
+                    {isLoggedIn && (inlineConfirmDelete ? (
+                      <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex flex-col gap-2 animate-in fade-in">
+                        <span className="text-xs font-bold text-rose-700 dark:text-rose-300 text-center">
+                          ยืนยันต้องการลบกิจการนี้?
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setInlineConfirmDelete(false)}
+                            className="flex-1 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer"
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInlineConfirmDelete(false);
+                              onDeleteRecord(activeRecord.id);
+                              logActivity('delete', `ลบกิจการ "${activeRecord.companyName}"`);
+                              onShowToast(`ลบ ${activeRecord.companyName} เรียบร้อย`, 'ลบสำเร็จ', 'success');
+                            }}
+                            className="flex-1 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          >
+                            ยืนยันลบ
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setInlineConfirmDelete(true)}
+                        className="w-full py-2 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        <span>ลบกิจการนี้</span>
+                      </button>
+                    ))}
                   </div>
 
                 </div>
@@ -797,10 +855,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* 3. OVERVIEW / ภาพรวม SCREEN WITH WIDER LEFT COMPACT LIST (WITH SEARCH & POPUP MODAL & NUMERICALLY SORTED SEQUENTIAL NUMBERING) AND RIGHT 2D BAR CHART */}
         {activeTab === 'dashboard' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 h-[calc(100vh-88px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
+          <div className="flex-1 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
             
             {/* LEFT SIDE: Wider Compact List with Search, Numerically Sorted Sequential Numbering & Popup Modal Trigger */}
-            <div className="w-full lg:w-[45%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
+            <div className="w-full lg:w-[58%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
               <div className="p-4 px-5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3 shrink-0 bg-slate-50/50 dark:bg-slate-900/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -842,8 +900,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           setSelectedId(r.id);
                           setIsDetailModalOpen(true); // Open popup modal with details
                         }}
-                        style={{ contentVisibility: 'auto', containIntrinsicSize: '56px' }}
-                        className="p-2.5 sm:p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-colors group"
+                        className="p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-all group"
                       >
                         <div className="flex items-center gap-3 min-w-0 pr-2">
                           <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0 w-7">
@@ -853,7 +910,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             <span className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600">
                               {r.companyName}
                             </span>
-                            <span className="text-[10px] font-mono text-slate-400 truncate">{r.taxId}</span>
+                            <span className="text-[10px] font-mono text-slate-400 truncate">
+                              {isLoggedIn ? (r.taxId || '0000000000000') : `${(r.taxId || '0000000000000').slice(0, 4)}*********`}
+                            </span>
                           </div>
                         </div>
 
@@ -893,6 +952,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setChartType(chartType === 'bar' ? 'pie' : 'bar')}
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-slate-200"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {chartType === 'bar' ? 'pie_chart' : 'bar_chart'}
+                    </span>
+                    <span>สลับเป็น {chartType === 'bar' ? 'กราฟวงกลม' : 'กราฟแท่ง'}</span>
+                  </button>
                   <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">รวมทั้งสิ้น {totalCount} รายการ</span>
                 </div>
@@ -900,70 +968,93 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               {/* 2D Bar Chart Area */}
               <div className="flex-1 flex items-end justify-around gap-6 pt-12 pb-8 px-6 relative">
-                {/* Background grid lines */}
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-                  <div className="border-b border-slate-300 dark:border-slate-700 w-full" />
-                  <div className="border-b border-slate-300 dark:border-slate-700 w-full" />
-                  <div className="border-b border-slate-300 dark:border-slate-700 w-full" />
-                  <div className="border-b border-slate-300 dark:border-slate-700 w-full" />
-                </div>
+                {chartType === 'bar' ? (
+                  <>
+                    {/* Bar 1: Completed */}
+                    <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
+                      <div className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                        {completedCount} รายการ
+                      </div>
+                      <div className="w-full max-w-[100px] bg-emerald-50 dark:bg-emerald-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
+                        <div
+                          style={{ height: `${Math.max(15, completedHeight)}%` }}
+                          className="w-full bg-emerald-500 rounded-t-xl transition-all duration-300 group-hover:bg-emerald-600 flex items-center justify-center text-white font-bold text-xs"
+                        >
+                          {completedCount > 0 && `${Math.round((completedCount / totalCount) * 100)}%`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-xs" />
+                        <span>เสร็จสิ้นแล้ว</span>
+                      </div>
+                    </div>
 
-                {/* Bar 1: Completed */}
-                <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
-                  <div className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-                    {completedCount} รายการ
-                  </div>
-                  <div className="w-full max-w-[100px] bg-emerald-50 dark:bg-emerald-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
-                    <div
-                      style={{ height: `${Math.max(15, completedHeight)}%` }}
-                      className="w-full bg-emerald-500 rounded-t-xl transition-all duration-300 group-hover:bg-emerald-600 flex items-center justify-center text-white font-bold text-xs"
-                    >
-                      {completedCount > 0 && `${Math.round((completedCount / totalCount) * 100)}%`}
+                    {/* Bar 2: In Progress */}
+                    <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
+                      <div className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+                        {inProgressCount} รายการ
+                      </div>
+                      <div className="w-full max-w-[100px] bg-amber-50 dark:bg-amber-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
+                        <div
+                          style={{ height: `${Math.max(15, inProgressHeight)}%` }}
+                          className="w-full bg-amber-500 rounded-t-xl transition-all duration-300 group-hover:bg-amber-600 flex items-center justify-center text-white font-bold text-xs"
+                        >
+                          {inProgressCount > 0 && `${Math.round((inProgressCount / totalCount) * 100)}%`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs" />
+                        <span>กำลังดำเนินการ</span>
+                      </div>
+                    </div>
+
+                    {/* Bar 3: Pending */}
+                    <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
+                      <div className="text-xs font-extrabold text-rose-600 dark:text-rose-400 font-mono">
+                        {pendingCount} รายการ
+                      </div>
+                      <div className="w-full max-w-[100px] bg-rose-50 dark:bg-rose-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
+                        <div
+                          style={{ height: `${Math.max(15, pendingHeight)}%` }}
+                          className="w-full bg-rose-500 rounded-t-xl transition-all duration-300 group-hover:bg-rose-600 flex items-center justify-center text-white font-bold text-xs"
+                        >
+                          {pendingCount > 0 && `${Math.round((pendingCount / totalCount) * 100)}%`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        <span className="w-3 h-3 rounded-full bg-rose-500 shadow-xs" />
+                        <span>รอดำเนินการ</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-8">
+                    <div 
+                      className="w-48 h-48 rounded-full border-8 border-slate-100 dark:border-slate-800 shadow-inner"
+                      style={{
+                        background: `conic-gradient(
+                          #10b981 0% ${completedHeight}%, 
+                          #f59e0b ${completedHeight}% ${completedHeight + inProgressHeight}%, 
+                          #f43f5e ${completedHeight + inProgressHeight}% 100%
+                        )`
+                      }}
+                    />
+                    <div className="flex flex-wrap gap-4 justify-center">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-xs" />
+                        <span>เสร็จสิ้น {completedCount}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs" />
+                        <span>กำลังทำ {inProgressCount}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                        <span className="w-3 h-3 rounded-full bg-rose-500 shadow-xs" />
+                        <span>รอ {pendingCount}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-xs" />
-                    <span>เสร็จสิ้นแล้ว</span>
-                  </div>
-                </div>
-
-                {/* Bar 2: In Progress */}
-                <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
-                  <div className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">
-                    {inProgressCount} รายการ
-                  </div>
-                  <div className="w-full max-w-[100px] bg-amber-50 dark:bg-amber-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
-                    <div
-                      style={{ height: `${Math.max(15, inProgressHeight)}%` }}
-                      className="w-full bg-amber-500 rounded-t-xl transition-all duration-300 group-hover:bg-amber-600 flex items-center justify-center text-white font-bold text-xs"
-                    >
-                      {inProgressCount > 0 && `${Math.round((inProgressCount / totalCount) * 100)}%`}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    <span className="w-3 h-3 rounded-full bg-amber-500 shadow-xs" />
-                    <span>กำลังดำเนินการ</span>
-                  </div>
-                </div>
-
-                {/* Bar 3: Pending */}
-                <div className="flex-1 flex flex-col items-center gap-3 z-10 h-full justify-end group">
-                  <div className="text-xs font-extrabold text-rose-600 dark:text-rose-400 font-mono">
-                    {pendingCount} รายการ
-                  </div>
-                  <div className="w-full max-w-[100px] bg-rose-50 dark:bg-rose-950/20 rounded-t-2xl p-2 h-[260px] flex items-end">
-                    <div
-                      style={{ height: `${Math.max(15, pendingHeight)}%` }}
-                      className="w-full bg-rose-500 rounded-t-xl transition-all duration-300 group-hover:bg-rose-600 flex items-center justify-center text-white font-bold text-xs"
-                    >
-                      {pendingCount > 0 && `${Math.round((pendingCount / totalCount) * 100)}%`}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    <span className="w-3 h-3 rounded-full bg-rose-500 shadow-xs" />
-                    <span>รอดำเนินการ</span>
-                  </div>
-                </div>
+                )}
 
               </div>
 
@@ -979,17 +1070,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
 
         {activeTab === 'settings' && (
-          <Suspense fallback={<div className="flex-1 grid place-items-center text-sm text-slate-500">กำลังโหลดการตั้งค่า…</div>}><SettingsView
+          <SettingsView
             records={records}
             selectedYear={selectedYear}
             userName={userName}
             onShowToast={onShowToast}
             onRestoreRecords={onRestoreRecords}
-          /></Suspense>
+            isLoggedIn={isLoggedIn}
+            onToggleLogin={onToggleLogin}
+          />
         )}
 
         {activeTab === 'import' && (
-          <Suspense fallback={<div className="flex-1 grid place-items-center text-sm text-slate-500">กำลังโหลดหน้าการนำเข้า…</div>}><ImportDocumentView
+          <ImportDocumentView
             selectedYear={selectedYear}
             existingRecords={records}
             onImportRecords={(items) => {
@@ -997,12 +1090,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               setActiveTab('directory');
             }}
             onShowToast={onShowToast}
-          /></Suspense>
+          />
         )}
       </div>
 
       {/* Modals */}
-      {isAddModalOpen && (
+      {isLoggedIn && isAddModalOpen && (
         <AddBusinessModal
           allRecords={records}
           onClose={() => setIsAddModalOpen(false)}
@@ -1017,7 +1110,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         />
       )}
 
-      {editingRecord && (
+      {isLoggedIn && editingRecord && (
         <EditBusinessModal
           record={editingRecord}
           onClose={() => setEditingRecord(null)}
@@ -1052,9 +1145,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             logActivity('edit', `เปลี่ยนสถานะ "${rec.companyName}" เป็น ${newStatus}`);
           }}
           onShowToast={(msg) => onShowToast(msg)}
+          isLoggedIn={isLoggedIn}
         />
       )}
-      {isDeleteModalOpen && (
+      {isLoggedIn && isDeleteModalOpen && (
         <DeleteBusinessModal
           records={records}
           onClose={() => setIsDeleteModalOpen(false)}
@@ -1069,4 +1163,3 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     </div>
   );
 };
-

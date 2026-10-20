@@ -22,3 +22,8 @@ export interface BusinessRecord {
   updatedAt: string;
 }
 
+export type ViewMode = 'table' | 'cards';
+
+export type FilterStatus = 'all' | 'company' | 'partnership' | 'individual' | 'pending' | 'in_progress' | 'completed';
+
+export type ActiveScreen = 'dashboard' | 'business-list' | 'import-docs' | 'settings' | 'add-business';

@@ -9,6 +9,7 @@ interface YearManageModalProps {
   onSelectYear: (year: string) => void;
   onAddYear: (newYear: string, copyFromYear?: string) => void;
   onDeleteYear?: (year: string) => void;
+  isLoggedIn: boolean;
 }
 
 export const YearManageModal: React.FC<YearManageModalProps> = ({
@@ -20,6 +21,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
   onSelectYear,
   onAddYear,
   onDeleteYear,
+  isLoggedIn,
 }) => {
   const [newYearInput, setNewYearInput] = useState('');
   const [copyFromYear, setCopyFromYear] = useState<string>('');
@@ -175,7 +177,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                         </span>
                       )}
 
-                      {availableYears.length > 1 && !isCurrent && onDeleteYear && (
+                      {isLoggedIn && availableYears.length > 1 && !isCurrent && onDeleteYear && (
                         <button
                           type="button"
                           onClick={() => setYearToDelete(yr)}
@@ -193,7 +195,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
           </div>
 
           {/* Create New Year Form */}
-          {isCreating ? (
+          {isLoggedIn && (isCreating ? (
             <form onSubmit={handleCreateYear} className="mt-2 p-4 rounded-2xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 dark:text-white">
@@ -271,7 +273,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
               <span className="material-symbols-outlined text-[18px] text-emerald-600">add_circle</span>
               <span>เพิ่มรอบปีใหม่ (+ New Fiscal Year)</span>
             </button>
-          )}
+          ))}
         </div>
       </div>
     </div>
