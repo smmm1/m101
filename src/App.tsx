@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ActiveScreen, BusinessRecord } from './types';
+import { supabase } from './lib/supabase';
+import { LoginScreen } from './components/LoginScreen';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -45,6 +47,11 @@ export default function App() {
 }
 
 function AppContent() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [cloudError, setCloudError] = useState('');
+  const [needsMigration, setNeedsMigration] = useState(false);
+
   const [currentScreen, setCurrentScreen] = useState<ActiveScreen>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +63,48 @@ function AppContent() {
       return 'Mustang Admin';
     }
   });
+
+  useEffect(() => {
+    let active = true;
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!active || !data.session?.user) return;
+        const email = data.session.user.email?.trim().toLowerCase();
+        if (!email) {
+          await supabase.auth.signOut();
+          return;
+        }
+        const { data: allowed, error: allowlistError } = await supabase
+          .from('allowed_users')
+          .select('email')
+          .eq('email', email)
+          .maybeSingle();
+        if (!active) return;
+        if (allowlistError || !allowed) {
+          await supabase.auth.signOut();
+          setIsLoggedIn(false);
+          return;
+        }
+        setUserName(email);
+        setIsLoggedIn(true);
+      } catch (error) {
+        if (active) setCloudError(error instanceof Error ? error.message : 'เชื่อมต่อ Supabase ไม่สำเร็จ');
+      }
+    };
+    void checkSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setIsLoggedIn(false);
+        setCloudReady(false);
+      }
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Multi-Year state (defaults to year 69)
   const [availableYears, setAvailableYears] = useState<string[]>(() => {
@@ -122,6 +171,63 @@ function AppContent() {
   // Active records for currently selected fiscal year
   const currentRecords = recordsByYear[selectedYear] || [];
 
+  // Load allowlisted users' records from Supabase. Migrate saved browser data only when the cloud has no records.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    const loadCloud = async () => {
+      setCloudReady(false);
+      setCloudError('');
+      setNeedsMigration(false);
+      const { data, error } = await supabase
+        .from('directory_year_data')
+        .select('fiscal_year, records');
+      if (!active) return;
+      if (error) {
+        setCloudError('เชื่อมต่อฐานข้อมูลไม่ได้: ' + error.message);
+        return;
+      }
+      const rows = data || [];
+      if (rows.length > 0) {
+        const cloudRecords: Record<string, BusinessRecord[]> = {};
+        rows.forEach((row: { fiscal_year: string; records: BusinessRecord[] }) => {
+          cloudRecords[row.fiscal_year] = row.records || [];
+        });
+        const years = Object.keys(cloudRecords).sort();
+        setRecordsByYear(cloudRecords);
+        setAvailableYears(years.length ? years : ['69']);
+        setSelectedYear((prev) => (cloudRecords[prev] ? prev : years[0] || '69'));
+      } else {
+        // Ask before copying saved browser data into Supabase.
+        setNeedsMigration(true);
+      }
+      if (active) setCloudReady(true);
+    };
+    void loadCloud();
+    return () => {
+      active = false;
+    };
+  }, [isLoggedIn]);
+
+  // Save records to Supabase after the initial cloud load completes.
+  useEffect(() => {
+    if (!isLoggedIn || !cloudReady || needsMigration) return;
+    const persist = async () => {
+      const rows = Object.entries(recordsByYear).map(([fiscal_year, records]) => ({
+        fiscal_year,
+        records,
+        updated_at: new Date().toISOString(),
+      }));
+      if (!rows.length) return;
+      const { error } = await supabase
+        .from('directory_year_data')
+        .upsert(rows, { onConflict: 'fiscal_year' });
+      if (error) setCloudError('บันทึกฐานข้อมูลไม่สำเร็จ: ' + error.message);
+      else setCloudError('');
+    };
+    void persist();
+  }, [recordsByYear, isLoggedIn, cloudReady, needsMigration]);
+
   // Persist records to local storage
   useEffect(() => {
     try {
@@ -171,6 +277,56 @@ function AppContent() {
 
   const handleDismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleLogin = (user: string) => {
+    setCloudReady(false);
+    setCloudError('');
+    setUserName(user);
+    try {
+      localStorage.setItem(STORAGE_KEY_USER, user);
+    } catch {}
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    void supabase.auth.signOut();
+    setCloudReady(false);
+    setCloudError('');
+    setIsLoggedIn(false);
+  };
+
+  const handleMigrateLocalData = async () => {
+    setCloudError('');
+    const rows = Object.entries(recordsByYear).map(([fiscal_year, records]) => ({
+      fiscal_year,
+      records,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase
+      .from('directory_year_data')
+      .upsert(rows, { onConflict: 'fiscal_year' });
+    if (error) {
+      setCloudError('ย้ายข้อมูลเดิมไม่สำเร็จ: ' + error.message);
+      return;
+    }
+    setNeedsMigration(false);
+  };
+
+  const handleStartEmptyCloud = async () => {
+    setCloudError('');
+    const emptyRecords = { '69': [] as BusinessRecord[] };
+    const { error } = await supabase
+      .from('directory_year_data')
+      .upsert([{ fiscal_year: '69', records: [], updated_at: new Date().toISOString() }], { onConflict: 'fiscal_year' });
+    if (error) {
+      setCloudError('เริ่มฐานข้อมูลว่างไม่สำเร็จ: ' + error.message);
+      return;
+    }
+    setRecordsByYear(emptyRecords);
+    setAvailableYears(['69']);
+    setSelectedYear('69');
+    setNeedsMigration(false);
   };
 
   // Year Handlers
@@ -230,6 +386,11 @@ function AppContent() {
       return;
     }
 
+    if (isLoggedIn && cloudReady && !needsMigration) {
+      void supabase.from('directory_year_data').delete().eq('fiscal_year', yearToDelete).then(({ error }) => {
+        if (error) setCloudError('ลบรอบปีในฐานข้อมูลไม่สำเร็จ: ' + error.message);
+      });
+    }
     const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
     setAvailableYears(nextAvailable);
 
@@ -452,8 +613,57 @@ function AppContent() {
     e.target.value = '';
   };
 
+  if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
+  if (!cloudReady) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#fafafa] text-sm text-[#52525b]">
+        <div className="font-semibold">กำลังโหลดข้อมูลที่ได้รับอนุญาตจากฐานข้อมูล…</div>
+        {cloudError && <div role="alert" className="max-w-xl px-4 text-center text-rose-600">{cloudError}</div>}
+        {cloudError && <button className="rounded-lg border px-3 py-2" onClick={handleLogout}>ออกจากระบบ</button>}
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
+  if (!cloudReady) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#fafafa] text-sm text-[#52525b]">
+        <div className="font-semibold">กำลังโหลดข้อมูลที่ได้รับอนุญาตจากฐานข้อมูล…</div>
+        {cloudError && <div role="alert" className="max-w-xl px-4 text-center text-rose-600">{cloudError}</div>}
+        {cloudError && <button className="rounded-lg border px-3 py-2" onClick={handleLogout}>ออกจากระบบ</button>}
+      </div>
+    );
+  }
+  if (needsMigration) {
+    const localCount = Object.values(recordsByYear).reduce((sum, records) => sum + records.length, 0);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f4f5f7] p-4 text-slate-900">
+        <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+          <h1 className="text-lg font-bold">เลือกข้อมูลเริ่มต้นสำหรับฐานข้อมูล</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            ยังไม่พบข้อมูลบน Supabase และพบข้อมูลที่บันทึกไว้ในเบราว์เซอร์ {localCount} รายการ
+            เลือกได้ว่าจะย้ายข้อมูลเดิมขึ้นฐานข้อมูล หรือเริ่มจากฐานข้อมูลว่าง
+          </p>
+          {cloudError && <div role="alert" className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{cloudError}</div>}
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={() => void handleMigrateLocalData()} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700">
+              ย้ายข้อมูลเดิมขึ้นฐานข้อมูล
+            </button>
+            <button type="button" onClick={() => void handleStartEmptyCloud()} className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              เริ่มฐานข้อมูลว่าง
+            </button>
+          </div>
+          <button type="button" onClick={handleLogout} className="mt-4 text-sm text-slate-500 underline">
+            ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
+      {cloudError && <div role="alert" className="fixed top-3 right-3 z-[100] max-w-lg rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs text-rose-800 shadow-lg">{cloudError}</div>}
       <DashboardView
         records={currentRecords}
         userName={userName}
@@ -467,6 +677,7 @@ function AppContent() {
         onDeleteMultiple={handleDeleteMultiple}
         onAddRecord={handleAddRecord}
         onShowToast={showToast}
+        onLogout={handleLogout}
         onImportRecords={(items) => processImportRecords(items, 'นำเข้าไฟล์')}
         onSelectYear={handleSelectYear}
         onOpenYearModal={() => setIsYearModalOpen(true)}
