@@ -272,6 +272,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>ทะเบียนกิจการ</span>
           </button>
 
+          {isLoggedIn && (
           <button
             type="button"
             onClick={() => setActiveTab('settings')}
@@ -284,6 +285,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="material-symbols-outlined text-[18px]">settings</span>
             <span>การตั้งค่า</span>
           </button>
+          )}
         </div>
 
         {/* Right Controls: Fiscal Year + Activity Log + Dark Mode + Profile */}
@@ -307,7 +309,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">
                     เลือกรอบปีบัญชี (Fiscal Years)
                   </span>
-                  {onOpenYearModal && (
+                  {isLoggedIn && onOpenYearModal && (
                     <button
                       type="button"
                       onClick={() => {
@@ -344,7 +346,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <span>ปีบัญชี {yr}</span>
                       </button>
 
-                      {availableYears.length > 1 && onDeleteYear && (
+                      {isLoggedIn && availableYears.length > 1 && onDeleteYear && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -364,6 +366,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   ))}
                 </div>
 
+                {isLoggedIn && (
                 {/* Add new year inline */}
                 <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <input
@@ -387,6 +390,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   >
                     เพิ่ม
                   </button>
+                )}
                 </div>
               </div>
             )}
