@@ -36,6 +36,7 @@ interface DashboardViewProps {
   onAddYear?: (year: string) => void;
   onDeleteYear?: (year: string) => void;
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
+  onLogout?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -56,6 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onAddYear,
   onDeleteYear,
   onRestoreRecords,
+  onLogout,
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -445,6 +447,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px]">{userName}</span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Admin</span>
             </div>
+            <button type="button" onClick={onLogout} aria-label="ออกจากระบบ" title="ออกจากระบบ" className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+            </button>
           </div>
         </div>
       </nav>
