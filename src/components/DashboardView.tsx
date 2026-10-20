@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import * as XLSX from 'xlsx';
-import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
+import { BusinessRecord } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
@@ -22,7 +21,6 @@ interface DashboardViewProps {
   userName?: string;
   selectedYear?: string;
   availableYears?: string[];
-  recordsByYear?: Record<string, BusinessRecord[]>;
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
@@ -47,7 +45,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   userName = 's2mth... Admin',
   selectedYear = '69',
   availableYears = ['69'],
-  recordsByYear = {},
   searchQuery: externalSearchQuery,
   onSearchChange: externalOnSearchChange,
   onEditRecord,
@@ -1105,7 +1102,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <SettingsView
             records={records}
             selectedYear={selectedYear}
-            userName={userName}
             onShowToast={onShowToast}
             onRestoreRecords={onRestoreRecords}
             isLoggedIn={isLoggedIn}
@@ -1116,7 +1112,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {activeTab === 'import' && (
           <ImportDocumentView
             selectedYear={selectedYear}
-            existingRecords={records}
             onImportRecords={(items) => {
               if (onImportRecords) onImportRecords(items);
               setActiveTab('directory');
