@@ -847,8 +847,8 @@ function AppContent() {
               </svg>
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Mustang Directory</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">ยินดีต้อนรับกลับมา</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ</p>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Time to work, my love.</h1>
+            
           </div>
 
           <form onSubmit={handleLoginSubmit} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-35px_rgba(15,23,42,0.28)] sm:p-8">
@@ -877,7 +877,7 @@ function AppContent() {
             <p className="mt-3 text-center text-xs leading-5 text-slate-400">ผู้เยี่ยมชมดูได้เฉพาะข้อมูลที่เปิดเผย และข้อมูลลับจะถูกปิดบัง</p>
           </form>
 
-          <p className="mt-6 text-center text-xs text-slate-400">เรียบง่าย เป็นส่วนตัว และปลอดภัย</p>
+          <p className="mt-6 text-center text-xs text-slate-400">อะ มีแมวกี่ตัว ?</p>
           <div aria-hidden="true" className="m101-paw pointer-events-none absolute -right-7 top-2 text-lg text-stone-300">🐾</div>
         </section>
 
