@@ -67,7 +67,7 @@ export const PublicDirectoryView: React.FC<{ onAdminLogin: () => void }> = ({ on
         setError('โหลดข้อมูลสาธารณะไม่สำเร็จ กรุณาลองใหม่ภายหลัง');
         setYears([]);
       } else {
-        const rows = Array.isArray(data) ? data as DirectoryRow[] : [];
+        const rows = (Array.isArray(data) ? data as DirectoryRow[] : []).sort((a, b) => Number(b.fiscal_year) - Number(a.fiscal_year));
         setYears(rows);
         setSelectedYear((current) => rows.some((row) => row.fiscal_year === current) ? current : (rows[0]?.fiscal_year || ''));
       }
