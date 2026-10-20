@@ -390,8 +390,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   >
                     เพิ่ม
                   </button>
-                )}
                 </div>
+                )}
               </div>
             )}
           </div>
