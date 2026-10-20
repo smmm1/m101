@@ -177,9 +177,10 @@ function AppContent() {
   ) => {
     const id = `${Date.now()}-${Math.random()}`;
     setToasts([{ id, title, message, type }]);
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       handleDismissToast(id);
-    }, 1500);
+    }, 3000);
+    return () => clearTimeout(timeout);
   };
 
   const handleDismissToast = (id: string) => {
