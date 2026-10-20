@@ -37,6 +37,8 @@ interface DashboardViewProps {
   onAddYear?: (year: string) => void;
   onDeleteYear?: (year: string) => void;
   isLoggedIn: boolean;
+  isVisitor?: boolean;
+  onReturnToLogin?: () => void;
   onToggleLogin: () => void;
 }
 
@@ -60,6 +62,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDeleteYear,
   onRestoreRecords,
   isLoggedIn,
+  isVisitor = false,
+  onReturnToLogin,
   onToggleLogin,
 }) => {
   const { isDark, toggleTheme } = useTheme();
@@ -471,8 +475,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="hidden lg:flex flex-col">
               <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px]">{userName}</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Admin</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : 'Admin'}</span>
             </div>
+            {isVisitor && onReturnToLogin && (
+              <button type="button" onClick={onReturnToLogin} className="ml-1 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-slate-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200" title="กลับไปเข้าสู่ระบบโดยไม่ต้องรีเฟรช">
+                <span className="material-symbols-outlined mr-1 align-middle text-[16px]">login</span>
+                เข้าสู่ระบบ
+              </button>
+            )}
           </div>
         </div>
       </nav>
