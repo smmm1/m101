@@ -162,6 +162,7 @@ function AppContent() {
 
   // Access is granted only by a real Supabase session and the database allowlist.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -346,6 +347,48 @@ function AppContent() {
     void loadRemoteData();
     return () => { active = false; };
   }, [isLoggedIn, accessReady, sessionUser, dataReloadKey]);
+
+
+  // Visitors use a database view that masks sensitive fields before data reaches the browser.
+  useEffect(() => {
+    if (!isVisitor || sessionUser || !supabase || !isSupabaseConfigured) return;
+    let active = true;
+    setDataReady(false);
+    setDataError('');
+
+    const loadPublicData = async () => {
+      try {
+        const { data: rows, error } = await supabase
+          .from('directory_year_data_public')
+          .select('fiscal_year, records, updated_at')
+          .order('fiscal_year', { ascending: true });
+        if (error) throw error;
+        if (!active) return;
+
+        const nextRecords: Record<string, BusinessRecord[]> = {};
+        for (const row of rows || []) {
+          const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
+          nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
+        }
+        const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
+        const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
+        setRecordsByYear(nextRecords);
+        setAvailableYears(years.length ? years : ['69']);
+        setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : (years[0] || '69'));
+        setUserName('ผู้เยี่ยมชม');
+        setDataReady(true);
+      } catch {
+        if (active) {
+          setDataError('โหลดข้อมูลสาธารณะไม่สำเร็จ กรุณาลองใหม่');
+          setDataReady(false);
+        }
+      }
+    };
+
+    void loadPublicData();
+    return () => { active = false; };
+  }, [isVisitor, sessionUser, dataReloadKey]);
 
   // Persist each fiscal-year document to Supabase. The local cache is never treated as authoritative.
   useEffect(() => {
@@ -716,6 +759,7 @@ function AppContent() {
 
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsVisitor(false);
     if (!supabase || !isSupabaseConfigured) {
       setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Publishable Key');
       return;
@@ -747,7 +791,11 @@ function AppContent() {
     return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Supabase…'}</div>;
   }
 
-  if (!sessionUser || !isLoggedIn) {
+  if (isVisitor && !dataReady) {
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-slate-600">{dataError || 'กำลังโหลดข้อมูลที่เปิดเผยได้…'}</p>{dataError && <button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button>}<button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div>;
+  }
+
+  if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
       <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6">
         <form onSubmit={handleLoginSubmit} className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
@@ -760,6 +808,9 @@ function AppContent() {
           <input type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-amber-400" />
           {authError && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{authError}</p>}
           <button type="submit" disabled={authBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:opacity-60">{authBusy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบอย่างปลอดภัย'}</button>
+          <div className="my-4 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>หรือ</span><span className="h-px flex-1 bg-slate-200" /></div>
+          <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-amber-100">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
+          <p className="mt-3 text-center text-xs text-slate-500">ผู้เยี่ยมชมดูข้อมูลได้เท่านั้น ข้อมูลลับจะถูกปิดบังก่อนส่งจากฐานข้อมูล</p>
         </form>
       </div>
     );
