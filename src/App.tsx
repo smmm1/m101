@@ -12,7 +12,6 @@ import { YearManageModal } from './components/YearManageModal';
 import { FloatingPenButton } from './components/FloatingPenButton';
 import { EditTitlesModal } from './components/EditTitlesModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { parseDocumentFile } from './utils/excelHelper';
 import {
   ImportConflictModal,
   DuplicateConflictItem,
@@ -243,7 +242,8 @@ function AppContent() {
   }, [sessionUser]);
 
   useEffect(() => {
-    if (!isLoggedIn || !accessReady || !sessionUser || !supabase) return;
+    const client = supabase;
+    if (!isLoggedIn || !accessReady || !sessionUser || !client) return;
     let active = true;
     setDataReady(false);
     setDataError('');
@@ -264,7 +264,7 @@ function AppContent() {
           }
         }
 
-        const { data: rows, error } = await supabase
+        const { data: rows, error } = await client
           .from('directory_year_data')
           .select('fiscal_year, records, updated_at')
           .order('fiscal_year', { ascending: true });
@@ -277,7 +277,7 @@ function AppContent() {
             const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
             nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
           }
-          remoteYearsRef.current = new Set(rows.map((row) => String(row.fiscal_year)));
+          remoteYearsRef.current = new Set(rows.map((row) => row.fiscal_year === '2569' ? '69' : String(row.fiscal_year)));
           const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
           const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
           const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
@@ -323,7 +323,7 @@ function AppContent() {
             updated_by: sessionUser.id,
             updated_at: new Date().toISOString(),
           }));
-          const { error: migrateError } = await supabase
+          const { error: migrateError } = await client
             .from('directory_year_data')
             .upsert(migrationRows, { onConflict: 'fiscal_year' });
           if (migrateError) throw migrateError;
@@ -351,14 +351,15 @@ function AppContent() {
 
   // Visitors use a database view that masks sensitive fields before data reaches the browser.
   useEffect(() => {
-    if (!isVisitor || sessionUser || !supabase || !isSupabaseConfigured) return;
+    const client = supabase;
+    if (!isVisitor || sessionUser || !client || !isSupabaseConfigured) return;
     let active = true;
     setDataReady(false);
     setDataError('');
 
     const loadPublicData = async () => {
       try {
-        const { data: rows, error } = await supabase
+        const { data: rows, error } = await client
           .from('directory_year_data_public')
           .select('fiscal_year, records, updated_at')
           .order('fiscal_year', { ascending: true });
@@ -392,10 +393,10 @@ function AppContent() {
 
   // Persist each fiscal-year document to Supabase. The local cache is never treated as authoritative.
   useEffect(() => {
-    if (!dataReady || !isLoggedIn || !sessionUser || !supabase) return;
+    const client = supabase;
+    if (!dataReady || !isLoggedIn || !sessionUser || !client) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      const client = supabase;
       const currentYears = Array.from(new Set([...availableYears, ...Object.keys(recordsByYear)]))
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -742,21 +743,6 @@ function AppContent() {
     }
   };
 
-  const handleHeaderFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const parsed = await parseDocumentFile(file, `ไฟล์: ${file.name}`);
-      if (parsed.length > 0) {
-        processImportRecords(parsed, file.name);
-      } else {
-        showToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'info');
-      }
-    } catch {
-      showToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
-    }
-    e.target.value = '';
-  };
 
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -896,7 +882,6 @@ function AppContent() {
         userName={userName}
         selectedYear={selectedYear}
         availableYears={availableYears}
-        recordsByYear={recordsByYear}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onEditRecord={handleUpdateRecord}

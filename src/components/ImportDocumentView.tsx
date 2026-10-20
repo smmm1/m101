@@ -1,24 +1,20 @@
 import React, { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { parseDocumentFile } from '../utils/excelHelper';
 
 interface ImportDocumentViewProps {
   selectedYear: string;
-  existingRecords: BusinessRecord[];
   onImportRecords: (records: Partial<BusinessRecord>[]) => void;
   onShowToast: (message: string, title?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
   selectedYear,
-  existingRecords,
   onImportRecords,
   onShowToast,
 }) => {
   const [parsedRows, setParsedRows] = useState<Partial<BusinessRecord>[]>([]);
   const [fileName, setFileName] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRowIndices, setSelectedRowIndices] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchFilter, setSearchFilter] = useState('');
@@ -27,7 +23,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsLoading(true);
+
     setFileName(file.name);
     try {
       const rows = await parseDocumentFile(file, `ไฟล์: ${file.name}`);
@@ -38,7 +34,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
       onShowToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
       setParsedRows([]);
     } finally {
-      setIsLoading(false);
+
       e.target.value = '';
     }
   };
@@ -275,7 +271,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  filteredParsedRows.map((row, idx) => {
+                  filteredParsedRows.map((row) => {
                     const originalIndex = parsedRows.indexOf(row);
                     const isSelected = selectedRowIndices.includes(originalIndex);
 

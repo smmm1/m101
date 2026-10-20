@@ -10,7 +10,6 @@ interface SettingsViewProps {
   onShowToast: (msg: string, title?: string, type?: 'success' | 'error' | 'info') => void;
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   onResetToDemoData?: () => void;
-  userName?: string;
   isLoggedIn: boolean;
   onToggleLogin: () => void;
 }
@@ -21,7 +20,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onShowToast,
   onRestoreRecords,
   onResetToDemoData,
-  userName = 'Admin User',
   isLoggedIn,
   onToggleLogin,
 }) => {
