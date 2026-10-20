@@ -846,8 +846,7 @@ function AppContent() {
                 <path d="M26 51 Q32 48 38 51" stroke="#8c6242" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
               </svg>
             </div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Mustang Directory</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Time to work, my love.</h1>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Time to work , my love.</h1>
             
           </div>
 
@@ -874,7 +873,6 @@ function AppContent() {
             <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-100" /><span>หรือ</span><span className="h-px flex-1 bg-slate-100" /></div>
 
             <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
-            <p className="mt-3 text-center text-xs leading-5 text-slate-400">ผู้เยี่ยมชมดูได้เฉพาะข้อมูลที่เปิดเผย และข้อมูลลับจะถูกปิดบัง</p>
           </form>
 
           <p className="mt-6 text-center text-xs text-slate-400">อะ มีแมวกี่ตัว ?</p>
