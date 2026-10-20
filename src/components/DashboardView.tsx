@@ -1,14 +1,14 @@
-import React, { useState, useMemo, useRef } from 'react';
-import * as XLSX from 'xlsx';
-import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
+import React, { lazy, Suspense, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { BusinessRecord } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
-import { SettingsView } from './SettingsView';
-import { ImportDocumentView } from './ImportDocumentView';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
 import { parseDocumentFile } from '../utils/excelHelper';
+
+const SettingsView = lazy(() => import('./SettingsView').then(({ SettingsView }) => ({ default: SettingsView })));
+const ImportDocumentView = lazy(() => import('./ImportDocumentView').then(({ ImportDocumentView }) => ({ default: ImportDocumentView })));
 
 interface ActivityLogItem {
   id: string;
@@ -63,6 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import'>('directory');
@@ -119,8 +120,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         if (filterTab === 'has_efiling' && (!r.eFilingCode || !r.eFilingCode.trim())) return false;
         if (filterTab === 'no_efiling' && r.eFilingCode && r.eFilingCode.trim()) return false;
 
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase().trim();
+        if (deferredSearchQuery.trim()) {
+          const q = deferredSearchQuery.toLowerCase().trim();
           const matchName = (r.companyName || '').toLowerCase().includes(q);
           const matchTax = (r.taxId || '').toLowerCase().includes(q);
           const matchSeq = (r.sequenceNo || '').toLowerCase().includes(q);
@@ -135,7 +136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         if (comp === 0) comp = (a.sequenceNo || '').localeCompare(b.sequenceNo || '');
         return sortOrder === 'asc' ? comp : -comp;
       });
-  }, [records, filterTab, searchQuery, sortOrder]);
+  }, [records, filterTab, deferredSearchQuery, sortOrder]);
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
@@ -455,9 +456,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="flex-1 overflow-hidden flex flex-col p-5">
+      <div className="flex-1 overflow-hidden flex flex-col p-3 sm:p-4">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 h-[calc(100vh-88px)] max-w-[1700px] w-full mx-auto overflow-hidden">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
             <div className="flex-1 lg:w-[72%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -573,7 +574,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div
                         key={r.id}
                         onClick={() => setSelectedId(r.id)}
-                        className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all group ${
+                        style={{ contentVisibility: 'auto', containIntrinsicSize: '68px' }}
+                        className={`px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between cursor-pointer transition-colors group ${
                           isSelected
                             ? 'bg-[#0f172a] text-white dark:bg-slate-800 dark:ring-1 dark:ring-amber-500/50'
                             : 'bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-900 dark:text-slate-100'
@@ -795,7 +797,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* 3. OVERVIEW / ภาพรวม SCREEN WITH WIDER LEFT COMPACT LIST (WITH SEARCH & POPUP MODAL & NUMERICALLY SORTED SEQUENTIAL NUMBERING) AND RIGHT 2D BAR CHART */}
         {activeTab === 'dashboard' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
+          <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 h-[calc(100vh-88px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
             
             {/* LEFT SIDE: Wider Compact List with Search, Numerically Sorted Sequential Numbering & Popup Modal Trigger */}
             <div className="w-full lg:w-[45%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
@@ -840,7 +842,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           setSelectedId(r.id);
                           setIsDetailModalOpen(true); // Open popup modal with details
                         }}
-                        className="p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-all group"
+                        style={{ contentVisibility: 'auto', containIntrinsicSize: '56px' }}
+                        className="p-2.5 sm:p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between cursor-pointer transition-colors group"
                       >
                         <div className="flex items-center gap-3 min-w-0 pr-2">
                           <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0 w-7">
@@ -976,17 +979,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
 
         {activeTab === 'settings' && (
-          <SettingsView
+          <Suspense fallback={<div className="flex-1 grid place-items-center text-sm text-slate-500">กำลังโหลดการตั้งค่า…</div>}><SettingsView
             records={records}
             selectedYear={selectedYear}
             userName={userName}
             onShowToast={onShowToast}
             onRestoreRecords={onRestoreRecords}
-          />
+          /></Suspense>
         )}
 
         {activeTab === 'import' && (
-          <ImportDocumentView
+          <Suspense fallback={<div className="flex-1 grid place-items-center text-sm text-slate-500">กำลังโหลดหน้าการนำเข้า…</div>}><ImportDocumentView
             selectedYear={selectedYear}
             existingRecords={records}
             onImportRecords={(items) => {
@@ -994,7 +997,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               setActiveTab('directory');
             }}
             onShowToast={onShowToast}
-          />
+          /></Suspense>
         )}
       </div>
 
@@ -1066,3 +1069,4 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     </div>
   );
 };
+

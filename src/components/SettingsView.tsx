@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
@@ -83,12 +82,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // Export all to Excel
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
       if (records.length === 0) {
         onShowToast('ไม่มีข้อมูลสำหรับส่งออก', 'แจ้งเตือน', 'info');
         return;
       }
+      const XLSX = await import('xlsx');
       const rows = records.map((r, idx) => ({
         ลำดับ: r.sequenceNo || idx + 1,
         ชื่อกิจการ: r.companyName,
@@ -362,3 +362,4 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
+

@@ -4,27 +4,20 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ActiveScreen, BusinessRecord } from './types';
+import { BusinessRecord } from './types';
 import { supabase } from './lib/supabase';
 import { LoginScreen } from './components/LoginScreen';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
-import { BusinessListView } from './components/BusinessListView';
 import { EditBusinessModal } from './components/EditBusinessModal';
 import { AddBusinessModal } from './components/AddBusinessModal';
-import { SettingsView } from './components/SettingsView';
-import { ImportDocumentView } from './components/ImportDocumentView';
 import { YearManageModal } from './components/YearManageModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { parseDocumentFile } from './utils/excelHelper';
 import {
   ImportConflictModal,
   DuplicateConflictItem,
   ConflictResolutionMode,
 } from './components/ImportConflictModal';
 import { ThemeProvider } from './context/ThemeContext';
-import { CursorProvider } from './context/CursorContext';
 import { SystemConfigProvider } from './context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from './data/initialData';
 
@@ -38,9 +31,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <SystemConfigProvider>
-        <CursorProvider>
-          <AppContent />
-        </CursorProvider>
+        <AppContent />
       </SystemConfigProvider>
     </ThemeProvider>
   );
@@ -52,8 +43,6 @@ function AppContent() {
   const [cloudError, setCloudError] = useState('');
   const [needsMigration, setNeedsMigration] = useState(false);
 
-  const [currentScreen, setCurrentScreen] = useState<ActiveScreen>('dashboard');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [userName, setUserName] = useState<string>(() => {
@@ -517,7 +506,6 @@ function AppContent() {
       const formatted = createNewFormattedRecords(newItemsList, currentRecords);
       updateActiveYearRecords((prev) => [...formatted, ...prev]);
       showToast(`นำเข้าสำเร็จ ${formatted.length} รายการ เข้าสู่ปี ${selectedYear}`, 'นำเข้าไฟล์สำเร็จ');
-      setCurrentScreen('dashboard');
     }
   };
 
@@ -564,7 +552,6 @@ function AppContent() {
         `อัปเดตข้อมูลเดิม ${conflictDuplicates.length} รายการ และเพิ่มกิจการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
         'อัปเดตข้อมูลสำเร็จ'
       );
-      setCurrentScreen('dashboard');
     } else if (mode === 'skip_duplicates') {
       if (conflictNewItems.length > 0) {
         updateActiveYearRecords((prev) => {
@@ -582,7 +569,6 @@ function AppContent() {
           'info'
         );
       }
-      setCurrentScreen('dashboard');
     } else if (mode === 'import_all') {
       const allIncoming = [...conflictDuplicates.map((d) => d.incoming), ...conflictNewItems];
       updateActiveYearRecords((prev) => {
@@ -593,24 +579,7 @@ function AppContent() {
         `นำเข้าทั้งหมด ${allIncoming.length} รายการ เข้าสู่ปี ${selectedYear}`,
         'นำเข้าทั้งหมดสำเร็จ'
       );
-      setCurrentScreen('dashboard');
     }
-  };
-
-  const handleHeaderFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const parsed = await parseDocumentFile(file, `ไฟล์: ${file.name}`);
-      if (parsed.length > 0) {
-        processImportRecords(parsed, file.name);
-      } else {
-        showToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'info');
-      }
-    } catch {
-      showToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
-    }
-    e.target.value = '';
   };
 
   if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
@@ -740,3 +709,4 @@ function AppContent() {
     </div>
   );
 }
+
