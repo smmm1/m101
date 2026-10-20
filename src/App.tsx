@@ -834,7 +834,18 @@ function AppContent() {
 
         <section className="relative z-10 w-full max-w-[390px] animate-[fadeIn_.45s_ease-out]">
           <div className="mb-7 text-center">
-            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-slate-900 text-lg font-bold tracking-tight text-white shadow-sm">M101</div>
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] shadow-sm transition-transform duration-300 hover:-rotate-3 hover:scale-105" role="img" aria-label="แมวลายสลิดน่ารัก">
+              <svg viewBox="0 0 64 64" className="h-12 w-12" aria-hidden="true">
+                <path d="M12 27 10 9 25 18 Q32 15 39 18 L54 9 52 28 Q57 35 54 44 Q49 56 32 56 Q15 56 10 44 Q7 35 12 27Z" fill="#d6a36e" stroke="#8c6242" strokeWidth="2" strokeLinejoin="round"/>
+                <path d="M15 23 14 15 23 21Z" fill="#eaa6a0"/><path d="M49 23 50 15 41 21Z" fill="#eaa6a0"/>
+                <path d="M23 19 27 25 M32 17 32 24 M41 19 37 25 M13 31 20 33 M51 31 44 33" stroke="#8c6242" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+                <path d="M21 34 Q25 30 29 34 M35 34 Q39 30 43 34" stroke="#49382e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <ellipse cx="32" cy="40" rx="3.4" ry="2.6" fill="#d8797d"/>
+                <path d="M32 42 Q29 46 25 43 M32 42 Q35 46 39 43" stroke="#49382e" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+                <path d="M23 41 12 39 M23 44 12 45 M41 41 52 39 M41 44 52 45" stroke="#8c6242" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M26 51 Q32 48 38 51" stroke="#8c6242" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+              </svg>
+            </div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Mustang Directory</p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">ยินดีต้อนรับกลับมา</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ</p>
