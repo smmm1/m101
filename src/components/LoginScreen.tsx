@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ThemeToggleButton } from './ThemeToggleButton';
+import { PublicDirectoryView } from './PublicDirectoryView';
 import { supabase } from '../lib/supabase';
 
 interface LoginScreenProps {
@@ -14,6 +15,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [viewMode, setViewMode] = useState<'public' | 'auth'>('public');
 
   const verifyAllowlist = async (normalizedEmail: string) => {
     const { data: allowed, error } = await supabase
@@ -64,15 +66,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
+  if (viewMode === 'public') {
+    return <PublicDirectoryView onAdminLogin={() => setViewMode('auth')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] flex items-center justify-center p-4 font-body relative">
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6"><ThemeToggleButton /></div>
       <div className="w-full max-w-sm bg-white dark:bg-[#121215] border border-[#e4e4e7] dark:border-[#27272a] rounded-2xl p-6 sm:p-7 shadow-xl flex flex-col gap-5">
+        <button type="button" onClick={() => setViewMode('public')} className="self-start text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white">← กลับไปดูทะเบียนสาธารณะ</button>
         <div className="flex items-center gap-3 pb-4 border-b border-[#f4f4f5] dark:border-[#27272a]">
           <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 via-blue-600 to-indigo-800 text-white font-bold flex items-center justify-center">M</div>
           <div>
             <h1 className="text-base font-bold text-[#111827] dark:text-white">Mustang Directory</h1>
-            <p className="text-xs text-[#71717a] dark:text-[#a1a1aa]">ระบบสำหรับทีมงานที่ได้รับอนุญาต</p>
+            <p className="text-xs text-[#71717a] dark:text-[#a1a1aa]">เข้าสู่ระบบสำหรับทีมงานที่ได้รับอนุญาต</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#f4f4f5] dark:bg-[#18181b] p-1">
