@@ -34,11 +34,11 @@ export function LiveStatsBar() {
   return (
     <div
       aria-label="วันที่และเวลาปัจจุบัน"
-      className="flex min-h-8 w-full shrink-0 items-center justify-end gap-2 border-b border-slate-200/40 bg-[#f4f5f7]/70 px-4 py-1 text-[11px] font-medium text-slate-500/90 dark:border-slate-800/40 dark:bg-[#0b0f19]/70 dark:text-slate-400/90 sm:px-6"
+      className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-slate-300/20 bg-white/65 px-3 py-2 text-[11px] font-medium text-slate-500/90 shadow-sm backdrop-blur-md transition-opacity hover:bg-white/85 dark:border-slate-700/30 dark:bg-slate-950/55 dark:text-slate-400/90 dark:hover:bg-slate-950/80"
     >
-      <span>{dateTime.date}</span>
+      <span className="whitespace-nowrap">{dateTime.date}</span>
       <span className="opacity-40">·</span>
-      <time className="tabular-nums tracking-wide">{dateTime.time}</time>
+      <time className="whitespace-nowrap tabular-nums tracking-wide">{dateTime.time}</time>
     </div>
   );
 }
