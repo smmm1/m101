@@ -179,7 +179,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = await requireUser(request, env);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as { availableYears?: string[]; recordsByYear?: Record<string, unknown[]> };
-      const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year) => String(year === '2569' ? '69' : year))))
+      const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
       const records = body.recordsByYear || {};
