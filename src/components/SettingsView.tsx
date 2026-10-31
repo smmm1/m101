@@ -10,6 +10,7 @@ interface SettingsViewProps {
   onRestoreRecords?: (newRecords: BusinessRecord[]) => void;
   onResetToDemoData?: () => void;
   isLoggedIn: boolean;
+  canManagePin?: boolean;
   isAdmin: boolean;
   onToggleLogin: () => void;
   pinEnabled?: boolean;
@@ -23,6 +24,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onRestoreRecords,
   onResetToDemoData,
   isLoggedIn,
+  canManagePin = false,
   isAdmin,
   onToggleLogin,
   pinEnabled = false,
@@ -234,7 +236,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{pinEnabled ? 'เปิดใช้งาน PIN แล้ว' : 'ยังไม่ได้ตั้งค่า PIN'}</p>
                 <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">PIN ใช้แทนการกรอกรหัสผ่านในการเข้าสู่ระบบครั้งถัดไป</p>
               </div>
-              <button type="button" disabled={!isLoggedIn} onClick={onOpenPinSetup} className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-emerald-600 hover:bg-slate-700 dark:hover:bg-emerald-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="button" disabled={!canManagePin} onClick={onOpenPinSetup} className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-emerald-600 hover:bg-slate-700 dark:hover:bg-emerald-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}
               </button>
             </div>
