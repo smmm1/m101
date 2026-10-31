@@ -102,7 +102,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
       // Money102 is the source of truth for credentials. M101 keeps its own
       // users, sessions and directory data in the separate M101 D1 database.
-      const authUrl = (env.MONEY102_AUTH_URL || 'https://money102-api.s2mtha16.workers.dev').replace(/\\/$/, '');
+      const authUrl = (env.MONEY102_AUTH_URL || 'https://money102-api.s2mtha16.workers.dev').replace(/\/$/, '');
       let remoteResponse: Response;
       try {
         remoteResponse = await fetch(`${authUrl}/api/auth/signin`, {
