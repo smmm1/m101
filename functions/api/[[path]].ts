@@ -1,4 +1,4 @@
-type Env = { DB: any; M101_BOOTSTRAP_KEY: string };
+type Env = { DB: any; MONEY102_AUTH_URL?: string };
 type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
@@ -98,17 +98,58 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const body = await request.json() as { email?: string; password?: string };
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');
-      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
-      if (!user) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
-      let candidate = await hashPassword(password, user.password_salt);
-      if (!constantTimeEqual(candidate.hash, user.password_hash)) {
-        // Accept the existing Money102 credential hash once, then upgrade it to M101's stronger work factor.
-        const legacyCandidate = await hashPassword(password, user.password_salt, 100000);
-        if (!constantTimeEqual(legacyCandidate.hash, user.password_hash)) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
-        candidate = await hashPassword(password);
-        await env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?')
-          .bind(candidate.hash, candidate.salt, user.id).run();
+      if (!email || !password || password.length > 1024) return json({ error: 'กรุณากรอกอีเมลและรหัสผ่าน' }, 400);
+
+      // Money102 is the source of truth for credentials. M101 keeps its own
+      // users, sessions and directory data in the separate M101 D1 database.
+      const authUrl = (env.MONEY102_AUTH_URL || 'https://money102-api.s2mtha16.workers.dev').replace(/\\/$/, '');
+      let remoteResponse: Response;
+      try {
+        remoteResponse = await fetch(`${authUrl}/api/auth/signin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          cache: 'no-store',
+          redirect: 'error',
+          signal: AbortSignal.timeout(10000),
+        });
+      } catch {
+        return json({ error: 'เชื่อมต่อระบบบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 503);
       }
+
+      if (remoteResponse.status === 401) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      if (!remoteResponse.ok) {
+        return json({ error: remoteResponse.status === 429 ? 'ลองเข้าสู่ระบบอีกครั้งในภายหลัง' : 'ระบบบัญชี Money102 ยังไม่พร้อม กรุณาลองใหม่' }, remoteResponse.status === 429 ? 429 : 503);
+      }
+
+      let remote: { user?: { id?: string; email?: string }; token?: string };
+      try { remote = await remoteResponse.json() as typeof remote; } catch {
+        return json({ error: 'ระบบบัญชี Money102 ส่งข้อมูลกลับมาไม่ถูกต้อง' }, 502);
+      }
+      const verifiedEmail = String(remote.user?.email || '').trim().toLowerCase();
+      if (!remote.token || !remote.user?.id || verifiedEmail !== email) {
+        return json({ error: 'ยืนยันบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 502);
+      }
+
+      // Provision the corresponding M101 identity only after Money102 has
+      // verified the password. No Money102 token or business data is copied.
+      let user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
+      if (!user) {
+        const countRow = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
+        const role = Number(countRow?.count || 0) === 0 ? 'admin' : 'member';
+        const localCredential = await hashPassword(password);
+        const id = randomToken(16);
+        await env.DB.prepare('INSERT OR IGNORE INTO users (id, email, display_name, role, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .bind(id, email, email.split('@')[0], role, localCredential.hash, localCredential.salt, new Date().toISOString()).run();
+        user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
+      } else {
+        const localCredential = await hashPassword(password);
+        await env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?')
+          .bind(localCredential.hash, localCredential.salt, user.id).run();
+        user = { ...user, password_hash: localCredential.hash, password_salt: localCredential.salt };
+      }
+      if (!user) return json({ error: 'สร้างบัญชีใน M101 ไม่สำเร็จ กรุณาลองใหม่' }, 500);
+
       const token = randomToken();
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
