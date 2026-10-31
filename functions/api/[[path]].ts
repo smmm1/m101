@@ -94,6 +94,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, database: 'connected', users: Number(row?.count || 0) });
     }
 
+    if (path === '/api/auth/bridge-health' && request.method === 'GET') {
+      try {
+        const response = await env.MONEY102_AUTH.fetch(new Request('https://money102-auth.internal/health'));
+        let service: unknown = null;
+        try { service = await response.json(); } catch { service = null; }
+        return json({ ok: response.ok, status: response.status, service });
+      } catch (error) {
+        console.error('M101 Money102 bridge health failed', error);
+        return json({ ok: false, error: 'Money102 authentication service unavailable' }, 503);
+      }
+    }
+
     if (path === '/api/auth/login' && request.method === 'POST') {
       const body = await request.json() as { email?: string; password?: string };
       const email = String(body.email || '').trim().toLowerCase();
