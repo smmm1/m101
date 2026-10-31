@@ -535,7 +535,7 @@ function AppContent() {
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
-          ? { email: authEmail.trim().toLowerCase(), pin: authPin }
+          ? { pin: authPin }
           : { email: authEmail.trim().toLowerCase(), password: authPassword }),
       });
       const payload = await response.json();
