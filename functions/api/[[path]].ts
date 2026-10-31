@@ -1,4 +1,4 @@
-type Env = { DB: any; MONEY102_AUTH_URL?: string };
+type Env = { DB: any; MONEY102_AUTH: Fetcher };
 type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
@@ -102,18 +102,15 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
       // Money102 is the source of truth for credentials. M101 keeps its own
       // users, sessions and directory data in the separate M101 D1 database.
-      const authUrl = (env.MONEY102_AUTH_URL || 'https://money102-api.s2mtha16.workers.dev').replace(/\/$/, '');
       let remoteResponse: Response;
       try {
-        remoteResponse = await fetch(`${authUrl}/api/auth/signin`, {
+        remoteResponse = await env.MONEY102_AUTH.fetch(new Request('https://money102-auth.internal/api/auth/signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ email, password }),
-          cache: 'no-store',
-          redirect: 'error',
-          signal: AbortSignal.timeout(10000),
-        });
-      } catch {
+        }));
+      } catch (error) {
+        console.error('M101 Money102 service binding failed', error);
         return json({ error: 'เชื่อมต่อระบบบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 503);
       }
 
