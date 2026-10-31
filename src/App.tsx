@@ -43,6 +43,14 @@ function AppContent() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const [authMode, setAuthMode] = useState<'password' | 'pin'>('password');
+  const [authPin, setAuthPin] = useState('');
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [pinSetupOpen, setPinSetupOpen] = useState(false);
+  const [pinSetupValue, setPinSetupValue] = useState('');
+  const [pinSetupConfirm, setPinSetupConfirm] = useState('');
+  const [pinSetupError, setPinSetupError] = useState('');
+  const [pinSetupBusy, setPinSetupBusy] = useState(false);
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
@@ -85,6 +93,29 @@ function AppContent() {
     void initialize();
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!sessionUser) {
+      setPinEnabled(false);
+      return () => { active = false; };
+    }
+    fetch('/api/auth/pin/status', { credentials: 'same-origin' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'PIN status unavailable');
+        return payload;
+      })
+      .then((payload) => {
+        if (!active) return;
+        setPinEnabled(Boolean(payload.enabled));
+        if (!payload.enabled) setPinSetupOpen(true);
+      })
+      .catch(() => {
+        if (active) setPinEnabled(false);
+      });
+    return () => { active = false; };
+  }, [sessionUser]);
 
   useEffect(() => {
     let active = true;
@@ -499,11 +530,13 @@ function AppContent() {
     setAuthBusy(true);
     setAuthError('');
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(authMode === 'pin' ? '/api/auth/pin/login' : '/api/auth/login', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail.trim().toLowerCase(), password: authPassword }),
+        body: JSON.stringify(authMode === 'pin'
+          ? { email: authEmail.trim().toLowerCase(), pin: authPin }
+          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -511,6 +544,7 @@ function AppContent() {
       setUserName(payload.user?.email || 'Mustang Admin');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
       setAuthPassword('');
+      setAuthPin('');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
     } finally {
@@ -596,8 +630,36 @@ function AppContent() {
             <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
             <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
 
-            <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-            <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+            <div className="mb-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+              <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>รหัสผ่าน</button>
+              <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'pin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>PIN</button>
+            </div>
+            {authMode === 'password' ? (
+              <>
+                <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+                <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน Money102" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+              </>
+            ) : (
+              <>
+                <label className="mb-3 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
+                <div className="mb-4 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
+                  {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3 w-3 rounded-full border ${index < authPin.length ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'}`} />)}
+                </div>
+                <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
+                  {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
+                    <button key={key} type="button" disabled={authBusy} onClick={() => {
+                      setAuthError('');
+                      if (key === 'clear') setAuthPin('');
+                      else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
+                      else setAuthPin((value) => value.length < 6 ? value + key : value);
+                    }} className="h-12 rounded-xl border border-slate-200 bg-white text-lg font-semibold text-slate-800 transition hover:bg-slate-50 active:scale-95 disabled:opacity-50">
+                      {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-center text-xs text-slate-400">ใช้ PIN ที่ตั้งไว้ใน M101</p>
+              </>
+            )}
 
             {authError && <p role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
 
@@ -625,6 +687,52 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
+      {sessionUser && isLoggedIn && (
+        <button type="button" onClick={() => { setPinSetupValue(''); setPinSetupConfirm(''); setPinSetupError(''); setPinSetupOpen(true); }} className="fixed right-4 top-4 z-[80] rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur hover:bg-slate-50">
+          {pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}
+        </button>
+      )}
+      {pinSetupOpen && sessionUser && isLoggedIn && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <form onSubmit={async (event) => {
+            event.preventDefault();
+            setPinSetupError('');
+            if (!/^\\d{6}$/.test(pinSetupValue)) { setPinSetupError('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+            if (pinSetupValue !== pinSetupConfirm) { setPinSetupError('PIN ทั้งสองช่องไม่ตรงกัน'); return; }
+            setPinSetupBusy(true);
+            try {
+              const response = await fetch('/api/auth/pin/setup', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: pinSetupValue }),
+              });
+              const payload = await response.json();
+              if (!response.ok) throw new Error(payload.error || 'บันทึก PIN ไม่สำเร็จ');
+              setPinEnabled(true);
+              setPinSetupOpen(false);
+              setPinSetupValue('');
+              setPinSetupConfirm('');
+              showToast('ตั้งค่า PIN เรียบร้อยแล้ว', 'PIN พร้อมใช้งาน');
+            } catch (error) {
+              setPinSetupError(error instanceof Error ? error.message : 'บันทึก PIN ไม่สำเร็จ');
+            } finally {
+              setPinSetupBusy(false);
+            }
+          }} className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div><h2 className="text-lg font-semibold text-slate-900">{pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}</h2><p className="mt-1 text-xs text-slate-500">กำหนดรหัสตัวเลข 6 หลักสำหรับเข้าสู่ระบบ</p></div>
+              {pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="rounded-full px-3 py-1 text-slate-400 hover:bg-slate-100">✕</button>}
+            </div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">PIN ใหม่</label>
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            <label className="mb-2 block text-sm font-medium text-slate-700">ยืนยัน PIN</label>
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{pinSetupError}</p>}
+            <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
+            {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
+          </form>
+        </div>
+      )}
       <DashboardView
         records={currentRecords}
         userName={userName}
