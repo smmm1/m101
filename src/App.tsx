@@ -37,6 +37,7 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [needsBootstrap, setNeedsBootstrap] = useState(false);
+  const [authSetupKey, setAuthSetupKey] = useState('');
   const [authReady, setAuthReady] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -46,7 +47,6 @@ function AppContent() {
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
-  const remoteYearsRef = useRef<Set<string>>(new Set());
   const pendingDatabaseWriteRef = useRef(false);
   const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -510,7 +510,7 @@ function AppContent() {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail.trim().toLowerCase(), password: authPassword }),
+        body: JSON.stringify({ email: authEmail.trim().toLowerCase(), password: authPassword, setupKey: authSetupKey }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || (needsBootstrap ? 'สร้างบัญชีไม่สำเร็จ' : 'เข้าสู่ระบบไม่สำเร็จ'));
@@ -606,6 +606,12 @@ function AppContent() {
 
             <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
             <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder={needsBootstrap ? 'สร้างรหัสผ่านอย่างน้อย 12 ตัวอักษร' : 'กรอกรหัสผ่าน'} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+
+            {needsBootstrap && <>
+              <label htmlFor="m101-setup-key" className="mb-2 mt-4 block text-sm font-medium text-slate-700">รหัสเปิดใช้งานครั้งแรก</label>
+              <input id="m101-setup-key" type="password" autoComplete="off" required value={authSetupKey} onChange={(event) => setAuthSetupKey(event.target.value)} placeholder="กรอกรหัสเปิดใช้งานที่ได้รับ" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+              <p className="mt-2 text-xs leading-5 text-slate-500">สร้างบัญชีผู้ดูแลได้เพียงครั้งเดียว บัญชีนี้จะเป็นผู้ดูแลหลักของ M101</p>
+            </>}
 
             {authError && <p role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
 
