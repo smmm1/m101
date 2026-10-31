@@ -246,7 +246,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [records, overviewSearch]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
+    <div className="mobile-app-shell flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
       
       {/* Hidden file input */}
       <input
@@ -512,9 +512,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
+      <div className="mobile-main-content flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
+          <div className="mobile-directory-layout flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
             <div className="flex-1 lg:w-[72%] min-h-[50vh] lg:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -892,7 +892,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* 3. OVERVIEW / ภาพรวม SCREEN WITH WIDER LEFT COMPACT LIST (WITH SEARCH & POPUP MODAL & NUMERICALLY SORTED SEQUENTIAL NUMBERING) AND RIGHT 2D BAR CHART */}
         {activeTab === 'dashboard' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
+          <div className="mobile-dashboard-layout flex-1 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
             
             {/* LEFT SIDE: Wider Compact List with Search, Numerically Sorted Sequential Numbering & Popup Modal Trigger */}
             <div className="w-full lg:w-[58%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
