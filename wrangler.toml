@@ -1,0 +1,9 @@
+name = "m101-directory"
+compatibility_date = "2026-10-31"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "m101_db"
+database_id = "9c038af7-d150-4628-93a6-0dcd5c125398"
+migrations_dir = "./migrations"
