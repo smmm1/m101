@@ -35,6 +35,7 @@ interface DashboardViewProps {
   onAddYear?: (year: string) => void;
   onDeleteYear?: (year: string) => void;
   isLoggedIn: boolean;
+  canManagePin?: boolean;
   isAdmin?: boolean;
   isVisitor?: boolean;
   pinEnabled?: boolean;
@@ -62,6 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onDeleteYear,
   onRestoreRecords,
   isLoggedIn,
+  canManagePin = false,
   isAdmin = false,
   isVisitor = false,
   pinEnabled = false,
@@ -1111,6 +1113,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onShowToast={onShowToast}
             onRestoreRecords={onRestoreRecords}
             isLoggedIn={isLoggedIn}
+            canManagePin={canManagePin}
             isAdmin={isAdmin}
             onToggleLogin={onToggleLogin}
             pinEnabled={pinEnabled}
