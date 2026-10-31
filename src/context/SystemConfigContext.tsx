@@ -88,7 +88,7 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   statusCompleted: 'เสร็จสิ้น',
 };
 
-const STORAGE_KEY = 'mustang_system_full_config_v2';
+const STORAGE_KEY = 'm101_cloudflare_system_config_v1';
 
 interface SystemConfigContextType {
   config: SystemConfig;
