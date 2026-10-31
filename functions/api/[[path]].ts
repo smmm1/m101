@@ -146,16 +146,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!user) {
         const countRow = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
         const role = Number(countRow?.count || 0) === 0 ? 'admin' : 'member';
-        const localCredential = await hashPassword(password);
+        // M101 does not store or derive any credential from the Money102 password.
+        // These legacy NOT NULL columns receive random unusable placeholders only;
+        // every login is verified against Money102 before an M101 session is issued.
         const id = randomToken(16);
         await env.DB.prepare('INSERT OR IGNORE INTO users (id, email, display_name, role, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .bind(id, email, email.split('@')[0], role, localCredential.hash, localCredential.salt, new Date().toISOString()).run();
+          .bind(id, email, email.split('@')[0], role, randomToken(32), randomToken(16), new Date().toISOString()).run();
         user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
-      } else {
-        const localCredential = await hashPassword(password);
-        await env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?')
-          .bind(localCredential.hash, localCredential.salt, user.id).run();
-        user = { ...user, password_hash: localCredential.hash, password_salt: localCredential.salt };
       }
       if (!user) return json({ error: 'สร้างบัญชีใน M101 ไม่สำเร็จ กรุณาลองใหม่' }, 500);
 
