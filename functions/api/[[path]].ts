@@ -176,6 +176,16 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
       if (!/^\\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
+
+      const configuredUsers = await env.DB.prepare('SELECT id, pin_hash, pin_salt FROM users WHERE pin_hash IS NOT NULL AND pin_salt IS NOT NULL AND id != ?')
+        .bind(user.id).all();
+      for (const existing of configuredUsers.results || []) {
+        const candidate = await hashPassword(pin, String(existing.pin_salt), 100000);
+        if (constantTimeEqual(candidate.hash, String(existing.pin_hash))) {
+          return json({ error: 'PIN นี้ถูกใช้กับบัญชีอื่นแล้ว กรุณาตั้ง PIN ที่แตกต่างกัน' }, 409);
+        }
+      }
+
       const encoded = await hashPassword(pin, randomToken(16), 100000);
       await env.DB.prepare('UPDATE users SET pin_hash = ?, pin_salt = ? WHERE id = ?')
         .bind(encoded.hash, encoded.salt, user.id).run();
@@ -183,35 +193,38 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/pin/login' && request.method === 'POST') {
-      const body = await request.json() as { email?: string; pin?: string };
-      const email = String(body.email || '').trim().toLowerCase();
+      const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
-      if (!email || !/^\\d{6}$/.test(pin)) return json({ error: 'กรุณากรอกอีเมลและ PIN 6 หลัก' }, 400);
+      if (!/^\\d{6}$/.test(pin)) return json({ error: 'กรุณากรอก PIN 6 หลัก' }, 400);
       const now = Math.floor(Date.now() / 1000);
+      const attemptKey = '__pin_gate__';
       const windowStart = now - 15 * 60;
       const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM pin_login_attempts WHERE email = ? AND attempted_at > ?')
-        .bind(email, windowStart).first() as { count?: number } | null;
+        .bind(attemptKey, windowStart).first() as { count?: number } | null;
       if (Number(attempts?.count || 0) >= 5) return json({ error: 'ลอง PIN ผิดหลายครั้ง กรุณารอ 15 นาทีหรือใช้รหัสผ่าน' }, 429);
 
-      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE')
-        .bind(email).first() as UserRow | null;
-      let valid = false;
-      if (user?.pin_hash && user.pin_salt) {
-        const candidate = await hashPassword(pin, user.pin_salt, 100000);
-        valid = constantTimeEqual(candidate.hash, user.pin_hash);
+      const configuredUsers = await env.DB.prepare('SELECT * FROM users WHERE pin_hash IS NOT NULL AND pin_salt IS NOT NULL')
+        .all();
+      let matchedUser: UserRow | null = null;
+      for (const candidateUser of (configuredUsers.results || []) as UserRow[]) {
+        const candidate = await hashPassword(pin, String(candidateUser.pin_salt), 100000);
+        if (constantTimeEqual(candidate.hash, String(candidateUser.pin_hash))) {
+          matchedUser = candidateUser;
+          break;
+        }
       }
-      if (!valid || !user) {
+      if (!matchedUser) {
         await env.DB.prepare('INSERT INTO pin_login_attempts (email, attempted_at) VALUES (?, ?)')
-          .bind(email, now).run();
+          .bind(attemptKey, now).run();
         return json({ error: 'PIN ไม่ถูกต้อง' }, 401);
       }
 
-      await env.DB.prepare('DELETE FROM pin_login_attempts WHERE email = ?').bind(email).run();
+      await env.DB.prepare('DELETE FROM pin_login_attempts WHERE email = ?').bind(attemptKey).run();
       const token = randomToken();
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
-        .bind(await digest(token), user.id, now + SESSION_SECONDS, createdAt).run();
-      return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
+        .bind(await digest(token), matchedUser.id, now + SESSION_SECONDS, createdAt).run();
+      return json({ user: publicUser(matchedUser) }, 200, { 'Set-Cookie': sessionCookie(token) });
     }
 
     if (path === '/api/auth/me' && request.method === 'GET') {
