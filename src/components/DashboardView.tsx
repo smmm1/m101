@@ -37,6 +37,8 @@ interface DashboardViewProps {
   isLoggedIn: boolean;
   isAdmin?: boolean;
   isVisitor?: boolean;
+  pinEnabled?: boolean;
+  onOpenPinSetup?: () => void;
   onReturnToLogin?: () => void;
   onToggleLogin: () => void;
 }
@@ -62,6 +64,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   isLoggedIn,
   isAdmin = false,
   isVisitor = false,
+  pinEnabled = false,
+  onOpenPinSetup,
   onReturnToLogin,
   onToggleLogin,
 }) => {
@@ -1109,6 +1113,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             isLoggedIn={isLoggedIn}
             isAdmin={isAdmin}
             onToggleLogin={onToggleLogin}
+            pinEnabled={pinEnabled}
+            onOpenPinSetup={onOpenPinSetup}
           />
         )}
 
