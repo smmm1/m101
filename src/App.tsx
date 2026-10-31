@@ -627,8 +627,12 @@ function AppContent() {
               </span>
             </div>
 
-            <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-            <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+            {authMode === 'password' && (
+              <>
+                <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
+                <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+              </>
+            )}
 
             <div className="mb-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
               <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>รหัสผ่าน</button>
