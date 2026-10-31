@@ -444,3 +444,192 @@ textarea {
     min-height: 44px;
   }
 }
+
+
+/* Mobile content fit: keep every view inside the viewport and allow full-page reading. */
+@media (max-width: 640px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  .mobile-app-shell {
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .mobile-main-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .mobile-main-content > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Directory becomes a readable vertical flow instead of a squeezed desktop split view. */
+  .mobile-directory-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    gap: 14px;
+    overflow: visible;
+  }
+
+  .mobile-directory-layout > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .mobile-directory-layout > div:first-child {
+    min-height: 360px;
+    max-height: 68vh;
+    border-radius: 18px;
+  }
+
+  .mobile-directory-layout > div:first-child > div:first-child {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .mobile-directory-layout > div:first-child > div:first-child > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobile-directory-layout > div:first-child > div:nth-child(2) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mobile-directory-layout > div:first-child > div:nth-child(2) > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-directory-layout > div:first-child > div:nth-child(2) button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mobile-directory-layout > div:last-child {
+    min-height: 0;
+  }
+
+  /* Keep dense record rows readable without pushing status/actions beyond the edge. */
+  .mobile-directory-layout .group,
+  .mobile-directory-layout [class*="rounded-"] {
+    min-width: 0;
+  }
+
+  .mobile-directory-layout input,
+  .mobile-directory-layout select,
+  .mobile-directory-layout textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Overview list and chart stack vertically; no fixed viewport-height clipping. */
+  .mobile-dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    gap: 14px;
+    padding: 0;
+  }
+
+  .mobile-dashboard-layout > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .mobile-dashboard-layout > div:first-child {
+    min-height: 320px;
+    max-height: 62vh;
+    border-radius: 18px;
+  }
+
+  .mobile-dashboard-layout > div:last-child {
+    min-height: 390px;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .mobile-dashboard-layout h3 {
+    overflow-wrap: anywhere;
+  }
+
+  /* Prevent long labels, data fields and utility controls from widening the page. */
+  .mobile-app-shell h1,
+  .mobile-app-shell h2,
+  .mobile-app-shell h3,
+  .mobile-app-shell p,
+  .mobile-app-shell span {
+    overflow-wrap: break-word;
+  }
+
+  .mobile-app-shell input,
+  .mobile-app-shell select,
+  .mobile-app-shell textarea {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .mobile-app-shell table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-app-shell [role="dialog"] {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    margin-inline: auto;
+  }
+
+  .mobile-app-shell .fixed.top-20.right-6 {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
