@@ -322,3 +322,36 @@ textarea {
 }
 
 
+
+
+/* Mobile-only button usability improvements.
+   Desktop button styling is intentionally unchanged. */
+@media (max-width: 640px) {
+  button,
+  [role="button"] {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.35;
+  }
+
+  /* Give icon-only controls a reliable thumb-sized hit area. */
+  button:has(> .material-symbols-outlined:only-child),
+  [role="button"]:has(> .material-symbols-outlined:only-child) {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  /* Keep long Thai labels readable without forcing horizontal overflow. */
+  button,
+  [role="button"] {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
