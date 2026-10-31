@@ -175,7 +175,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
-      if (!/^\\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
+      if (!/^\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
 
       const configuredUsers = await env.DB.prepare('SELECT id, pin_hash, pin_salt FROM users WHERE pin_hash IS NOT NULL AND pin_salt IS NOT NULL AND id != ?')
         .bind(user.id).all();
@@ -195,7 +195,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/auth/pin/login' && request.method === 'POST') {
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
-      if (!/^\\d{6}$/.test(pin)) return json({ error: 'กรุณากรอก PIN 6 หลัก' }, 400);
+      if (!/^\d{6}$/.test(pin)) return json({ error: 'กรุณากรอก PIN 6 หลัก' }, 400);
       const now = Math.floor(Date.now() / 1000);
       const attemptKey = '__pin_gate__';
       const windowStart = now - 15 * 60;
