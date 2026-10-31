@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
-import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -305,33 +304,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {isLoggedIn && (
-              <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-white">
-                    โหลดข้อมูลตัวอย่างเริ่มต้น (69 รายการ)
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    เติมข้อมูลนิติบุคคลและสถานประกอบการชุดมาตรฐานลงในรอบปีปัจจุบัน
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onResetToDemoData) {
-                      onResetToDemoData();
-                    } else if (onRestoreRecords) {
-                      onRestoreRecords(INITIAL_BUSINESS_RECORDS);
-                      onShowToast('โหลดข้อมูลตัวอย่าง 69 รายการเรียบร้อยแล้ว', 'สำเร็จ');
-                    }
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-200 dark:border-indigo-800 cursor-pointer transition-colors w-fit"
-                >
-                  โหลดข้อมูลตัวอย่าง 69 รายการ
-                </button>
-              </div>
-            )}
-
             {isLoggedIn && (
               <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3">
                 <div>
