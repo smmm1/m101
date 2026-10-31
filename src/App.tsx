@@ -697,7 +697,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
-      {pinSetupOpen && sessionUser && isLoggedIn && (
+      {pinSetupOpen && sessionUser && (
         <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <form onSubmit={async (event) => {
             event.preventDefault();
@@ -763,6 +763,7 @@ function AppContent() {
           }));
         }}
         isLoggedIn={isLoggedIn}
+        canManagePin={Boolean(sessionUser)}
         isAdmin={userRole === 'admin'}
         isVisitor={isVisitor}
         pinEnabled={pinEnabled}
