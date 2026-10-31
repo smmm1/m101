@@ -107,7 +107,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'รหัสเปิดใช้งานครั้งแรกไม่ถูกต้อง' }, 403);
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'กรุณากรอกอีเมลให้ถูกต้อง' }, 400);
-      if (password.length < 12) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      if (password.length < 8 || password.length > 128) return json({ error: 'รหัสผ่านต้องมีความยาว 8–128 ตัวอักษร' }, 400);
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first();
       if (Number(existing?.count || 0) > 0) return json({ error: 'ระบบมีบัญชีผู้ดูแลแล้ว กรุณาเข้าสู่ระบบ' }, 409);
       const { salt, hash } = await hashPassword(password);
