@@ -271,9 +271,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
-      <nav className="min-h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 shadow-2xs">
+      <nav className="mobile-app-nav min-h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 shadow-2xs">
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+        <div className="mobile-primary-nav flex flex-wrap items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
@@ -317,7 +317,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Right Controls: Fiscal Year + Activity Log + Dark Mode + Profile */}
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <div className="mobile-utility-nav flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
