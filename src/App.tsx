@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 import { BusinessRecord } from './types';
 import { DashboardView } from './components/DashboardView';
 import { YearManageModal } from './components/YearManageModal';
@@ -20,6 +19,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CursorProvider } from './context/CursorContext';
 import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
+
+interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
 export default function App() {
   return (
@@ -515,6 +516,7 @@ function AppContent() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || (needsBootstrap ? 'สร้างบัญชีไม่สำเร็จ' : 'เข้าสู่ระบบไม่สำเร็จ'));
       setNeedsBootstrap(false);
+      setAuthSetupKey('');
       setSessionUser(payload.user as SessionUser);
       setUserName(payload.user?.email || 'Mustang Admin');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
@@ -605,7 +607,7 @@ function AppContent() {
             <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
 
             <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-            <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder={needsBootstrap ? 'สร้างรหัสผ่านอย่างน้อย 12 ตัวอักษร' : 'กรอกรหัสผ่าน'} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+            <input id="m101-login-password" type="password" autoComplete="current-password" required minLength={needsBootstrap ? 12 : undefined} value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder={needsBootstrap ? 'สร้างรหัสผ่านอย่างน้อย 12 ตัวอักษร' : 'กรอกรหัสผ่าน'} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
 
             {needsBootstrap && <>
               <label htmlFor="m101-setup-key" className="mb-2 mt-4 block text-sm font-medium text-slate-700">รหัสเปิดใช้งานครั้งแรก</label>
