@@ -1,5 +1,5 @@
 type Env = { DB: any; MONEY102_AUTH: Fetcher };
-type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string };
+type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -160,6 +160,57 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
         .bind(await digest(token), user.id, Math.floor(Date.now() / 1000) + SESSION_SECONDS, createdAt).run();
+      return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
+    }
+
+    if (path === '/api/auth/pin/status' && request.method === 'GET') {
+      const user = await requireUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const row = await env.DB.prepare('SELECT pin_hash FROM users WHERE id = ?').bind(user.id).first() as { pin_hash?: string | null } | null;
+      return json({ enabled: Boolean(row?.pin_hash) });
+    }
+
+    if (path === '/api/auth/pin/setup' && request.method === 'POST') {
+      const user = await requireUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { pin?: string };
+      const pin = String(body.pin || '');
+      if (!/^\\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
+      const encoded = await hashPassword(pin, randomToken(16), 100000);
+      await env.DB.prepare('UPDATE users SET pin_hash = ?, pin_salt = ? WHERE id = ?')
+        .bind(encoded.hash, encoded.salt, user.id).run();
+      return json({ ok: true, enabled: true });
+    }
+
+    if (path === '/api/auth/pin/login' && request.method === 'POST') {
+      const body = await request.json() as { email?: string; pin?: string };
+      const email = String(body.email || '').trim().toLowerCase();
+      const pin = String(body.pin || '');
+      if (!email || !/^\\d{6}$/.test(pin)) return json({ error: 'กรุณากรอกอีเมลและ PIN 6 หลัก' }, 400);
+      const now = Math.floor(Date.now() / 1000);
+      const windowStart = now - 15 * 60;
+      const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM pin_login_attempts WHERE email = ? AND attempted_at > ?')
+        .bind(email, windowStart).first() as { count?: number } | null;
+      if (Number(attempts?.count || 0) >= 5) return json({ error: 'ลอง PIN ผิดหลายครั้ง กรุณารอ 15 นาทีหรือใช้รหัสผ่าน' }, 429);
+
+      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE')
+        .bind(email).first() as UserRow | null;
+      let valid = false;
+      if (user?.pin_hash && user.pin_salt) {
+        const candidate = await hashPassword(pin, user.pin_salt, 100000);
+        valid = constantTimeEqual(candidate.hash, user.pin_hash);
+      }
+      if (!valid || !user) {
+        await env.DB.prepare('INSERT INTO pin_login_attempts (email, attempted_at) VALUES (?, ?)')
+          .bind(email, now).run();
+        return json({ error: 'PIN ไม่ถูกต้อง' }, 401);
+      }
+
+      await env.DB.prepare('DELETE FROM pin_login_attempts WHERE email = ?').bind(email).run();
+      const token = randomToken();
+      const createdAt = new Date().toISOString();
+      await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
+        .bind(await digest(token), user.id, now + SESSION_SECONDS, createdAt).run();
       return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
     }
 
