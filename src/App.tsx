@@ -37,8 +37,6 @@ export default function App() {
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [needsBootstrap, setNeedsBootstrap] = useState(false);
-  const [authSetupKey, setAuthSetupKey] = useState('');
   const [authReady, setAuthReady] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -73,15 +71,10 @@ function AppContent() {
     let active = true;
     const initialize = async () => {
       try {
-        const [statusResponse, sessionResponse] = await Promise.all([
-          fetch('/api/auth/status', { credentials: 'same-origin' }),
-          fetch('/api/auth/me', { credentials: 'same-origin' }),
-        ]);
-        if (!statusResponse.ok || !sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
-        const status = await statusResponse.json();
+        const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
         if (!active) return;
-        setNeedsBootstrap(Boolean(status.needsBootstrap));
         if (session.user) setSessionUser(session.user as SessionUser);
       } catch {
         if (active) setAuthError('เชื่อมต่อระบบ Cloudflare ไม่สำเร็จ กรุณาลองใหม่');
@@ -506,17 +499,14 @@ function AppContent() {
     setAuthBusy(true);
     setAuthError('');
     try {
-      const endpoint = needsBootstrap ? '/api/auth/bootstrap' : '/api/auth/login';
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail.trim().toLowerCase(), password: authPassword, setupKey: authSetupKey }),
+        body: JSON.stringify({ email: authEmail.trim().toLowerCase(), password: authPassword }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || (needsBootstrap ? 'สร้างบัญชีไม่สำเร็จ' : 'เข้าสู่ระบบไม่สำเร็จ'));
-      setNeedsBootstrap(false);
-      setAuthSetupKey('');
+      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       setSessionUser(payload.user as SessionUser);
       setUserName(payload.user?.email || 'Mustang Admin');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
@@ -591,13 +581,13 @@ function AppContent() {
                 <path d="M26 51 Q32 48 38 51" stroke="#8c6242" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
               </svg>
             </div>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{needsBootstrap ? 'เริ่มต้นใช้งาน M101' : 'Time to work , my love.'}</h1>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Time to work , my love.</h1>
             
           </div>
 
           <form onSubmit={handleLoginSubmit} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-35px_rgba(15,23,42,0.28)] sm:p-8">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-800">{needsBootstrap ? 'สร้างบัญชีผู้ดูแลระบบ' : 'เข้าสู่ระบบ'}</h2>
+              <h2 className="text-base font-semibold text-slate-800">เข้าสู่ระบบ</h2>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> ปลอดภัย
               </span>
@@ -607,18 +597,12 @@ function AppContent() {
             <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
 
             <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-            <input id="m101-login-password" type="password" autoComplete="current-password" required minLength={needsBootstrap ? 8 : undefined} value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder={needsBootstrap ? 'สร้างรหัสผ่าน 8–128 ตัวอักษร' : 'กรอกรหัสผ่าน'} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
-
-            {needsBootstrap && <>
-              <label htmlFor="m101-setup-key" className="mb-2 mt-4 block text-sm font-medium text-slate-700">รหัสเปิดใช้งานครั้งแรก</label>
-              <input id="m101-setup-key" type="password" autoComplete="off" required value={authSetupKey} onChange={(event) => setAuthSetupKey(event.target.value)} placeholder="กรอกรหัสเปิดใช้งานที่ได้รับ" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
-              <p className="mt-2 text-xs leading-5 text-slate-500">สร้างบัญชีผู้ดูแลได้เพียงครั้งเดียว บัญชีนี้จะเป็นผู้ดูแลหลักของ M101</p>
-            </>}
+            <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
 
             {authError && <p role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
 
             <button type="submit" disabled={authBusy} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition duration-200 hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังดำเนินการ…</> : <>{needsBootstrap ? 'สร้างบัญชีผู้ดูแล' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
+              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>เข้าสู่ระบบ <span aria-hidden="true">→</span></>}
             </button>
 
             <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-100" /><span>หรือ</span><span className="h-px flex-1 bg-slate-100" /></div>
