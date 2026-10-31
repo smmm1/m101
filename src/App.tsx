@@ -708,7 +708,7 @@ function AppContent() {
           <form onSubmit={async (event) => {
             event.preventDefault();
             setPinSetupError('');
-            if (!/^\\d{6}$/.test(pinSetupValue)) { setPinSetupError('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+            if (!/^\d{6}$/.test(pinSetupValue)) { setPinSetupError('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
             if (pinSetupValue !== pinSetupConfirm) { setPinSetupError('PIN ทั้งสองช่องไม่ตรงกัน'); return; }
             setPinSetupBusy(true);
             try {
@@ -735,9 +735,9 @@ function AppContent() {
               {pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="rounded-full px-3 py-1 text-slate-400 hover:bg-slate-100">✕</button>}
             </div>
             <label className="mb-2 block text-sm font-medium text-slate-700">PIN ใหม่</label>
-            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
             <label className="mb-2 block text-sm font-medium text-slate-700">ยืนยัน PIN</label>
-            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
             {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{pinSetupError}</p>}
             <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
             {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
