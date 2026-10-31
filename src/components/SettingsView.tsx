@@ -324,7 +324,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             )}
 
-            {/* Login / Auth Status Card */}
+            {isLoggedIn && (
             <div className="p-4 rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3 sm:col-span-2">
               <div>
                 <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
@@ -359,6 +359,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span>{isLoggedIn ? 'ออกจากระบบ (Log Out)' : 'เข้าสู่ระบบ Admin (Log In)'}</span>
               </button>
             </div>
+            )}
+
           </div>
         </div>
       </div>
