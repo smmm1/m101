@@ -7,3 +7,7 @@ binding = "DB"
 database_name = "m101_db"
 database_id = "9c038af7-d150-4628-93a6-0dcd5c125398"
 migrations_dir = "./migrations"
+
+[[services]]
+binding = "MONEY102_AUTH"
+service = "money102-auth-bridge"
