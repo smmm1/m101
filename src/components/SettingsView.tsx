@@ -12,6 +12,8 @@ interface SettingsViewProps {
   isLoggedIn: boolean;
   isAdmin: boolean;
   onToggleLogin: () => void;
+  pinEnabled?: boolean;
+  onOpenPinSetup?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -23,6 +25,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   isLoggedIn,
   isAdmin,
   onToggleLogin,
+  pinEnabled = false,
+  onOpenPinSetup,
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
   const { config, updateConfig } = useSystemConfig();
@@ -213,6 +217,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
           </div>
         </div>
+
+        {/* PIN security settings */}
+        {isLoggedIn && (
+          <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-4 shadow-xs">
+            <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">pin</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white font-headline">ความปลอดภัยในการเข้าสู่ระบบ</h3>
+                <p className="text-[11px] text-slate-400">ตั้งค่า PIN 6 หลักสำหรับเข้าสู่ระบบ M101</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{pinEnabled ? 'เปิดใช้งาน PIN แล้ว' : 'ยังไม่ได้ตั้งค่า PIN'}</p>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">PIN ใช้แทนการกรอกรหัสผ่านในการเข้าสู่ระบบครั้งถัดไป</p>
+              </div>
+              <button type="button" onClick={onOpenPinSetup} className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-emerald-600 hover:bg-slate-700 dark:hover:bg-emerald-500 text-white text-xs font-semibold transition-colors">
+                {pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 2. Backup & Export Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs">
