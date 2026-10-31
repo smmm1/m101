@@ -558,6 +558,33 @@ function AppContent() {
     }
   }, [authMode, authPin, authBusy]);
 
+  // PIN login accepts physical keyboard input without requiring the keypad to be focused.
+  useEffect(() => {
+    if (authMode !== 'pin' || isVisitor || isLoggedIn) return;
+
+    const handlePinKeyDown = (event: KeyboardEvent) => {
+      if (authBusy) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        setAuthError('');
+        setAuthPin((current) => current.length < 6 ? current + event.key : current);
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        setAuthError('');
+        setAuthPin((current) => current.slice(0, -1));
+      } else if (event.key === 'Escape') {
+        setAuthError('');
+        setAuthPin('');
+      }
+    };
+
+    window.addEventListener('keydown', handlePinKeyDown);
+    return () => window.removeEventListener('keydown', handlePinKeyDown);
+  }, [authMode, authBusy, isVisitor, isLoggedIn]);
+
   if (!authReady) {
     return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
   }
@@ -667,7 +694,7 @@ function AppContent() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-center text-xs text-slate-400">ใช้ PIN ที่ตั้งไว้ใน M101</p>
+                <p className="mt-2 text-center text-xs text-slate-400">กดตัวเลขจากคีย์บอร์ดหรือแป้นบนหน้าจอได้เลย · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
               </>
             )}
 
