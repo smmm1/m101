@@ -1,4 +1,4 @@
-type Env = { DB: any };
+type Env = { DB: any; M101_BOOTSTRAP_KEY: string };
 type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
@@ -100,9 +100,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
-      const body = await request.json() as { email?: string; password?: string };
+      const body = await request.json() as { email?: string; password?: string; setupKey?: string };
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');
+      if (!env.M101_BOOTSTRAP_KEY || !constantTimeEqual(String(body.setupKey || ''), env.M101_BOOTSTRAP_KEY)) {
+        return json({ error: 'รหัสเปิดใช้งานครั้งแรกไม่ถูกต้อง' }, 403);
+      }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'กรุณากรอกอีเมลให้ถูกต้อง' }, 400);
       if (password.length < 12) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first();
