@@ -41,9 +41,9 @@ async function digest(value: string) {
   return toBase64Url(new Uint8Array(bytes));
 }
 
-async function hashPassword(password: string, salt = randomToken(16)) {
+async function hashPassword(password: string, salt = randomToken(16), iterations = PBKDF2_ITERATIONS) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: fromBase64Url(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: fromBase64Url(salt), iterations, hash: 'SHA-256' }, key, 256);
   return { salt, hash: toBase64Url(new Uint8Array(bits)) };
 }
 
@@ -94,44 +94,21 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, database: 'connected', users: Number(row?.count || 0) });
     }
 
-    if (path === '/api/auth/status' && request.method === 'GET') {
-      const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first();
-      return json({ needsBootstrap: Number(row?.count || 0) === 0 });
-    }
-
-    if (path === '/api/auth/bootstrap' && request.method === 'POST') {
-      const body = await request.json() as { email?: string; password?: string; setupKey?: string };
-      const email = String(body.email || '').trim().toLowerCase();
-      const password = String(body.password || '');
-      if (!env.M101_BOOTSTRAP_KEY || !constantTimeEqual(String(body.setupKey || ''), env.M101_BOOTSTRAP_KEY)) {
-        return json({ error: 'รหัสเปิดใช้งานครั้งแรกไม่ถูกต้อง' }, 403);
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'กรุณากรอกอีเมลให้ถูกต้อง' }, 400);
-      if (password.length < 8 || password.length > 128) return json({ error: 'รหัสผ่านต้องมีความยาว 8–128 ตัวอักษร' }, 400);
-      const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first();
-      if (Number(existing?.count || 0) > 0) return json({ error: 'ระบบมีบัญชีผู้ดูแลแล้ว กรุณาเข้าสู่ระบบ' }, 409);
-      const { salt, hash } = await hashPassword(password);
-      const id = crypto.randomUUID();
-      const createdAt = new Date().toISOString();
-      const result = await env.DB.prepare(
-        "INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at) SELECT ?, ?, ?, 'admin', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)"
-      ).bind(id, email, email, hash, salt, createdAt).run();
-      if (!result.success || Number(result.meta?.changes || 0) !== 1) return json({ error: 'มีการสร้างบัญชีผู้ดูแลไปแล้ว กรุณาเข้าสู่ระบบ' }, 409);
-      const token = randomToken();
-      await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
-        .bind(await digest(token), id, Math.floor(Date.now() / 1000) + SESSION_SECONDS, createdAt).run();
-      const user: UserRow = { id, email, display_name: email, role: 'admin', password_hash: '', password_salt: '' };
-      return json({ user: publicUser(user) }, 201, { 'Set-Cookie': sessionCookie(token) });
-    }
-
     if (path === '/api/auth/login' && request.method === 'POST') {
       const body = await request.json() as { email?: string; password?: string };
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');
       const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
       if (!user) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
-      const candidate = await hashPassword(password, user.password_salt);
-      if (!constantTimeEqual(candidate.hash, user.password_hash)) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      let candidate = await hashPassword(password, user.password_salt);
+      if (!constantTimeEqual(candidate.hash, user.password_hash)) {
+        // Accept the existing Money102 credential hash once, then upgrade it to M101's stronger work factor.
+        const legacyCandidate = await hashPassword(password, user.password_salt, 100000);
+        if (!constantTimeEqual(legacyCandidate.hash, user.password_hash)) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
+        candidate = await hashPassword(password);
+        await env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?')
+          .bind(candidate.hash, candidate.salt, user.id).run();
+      }
       const token = randomToken();
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
