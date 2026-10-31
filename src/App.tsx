@@ -547,10 +547,17 @@ function AppContent() {
       setAuthPin('');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
+      if (authMode === 'pin') setAuthPin('');
     } finally {
       setAuthBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (authMode === 'pin' && authPin.length === 6 && !authBusy) {
+      void handleLoginSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
+    }
+  }, [authMode, authPin, authBusy]);
 
   if (!authReady) {
     return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
