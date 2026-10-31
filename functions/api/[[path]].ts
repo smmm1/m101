@@ -6,10 +6,10 @@ const SESSION_SECONDS = 60 * 60 * 24 * 30;
 const PBKDF2_ITERATIONS = 310000;
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
-  });
+  const responseHeaders = new Headers(headers);
+  responseHeaders.set('Content-Type', 'application/json; charset=utf-8');
+  responseHeaders.set('Cache-Control', 'no-store');
+  return new Response(JSON.stringify(data), { status, headers: responseHeaders });
 }
 
 function getCookie(request: Request, name: string) {
