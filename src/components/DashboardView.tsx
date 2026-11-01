@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { BusinessRecord } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
 import { SettingsView } from './SettingsView';
-import { ImportDocumentView } from './ImportDocumentView';
+const ImportDocumentView = lazy(() => import('./ImportDocumentView').then((module) => ({ default: module.ImportDocumentView })) );
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
 
@@ -1097,16 +1097,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {isLoggedIn && isImportModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="นำเข้าเอกสารและเลือกข้อมูล">
           <div className="relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#090a0f] sm:rounded-3xl">
-            <ImportDocumentView
-              selectedYear={selectedYear}
-              onClose={() => setIsImportModalOpen(false)}
-              onImportRecords={(items) => {
-                if (onImportRecords) onImportRecords(items);
-                setIsImportModalOpen(false);
-                logActivity('import', `นำเข้ารายการจำนวน ${items.length} รายการ`);
-              }}
-              onShowToast={onShowToast}
-            />
+            <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-sm text-slate-500">กำลังเปิดเครื่องมือนำเข้า...</div>}>
+              <ImportDocumentView
+                selectedYear={selectedYear}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportRecords={(items) => {
+                  if (onImportRecords) onImportRecords(items);
+                  setIsImportModalOpen(false);
+                  logActivity('import', `นำเข้ารายการจำนวน ${items.length} รายการ`);
+                }}
+                onShowToast={onShowToast}
+              />
+            </Suspense>
           </div>
         </div>
       )}
