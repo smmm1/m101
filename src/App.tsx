@@ -386,7 +386,7 @@ function AppContent() {
 
       return {
         id: `import-${selectedYear}-${baseTimestamp}-${String(idx).padStart(4, '0')}`,
-        sequenceNo: String(calculatedSeq),
+        sequenceNo: item.sequenceNo?.trim() || String(calculatedSeq),
         taxId: item.taxId !== undefined ? item.taxId : '',
         companyName: item.companyName || `กิจการนำเข้า ${calculatedSeq}`,
         type: item.type || 'company',
