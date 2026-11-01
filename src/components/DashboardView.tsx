@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BusinessRecord } from '../types';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
@@ -7,7 +7,6 @@ import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
-import { parseDocumentFile } from '../utils/excelHelper';
 
 interface ActivityLogItem {
   id: string;
@@ -88,12 +87,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BusinessRecord | null>(null);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [newYearInput, setNewYearInput] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync selectedId when records change or item is deleted
   useEffect(() => {
@@ -187,25 +186,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     onShowToast(`คัดลอก ${label} เรียบร้อย`, 'คัดลอกสำเร็จ', 'success');
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      onShowToast(`กำลังอ่านไฟล์ ${file.name}...`, 'นำเข้าข้อมูล', 'info');
-      const parsed = await parseDocumentFile(file, file.name);
-      if (parsed.length > 0 && onImportRecords) {
-        onImportRecords(parsed);
-        logActivity('import', `นำเข้าไฟล์จำนวน ${parsed.length} รายการ (${file.name})`);
-        setActiveTab('directory');
-      } else {
-        onShowToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'error');
-      }
-    } catch {
-      onShowToast(`เกิดข้อผิดพลาดในการอ่านไฟล์ ${file.name}`, 'ข้อผิดพลาด', 'error');
-    }
-    e.target.value = '';
-  };
-
   // Overview stats calculation for 2D Bar Chart
   const totalCount = records.length;
   const completedCount = records.filter((r) => r.status === 'completed').length;
@@ -248,15 +228,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="mobile-app-shell flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
       
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".xlsx,.xls,.csv"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Floating 3-second Notification Toast */}
       {currentNotification && (
         <div className="fixed top-20 right-6 z-50 bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200 border border-slate-700 dark:border-amber-400">
@@ -553,7 +524,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {isLoggedIn && (
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => setIsImportModalOpen(true)}
                       className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                     >
                       <span className="material-symbols-outlined text-[16px]">upload_file</span>
@@ -1121,17 +1092,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           />
         )}
 
-        {activeTab === 'import' && (
-          <ImportDocumentView
-            selectedYear={selectedYear}
-            onImportRecords={(items) => {
-              if (onImportRecords) onImportRecords(items);
-              setActiveTab('directory');
-            }}
-            onShowToast={onShowToast}
-          />
-        )}
       </div>
+
+      {isLoggedIn && isImportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="นำเข้าเอกสารและเลือกข้อมูล">
+          <div className="relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#090a0f] sm:rounded-3xl">
+            <ImportDocumentView
+              selectedYear={selectedYear}
+              onClose={() => setIsImportModalOpen(false)}
+              onImportRecords={(items) => {
+                if (onImportRecords) onImportRecords(items);
+                setIsImportModalOpen(false);
+                logActivity('import', `นำเข้ารายการจำนวน ${items.length} รายการ`);
+              }}
+              onShowToast={onShowToast}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {isLoggedIn && isAddModalOpen && (
