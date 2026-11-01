@@ -70,6 +70,12 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
     const name = mapping.companyName >= 0 ? String(row[mapping.companyName] ?? '').trim() : '';
     return Boolean(tax && name);
   }).length, [dataRows, mapping]);
+  const selectedValidRowsCount = useMemo(() => dataRows.filter(({ row, sourceIndex }) => {
+    if (!selectedRowIndices.includes(sourceIndex)) return false;
+    const tax = mapping.taxId >= 0 ? String(row[mapping.taxId] ?? '').trim() : '';
+    const name = mapping.companyName >= 0 ? String(row[mapping.companyName] ?? '').trim() : '';
+    return Boolean(tax && name);
+  }).length, [dataRows, mapping, selectedRowIndices]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,11 +126,28 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
     });
   };
   const selectedColumnField = (Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === selectedColumnIndex) || '';
-  const toggleAll = () => setSelectedRowIndices((current) => current.length === dataRows.length ? [] : dataRows.map(({ sourceIndex }) => sourceIndex));
+  const toggleAll = () => setSelectedRowIndices((current) => {
+    const visibleIndices = visibleRows.map(({ sourceIndex }) => sourceIndex);
+    const allVisibleSelected = visibleIndices.length > 0 && visibleIndices.every((index) => current.includes(index));
+    return allVisibleSelected ? current.filter((index) => !visibleIndices.includes(index)) : Array.from(new Set([...current, ...visibleIndices]));
+  });
+  const resetImport = () => {
+    setRawRows([]);
+    setFileName('');
+    setSelectedRowIndices([]);
+    setSearchFilter('');
+    setMapping({} as Record<ImportField, number>);
+    setSelectedColumnIndex(0);
+    onClose?.();
+  };
 
   const handleImport = () => {
     if (mapping.taxId < 0 || mapping.companyName < 0) {
       onShowToast('กรุณาเลือกคอลัมน์เลขผู้เสียภาษีและชื่อกิจการก่อนนำเข้า', 'ยังจับคู่ข้อมูลไม่ครบ', 'error');
+      return;
+    }
+    if (!selectedRowIndices.length) {
+      onShowToast('กรุณาเลือกแถวข้อมูลอย่างน้อย 1 แถว', 'ยังไม่ได้เลือกรายการ', 'info');
       return;
     }
     const selected = dataRows.filter(({ sourceIndex }) => selectedRowIndices.includes(sourceIndex));
@@ -156,11 +179,17 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
     if (validRecords.length !== records.length) {
       onShowToast(`ข้าม ${records.length - validRecords.length} แถวที่ไม่มีเลขผู้เสียภาษีหรือชื่อกิจการ`, 'ตรวจพบแถวข้อมูลไม่ครบ', 'info');
     }
-    onImportRecords(validRecords);
-    setRawRows([]);
-    setFileName('');
-    setSelectedRowIndices([]);
-    onShowToast(`ส่งข้อมูล ${validRecords.length} รายการเข้าสู่ขั้นตอนตรวจสอบและบันทึก ปี ${selectedYear}`, 'พร้อมนำเข้า', 'success');
+    try {
+      onImportRecords(validRecords);
+      onShowToast(`ส่งข้อมูล ${validRecords.length} รายการเข้าสู่ขั้นตอนตรวจสอบ ปี ${selectedYear}`, 'ส่งข้อมูลเรียบร้อย', 'success');
+      setRawRows([]);
+      setFileName('');
+      setSelectedRowIndices([]);
+      setSearchFilter('');
+      onClose?.();
+    } catch (error) {
+      onShowToast(error instanceof Error ? error.message : 'ระบบไม่สามารถส่งข้อมูลเข้าสู่รายการได้ กรุณาลองอีกครั้ง', 'นำเข้าไม่สำเร็จ', 'error');
+    }
   };
 
   const columnLabel = (index: number) => hasHeader && String(headers[index] ?? '').trim() ? `${LETTERS(index)} · ${String(headers[index])}` : `คอลัมน์ ${LETTERS(index)}`;
@@ -196,7 +225,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
             </div>
             <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-[#131B2E] sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2"><span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-500 dark:border-slate-600 dark:bg-slate-800">fx</span><span className="shrink-0 text-xs font-semibold text-slate-500">คอลัมน์ {LETTERS(selectedColumnIndex)}</span><span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{String(headers[selectedColumnIndex] ?? '') || '(ไม่มีชื่อหัวตาราง)'}</span></div>
-              <div className="flex flex-wrap items-center gap-2"><label className="text-xs font-semibold text-slate-600 dark:text-slate-300" htmlFor="m101-column-mapping">กำหนดคอลัมน์นี้เป็น</label><select id="m101-column-mapping" value={selectedColumnField} onChange={(event) => assignSelectedColumn(event.target.value)} className="min-h-9 min-w-52 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 outline-none dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100"><option value="">ไม่ใช้คอลัมน์นี้</option>{FIELD_OPTIONS.map((field) => { const used = mapping[field.key] >= 0 && mapping[field.key] !== selectedColumnIndex; return <option key={field.key} value={field.key} disabled={used}>{field.label}{field.required ? ' *' : ''}{used ? ' (เลือกแล้ว)' : ''}</option>; })}</select><span className={mapping.taxId >= 0 && mapping.companyName >= 0 ? 'rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700' : 'rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-700'}>{mapping.taxId >= 0 && mapping.companyName >= 0 ? 'จับคู่ช่องจำเป็นครบ' : 'ต้องเลือกเลขผู้เสียภาษี + ชื่อกิจการ'}</span></div>
+              <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => setMapping(suggestMapping(headers, hasHeader))} className="min-h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">จับคู่อัตโนมัติ</button><label className="text-xs font-semibold text-slate-600 dark:text-slate-300" htmlFor="m101-column-mapping">กำหนดคอลัมน์นี้เป็น</label><select id="m101-column-mapping" value={selectedColumnField} onChange={(event) => assignSelectedColumn(event.target.value)} className="min-h-9 min-w-52 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 outline-none dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100"><option value="">ไม่ใช้คอลัมน์นี้</option>{FIELD_OPTIONS.map((field) => { const used = mapping[field.key] >= 0 && mapping[field.key] !== selectedColumnIndex; return <option key={field.key} value={field.key} disabled={used}>{field.label}{field.required ? ' *' : ''}{used ? ' (เลือกแล้ว)' : ''}</option>; })}</select><span className={mapping.taxId >= 0 && mapping.companyName >= 0 ? 'rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700' : 'rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-700'}>{mapping.taxId >= 0 && mapping.companyName >= 0 ? 'จับคู่ช่องจำเป็นครบ' : 'ต้องเลือกเลขผู้เสียภาษี + ชื่อกิจการ'}</span></div>
             </div>
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900/50"><p className="text-[11px] text-slate-500">คลิกหัวคอลัมน์ A, B, C… เพื่อเลือกคอลัมน์ แล้วกำหนดว่าจะนำข้อมูลไปใส่ช่องใดของ M101 · คอลัมน์ที่จับคู่แล้วจะแสดงชื่อช่องสีเขียว</p></div>
           </section>
@@ -206,21 +235,21 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
               <div><h3 className="text-sm font-bold text-slate-900 dark:text-white">เลือกแถวที่จะนำเข้า</h3><p className="mt-1 text-xs text-slate-500">เลือกเฉพาะรายการที่ต้องการ หรือเลือกทั้งหมด</p></div>
               <div className="flex flex-wrap items-center gap-2">
                 <input value={searchFilter} onChange={(event) => setSearchFilter(event.target.value)} placeholder="ค้นหาข้อมูลในไฟล์..." className="min-h-10 min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-                <button type="button" onClick={toggleAll} className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold dark:border-slate-700 dark:text-white">เลือก / ไม่เลือกทั้งหมด</button>
+                <button type="button" onClick={toggleAll} className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold dark:border-slate-700 dark:text-white">เลือก / ไม่เลือกที่เห็น</button>
               </div>
             </div>
             <div className="max-h-[460px] overflow-auto">
               <table className="min-w-full border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><tr><th className="p-3"><input type="checkbox" checked={selectedRowIndices.length === dataRows.length && dataRows.length > 0} onChange={toggleAll} /></th><th className="whitespace-nowrap p-3">แถว</th>{Array.from({ length: columnCount }, (_, index) => <th key={index} className="min-w-40 whitespace-nowrap border-l border-slate-200 p-0 dark:border-slate-700"><button type="button" onClick={() => setSelectedColumnIndex(index)} className={selectedColumnIndex === index ? "flex min-h-14 w-full flex-col items-start gap-1 bg-emerald-100 px-3 py-2 text-left ring-2 ring-inset ring-emerald-600 dark:bg-emerald-950" : "flex min-h-14 w-full flex-col items-start gap-1 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700"}><span className="font-mono text-[10px] font-bold text-slate-400">{LETTERS(index)}</span><span className="max-w-48 truncate text-xs font-bold text-slate-700 dark:text-slate-200">{columnLabel(index)}</span><span className="max-w-48 truncate text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{(Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index) ? FIELD_OPTIONS.find((field) => field.key === (Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index))?.label : "คลิกเพื่อเลือก"}</span></button></th>)}</tr></thead>
+                <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><tr><th className="p-3"><input type="checkbox" checked={visibleRows.length > 0 && visibleRows.every(({ sourceIndex }) => selectedRowIndices.includes(sourceIndex))} onChange={toggleAll} /></th><th className="whitespace-nowrap p-3">แถว</th>{Array.from({ length: columnCount }, (_, index) => <th key={index} className="min-w-40 whitespace-nowrap border-l border-slate-200 p-0 dark:border-slate-700"><button type="button" onClick={() => setSelectedColumnIndex(index)} className={selectedColumnIndex === index ? "flex min-h-14 w-full flex-col items-start gap-1 bg-emerald-100 px-3 py-2 text-left ring-2 ring-inset ring-emerald-600 dark:bg-emerald-950" : "flex min-h-14 w-full flex-col items-start gap-1 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700"}><span className="font-mono text-[10px] font-bold text-slate-400">{LETTERS(index)}</span><span className="max-w-48 truncate text-xs font-bold text-slate-700 dark:text-slate-200">{columnLabel(index)}</span><span className="max-w-48 truncate text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{(Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index) ? FIELD_OPTIONS.find((field) => field.key === (Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index))?.label : "คลิกเพื่อเลือก"}</span></button></th>)}</tr></thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {visibleRows.slice(0, 150).map(({ row, sourceIndex }) => <tr key={sourceIndex} onClick={() => toggleRow(sourceIndex)} className={selectedRowIndices.includes(sourceIndex) ? 'cursor-pointer bg-indigo-50/60 dark:bg-indigo-950/30' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60'}><td className="p-3"><input type="checkbox" checked={selectedRowIndices.includes(sourceIndex)} onChange={() => toggleRow(sourceIndex)} onClick={(event) => event.stopPropagation()} /></td><td className="p-3 font-mono text-slate-400">{sourceIndex + 1}</td>{Array.from({ length: columnCount }, (_, index) => <td key={index} className="max-w-64 truncate whitespace-nowrap p-3 text-slate-700 dark:text-slate-200">{String(row[index] ?? '')}</td>)}</tr>)}
                 </tbody>
               </table>
               {visibleRows.length > 150 && <p className="p-3 text-center text-xs text-slate-500">แสดงตัวอย่าง 150 จาก {visibleRows.length} แถว แต่ระบบจะนำเข้าตามรายการที่เลือกทั้งหมด</p>}
             </div>
-            <div className="flex flex-col justify-between gap-3 border-t border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 sm:flex-row sm:items-center">
-              <span className="text-xs text-slate-500">เลือก {selectedRowIndices.length} / {dataRows.length} แถว · จะนำเข้าได้จริง {validRowsCount} แถวก่อนคัดตามรายการที่เลือก</span>
-              <div className="flex gap-2"><button type="button" onClick={() => { setRawRows([]); setFileName(''); setSelectedRowIndices([]); onClose?.(); }} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">ยกเลิก</button><button type="button" onClick={handleImport} disabled={!selectedRowIndices.length || mapping.taxId < 0 || mapping.companyName < 0} className="min-h-10 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">ยืนยันนำเข้า {selectedRowIndices.length} รายการ</button></div>
+            <div className="sticky bottom-0 z-20 flex flex-col justify-between gap-3 border-t border-slate-200 bg-white/95 p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 sm:flex-row sm:items-center">
+              <div className="min-w-0"><p className="text-sm font-bold text-slate-800 dark:text-white">พร้อมนำเข้า ${selectedValidRowsCount} รายการ</p><p className="mt-1 text-[11px] text-slate-500">เลือกไว้ ${selectedRowIndices.length} จาก ${dataRows.length} แถว${selectedRowIndices.length > selectedValidRowsCount ? ` · ข้าม ${selectedRowIndices.length - selectedValidRowsCount} แถวที่ข้อมูลจำเป็นไม่ครบ` : ''}${mapping.taxId < 0 || mapping.companyName < 0 ? ' · กรุณาจับคู่เลขผู้เสียภาษีและชื่อกิจการก่อน' : ''}</p></div>
+              <div className="flex shrink-0 gap-2"><button type="button" onClick={resetImport} className="min-h-11 flex-1 rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 sm:flex-none">ยกเลิก</button><button type="button" onClick={handleImport} disabled={selectedValidRowsCount === 0 || mapping.taxId < 0 || mapping.companyName < 0} className="min-h-11 flex-1 rounded-xl bg-indigo-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-slate-700 sm:flex-none">ยืนยันนำเข้า ${selectedValidRowsCount} รายการ</button></div>
             </div>
           </section>
         </>
