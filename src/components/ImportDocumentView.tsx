@@ -201,29 +201,6 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900/50"><p className="text-[11px] text-slate-500">คลิกหัวคอลัมน์ A, B, C… เพื่อเลือกคอลัมน์ แล้วกำหนดว่าจะนำข้อมูลไปใส่ช่องใดของ M101 · คอลัมน์ที่จับคู่แล้วจะแสดงชื่อช่องสีเขียว</p></div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#131B2E] sm:p-6">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div className="min-w-0"><h2 className="truncate text-base font-bold text-slate-900 dark:text-white">{fileName}</h2><p className="mt-1 text-xs text-slate-500">{dataRows.length} แถวข้อมูล · {columnCount} คอลัมน์ · รอบปี {selectedYear}</p></div>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200"><input type="checkbox" checked={hasHeader} onChange={(event) => changeHeaderMode(event.target.checked)} className="h-4 w-4 rounded accent-indigo-600" /> แถวแรกเป็นหัวตาราง</label>
-            </div>
-            <div className="mt-5 flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-slate-900 dark:text-white">จับคู่คอลัมน์กับฟอร์มเพิ่มกิจการ</h3><span className="text-xs text-slate-500">เลือก “ไม่ใช้” เพื่อข้ามคอลัมน์</span></div>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {FIELD_OPTIONS.map((field) => (
-                <label key={field.key} className="flex min-w-0 flex-col gap-1.5 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{field.label}{field.required && <span className="ml-1 text-rose-500">*</span>}</span>
-                  <select value={mapping[field.key] ?? -1} onChange={(event) => setMapping((current) => ({ ...current, [field.key]: Number(event.target.value) }))} className="min-h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none focus:border-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
-                    <option value={-1}>ไม่ใช้คอลัมน์นี้</option>
-                    {Array.from({ length: columnCount }, (_, index) => <option key={index} value={index}>{columnLabel(index)}</option>)}
-                  </select>
-                </label>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-              <span className={mapping.taxId >= 0 && mapping.companyName >= 0 ? 'rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700' : 'rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700'}>{mapping.taxId >= 0 && mapping.companyName >= 0 ? 'จับคู่ช่องจำเป็นแล้ว' : 'ต้องเลือกเลขผู้เสียภาษีและชื่อกิจการ'}</span>
-              <span className="text-slate-500">พบ {validRowsCount} แถวที่มีข้อมูลจำเป็นครบ</span>
-            </div>
-          </section>
-
           <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#131B2E]">
             <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:flex-row sm:items-center sm:p-5">
               <div><h3 className="text-sm font-bold text-slate-900 dark:text-white">เลือกแถวที่จะนำเข้า</h3><p className="mt-1 text-xs text-slate-500">เลือกเฉพาะรายการที่ต้องการ หรือเลือกทั้งหมด</p></div>
