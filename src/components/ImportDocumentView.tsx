@@ -57,6 +57,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
   const [mapping, setMapping] = useState<Record<ImportField, number>>({} as Record<ImportField, number>);
   const [selectedRowIndices, setSelectedRowIndices] = useState<number[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const columnCount = useMemo(() => Math.max(0, ...rawRows.map((row) => row.length)), [rawRows]);
@@ -91,6 +92,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
       setFileName(file.name);
       setHasHeader(detectedHeader);
       setMapping(suggestMapping(rows[0], detectedHeader));
+      setSelectedColumnIndex(0);
       setSelectedRowIndices(rows.map((_, index) => index).filter((index) => index >= (detectedHeader ? 1 : 0)));
       setSearchFilter('');
       onShowToast(`อ่านไฟล์สำเร็จ พบ ${rows.length - (detectedHeader ? 1 : 0)} แถวข้อมูล`, 'อ่านไฟล์สำเร็จ', 'success');
@@ -109,6 +111,15 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
   };
 
   const toggleRow = (index: number) => setSelectedRowIndices((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index]);
+  const assignSelectedColumn = (fieldKey: string) => {
+    setMapping((current) => {
+      const next = { ...current };
+      (Object.keys(next) as ImportField[]).forEach((key) => { if (next[key] === selectedColumnIndex) next[key] = -1; });
+      if (fieldKey) next[fieldKey as ImportField] = selectedColumnIndex;
+      return next;
+    });
+  };
+  const selectedColumnField = (Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === selectedColumnIndex) || '';
   const toggleAll = () => setSelectedRowIndices((current) => current.length === dataRows.length ? [] : dataRows.map(({ sourceIndex }) => sourceIndex));
 
   const handleImport = () => {
@@ -178,6 +189,18 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
         </section>
       ) : (
         <>
+          <section className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm dark:border-slate-700 dark:bg-[#131B2E]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-[#f3f5f8] px-4 py-3 dark:border-slate-700 dark:bg-slate-900/70">
+              <div className="min-w-0"><div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100"><span className="material-symbols-outlined text-emerald-700">table_view</span> ตัวอย่างเวิร์กชีต</div><p className="mt-1 truncate text-xs text-slate-500">{fileName} · {dataRows.length} แถวข้อมูล · {columnCount} คอลัมน์ · รอบปี {selectedYear}</p></div>
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300"><input type="checkbox" checked={hasHeader} onChange={(event) => changeHeaderMode(event.target.checked)} className="h-4 w-4 rounded accent-emerald-600" /> แถวแรกเป็นหัวตาราง</label>
+            </div>
+            <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-[#131B2E] sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2"><span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-500 dark:border-slate-600 dark:bg-slate-800">fx</span><span className="shrink-0 text-xs font-semibold text-slate-500">คอลัมน์ {LETTERS(selectedColumnIndex)}</span><span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{String(headers[selectedColumnIndex] ?? '') || '(ไม่มีชื่อหัวตาราง)'}</span></div>
+              <div className="flex flex-wrap items-center gap-2"><label className="text-xs font-semibold text-slate-600 dark:text-slate-300" htmlFor="m101-column-mapping">กำหนดคอลัมน์นี้เป็น</label><select id="m101-column-mapping" value={selectedColumnField} onChange={(event) => assignSelectedColumn(event.target.value)} className="min-h-9 min-w-52 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 outline-none dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100"><option value="">ไม่ใช้คอลัมน์นี้</option>{FIELD_OPTIONS.map((field) => { const used = mapping[field.key] >= 0 && mapping[field.key] !== selectedColumnIndex; return <option key={field.key} value={field.key} disabled={used}>{field.label}{field.required ? ' *' : ''}{used ? ' (เลือกแล้ว)' : ''}</option>; })}</select><span className={mapping.taxId >= 0 && mapping.companyName >= 0 ? 'rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700' : 'rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-700'}>{mapping.taxId >= 0 && mapping.companyName >= 0 ? 'จับคู่ช่องจำเป็นครบ' : 'ต้องเลือกเลขผู้เสียภาษี + ชื่อกิจการ'}</span></div>
+            </div>
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900/50"><p className="text-[11px] text-slate-500">คลิกหัวคอลัมน์ A, B, C… เพื่อเลือกคอลัมน์ แล้วกำหนดว่าจะนำข้อมูลไปใส่ช่องใดของ M101 · คอลัมน์ที่จับคู่แล้วจะแสดงชื่อช่องสีเขียว</p></div>
+          </section>
+
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#131B2E] sm:p-6">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div className="min-w-0"><h2 className="truncate text-base font-bold text-slate-900 dark:text-white">{fileName}</h2><p className="mt-1 text-xs text-slate-500">{dataRows.length} แถวข้อมูล · {columnCount} คอลัมน์ · รอบปี {selectedYear}</p></div>
@@ -211,7 +234,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
             </div>
             <div className="max-h-[460px] overflow-auto">
               <table className="min-w-full border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><tr><th className="p-3"><input type="checkbox" checked={selectedRowIndices.length === dataRows.length && dataRows.length > 0} onChange={toggleAll} /></th><th className="whitespace-nowrap p-3">แถว</th>{Array.from({ length: columnCount }, (_, index) => <th key={index} className="min-w-36 whitespace-nowrap p-3">{columnLabel(index)}</th>)}</tr></thead>
+                <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><tr><th className="p-3"><input type="checkbox" checked={selectedRowIndices.length === dataRows.length && dataRows.length > 0} onChange={toggleAll} /></th><th className="whitespace-nowrap p-3">แถว</th>{Array.from({ length: columnCount }, (_, index) => <th key={index} className="min-w-40 whitespace-nowrap border-l border-slate-200 p-0 dark:border-slate-700"><button type="button" onClick={() => setSelectedColumnIndex(index)} className={selectedColumnIndex === index ? "flex min-h-14 w-full flex-col items-start gap-1 bg-emerald-100 px-3 py-2 text-left ring-2 ring-inset ring-emerald-600 dark:bg-emerald-950" : "flex min-h-14 w-full flex-col items-start gap-1 px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700"}><span className="font-mono text-[10px] font-bold text-slate-400">{LETTERS(index)}</span><span className="max-w-48 truncate text-xs font-bold text-slate-700 dark:text-slate-200">{columnLabel(index)}</span><span className="max-w-48 truncate text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{(Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index) ? FIELD_OPTIONS.find((field) => field.key === (Object.keys(mapping) as ImportField[]).find((key) => mapping[key] === index))?.label : "คลิกเพื่อเลือก"}</span></button></th>)}</tr></thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {visibleRows.slice(0, 150).map(({ row, sourceIndex }) => <tr key={sourceIndex} onClick={() => toggleRow(sourceIndex)} className={selectedRowIndices.includes(sourceIndex) ? 'cursor-pointer bg-indigo-50/60 dark:bg-indigo-950/30' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60'}><td className="p-3"><input type="checkbox" checked={selectedRowIndices.includes(sourceIndex)} onChange={() => toggleRow(sourceIndex)} onClick={(event) => event.stopPropagation()} /></td><td className="p-3 font-mono text-slate-400">{sourceIndex + 1}</td>{Array.from({ length: columnCount }, (_, index) => <td key={index} className="max-w-64 truncate whitespace-nowrap p-3 text-slate-700 dark:text-slate-200">{String(row[index] ?? '')}</td>)}</tr>)}
                 </tbody>
