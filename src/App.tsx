@@ -54,7 +54,7 @@ function AppContent() {
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
-  const pendingDatabaseWriteRef = useRef(false);
+  const pendingDatabaseWriteRef = React.useRef(false);
   const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
