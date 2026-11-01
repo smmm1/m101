@@ -5,6 +5,7 @@ import { BusinessRecord } from '../types';
 
 interface ImportDocumentViewProps {
   selectedYear: string;
+  onClose?: () => void;
   onImportRecords: (records: Partial<BusinessRecord>[]) => void;
   onShowToast: (message: string, title?: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -39,7 +40,7 @@ const suggestMapping = (headers: unknown[], hasHeader: boolean): Record<ImportFi
   return result;
 };
 
-export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selectedYear, onImportRecords, onShowToast }) => {
+export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selectedYear, onClose, onImportRecords, onShowToast }) => {
   const [rawRows, setRawRows] = useState<unknown[][]>([]);
   const [fileName, setFileName] = useState('');
   const [hasHeader, setHasHeader] = useState(true);
@@ -144,13 +145,14 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
   const columnLabel = (index: number) => hasHeader && String(headers[index] ?? '').trim() ? `${LETTERS(index)} · ${String(headers[index])}` : `คอลัมน์ ${LETTERS(index)}`;
 
   return (
-    <div className="flex-1 flex min-w-0 flex-col gap-5 overflow-y-auto bg-[#f8f9fc] p-4 dark:bg-[#090a0f] sm:p-8">
-      <section className="flex flex-col justify-between gap-4 rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900 p-6 text-white shadow-xl sm:flex-row sm:items-center sm:p-8">
-        <div className="min-w-0">
+    <div className="flex min-h-0 flex-1 min-w-0 flex-col gap-4 overflow-y-auto bg-[#f8f9fc] p-3 dark:bg-[#090a0f] sm:gap-5 sm:p-6">
+      <section className="flex flex-col justify-between gap-4 rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900 p-5 text-white shadow-xl sm:flex-row sm:items-center sm:p-6">
+        <div className="min-w-0 flex-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">M101 · DOCUMENT IMPORT</span>
           <h1 className="mt-2 text-xl font-extrabold sm:text-2xl">นำเข้าเอกสาร</h1>
-          <p className="mt-2 max-w-2xl text-sm text-indigo-100">เลือกเฉพาะคอลัมน์และรายการที่ต้องการนำเข้าได้ แม้ไฟล์ต้นฉบับไม่มีหัวตาราง</p>
+          <p className="mt-2 max-w-2xl text-sm text-indigo-100">เลือกคอลัมน์และแถวที่จะนำเข้าได้เอง แม้ไฟล์ต้นฉบับไม่มีหัวตาราง</p>
         </div>
+        {onClose && <button type="button" onClick={onClose} aria-label="ปิดหน้าต่างนำเข้า" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"><span className="material-symbols-outlined">close</span></button>}
         <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" />
         <button type="button" onClick={() => fileInputRef.current?.click()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-900 shadow-lg hover:bg-indigo-50">
           <span className="material-symbols-outlined">upload_file</span>{rawRows.length ? 'เปลี่ยนไฟล์' : 'เลือกไฟล์ Excel / CSV'}
@@ -208,7 +210,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
             </div>
             <div className="flex flex-col justify-between gap-3 border-t border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 sm:flex-row sm:items-center">
               <span className="text-xs text-slate-500">เลือก {selectedRowIndices.length} / {dataRows.length} แถว · จะนำเข้าได้จริง {validRowsCount} แถวก่อนคัดตามรายการที่เลือก</span>
-              <div className="flex gap-2"><button type="button" onClick={() => { setRawRows([]); setFileName(''); setSelectedRowIndices([]); }} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">ยกเลิก</button><button type="button" onClick={handleImport} disabled={!selectedRowIndices.length || mapping.taxId < 0 || mapping.companyName < 0} className="min-h-10 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">นำเข้า {selectedRowIndices.length} รายการ</button></div>
+              <div className="flex gap-2"><button type="button" onClick={() => { setRawRows([]); setFileName(''); setSelectedRowIndices([]); onClose?.(); }} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">ยกเลิก</button><button type="button" onClick={handleImport} disabled={!selectedRowIndices.length || mapping.taxId < 0 || mapping.companyName < 0} className="min-h-10 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">นำเข้า {selectedRowIndices.length} รายการ</button></div>
             </div>
           </section>
         </>
