@@ -27,15 +27,25 @@ const LETTERS = (index: number) => {
   while (n > 0) { const r = (n - 1) % 26; label = String.fromCharCode(65 + r) + label; n = Math.floor((n - 1) / 26); }
   return label;
 };
-const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[\s\-_/\\()[\].:]/g, '');
-const guessHeader = (row: unknown[]) => row.filter((cell) => {
-  const value = normalize(cell);
-  return FIELD_OPTIONS.some((field) => field.aliases.some((alias) => normalize(alias) === value || (value.length >= 4 && (normalize(alias).includes(value) || value.includes(normalize(alias)))));
-}).length >= 2;
+const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[\\s\\-_/\\\\()[\\].:]/g, '');
+const matchesAlias = (value: unknown, alias: string) => {
+  const normalizedValue = normalize(value);
+  const normalizedAlias = normalize(alias);
+  return normalizedAlias === normalizedValue || (
+    normalizedValue.length >= 4 &&
+    (normalizedAlias.includes(normalizedValue) || normalizedValue.includes(normalizedAlias))
+  );
+};
+const guessHeader = (row: unknown[]) =>
+  row.filter((cell) => FIELD_OPTIONS.some((field) =>
+    field.aliases.some((alias) => matchesAlias(cell, alias))
+  )).length >= 2;
 const suggestMapping = (headers: unknown[], hasHeader: boolean): Record<ImportField, number> => {
   const result = {} as Record<ImportField, number>;
   FIELD_OPTIONS.forEach((field) => {
-    result[field.key] = hasHeader ? headers.findIndex((header) => field.aliases.some((alias) => normalize(alias) === normalize(header) || (normalize(header).length >= 4 && (normalize(alias).includes(normalize(header)) || normalize(header).includes(normalize(alias))))) : -1;
+    result[field.key] = hasHeader
+      ? headers.findIndex((header) => field.aliases.some((alias) => matchesAlias(header, alias)))
+      : -1;
   });
   return result;
 };
