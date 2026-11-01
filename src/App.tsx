@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BusinessRecord } from './types';
 import { DashboardView } from './components/DashboardView';
 import { YearManageModal } from './components/YearManageModal';
@@ -55,8 +55,8 @@ function AppContent() {
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
   const pendingDatabaseWriteRef = React.useRef(false);
-  const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
+  const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return initCuteClickSound();
