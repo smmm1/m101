@@ -27,7 +27,7 @@ const LETTERS = (index: number) => {
   while (n > 0) { const r = (n - 1) % 26; label = String.fromCharCode(65 + r) + label; n = Math.floor((n - 1) / 26); }
   return label;
 };
-const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[\\s\\-_/\\\\()[\\].:]/g, '');
+const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[\s\-_/\\()[\].:]/g, '');
 const matchesAlias = (value: unknown, alias: string) => {
   const normalizedValue = normalize(value);
   const normalizedAlias = normalize(alias);
