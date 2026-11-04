@@ -168,3 +168,158 @@ html.dark .m101-dialog-panel label{color:#b2c2ba}
 
 .m101-import-dialog-panel input[type="checkbox"] { width:15px!important; height:15px!important; min-height:15px!important; padding:0!important; border-radius:4px!important; box-shadow:none!important; }
 .m101-import-dialog-panel select:focus { outline:2px solid rgba(23,107,92,.16); outline-offset:1px; }
+
+
+/* =========================================================
+   M101 DESIGN SYSTEM v2 — Calm professional records workspace
+   Palette: deep teal / sage / paper / neutral graphite
+   ========================================================= */
+:root {
+  --m101-canvas: #f4f7f5;
+  --m101-surface: #ffffff;
+  --m101-surface-soft: #f8faf9;
+  --m101-surface-raised: #ffffff;
+  --m101-ink: #182d29;
+  --m101-ink-soft: #405650;
+  --m101-muted: #788983;
+  --m101-muted-2: #9aa8a2;
+  --m101-line: #e3ebe7;
+  --m101-line-strong: #d4e0da;
+  --m101-accent: #176b5c;
+  --m101-accent-hover: #10584c;
+  --m101-accent-soft: #e8f3ee;
+  --m101-accent-tint: #f1f7f4;
+  --m101-info: #477b9c;
+  --m101-info-soft: #edf4f8;
+  --m101-success: #27815e;
+  --m101-success-soft: #eaf5ee;
+  --m101-warning: #a9762d;
+  --m101-warning-soft: #fbf4e8;
+  --m101-danger: #b65353;
+  --m101-danger-soft: #fbefef;
+  --m101-radius: 16px;
+  --m101-radius-sm: 11px;
+  --m101-shadow: 0 2px 10px rgba(27,55,46,.035), 0 12px 30px rgba(27,55,46,.025);
+  --m101-shadow-float: 0 18px 55px rgba(24,49,41,.14);
+}
+html,body,#root { background:var(--m101-canvas); color:var(--m101-ink); }
+body { font-family:'Sarabun','Plus Jakarta Sans',sans-serif; font-size:14px; line-height:1.55; letter-spacing:0; }
+::selection { background:#cfe7dc; color:#153b30; }
+
+/* Application frame and navigation */
+.mobile-app-shell { background:var(--m101-canvas)!important; }
+.m101-sidebar { background:var(--m101-surface)!important; border-color:var(--m101-line)!important; padding:25px 15px 17px!important; }
+.m101-brand { padding:0 9px 29px!important; gap:11px!important; }
+.m101-brand-mark { width:39px!important; height:39px!important; border-radius:12px!important; background:linear-gradient(145deg,#247d69,#14594f)!important; box-shadow:0 5px 12px rgba(23,107,92,.17); font-size:17px; }
+.m101-brand-copy strong { color:#193b33!important; font-size:18px!important; letter-spacing:-.045em!important; }
+.m101-brand-copy span { color:#91a19a!important; font-size:9px!important; letter-spacing:.15em!important; }
+.m101-nav-caption { color:#a0ada7!important; font-size:9px!important; letter-spacing:.15em!important; }
+.m101-side-link { min-height:43px!important; margin:3px 0!important; border-radius:10px!important; color:#65766f!important; font-size:12px!important; font-weight:650!important; }
+.m101-side-link .material-symbols-outlined { font-size:19px!important; color:#8a9b93!important; }
+.m101-side-link:hover { background:#f4f8f6!important; color:#225d4e!important; }
+.m101-side-link.is-active { background:#eaf4ef!important; color:#176b5c!important; box-shadow:inset 3px 0 0 #287b66; }
+.m101-side-link.is-active .material-symbols-outlined { color:#176b5c!important; }
+.m101-side-count { background:#e4f0e9!important; color:#286c56!important; }
+.m101-sidebar-foot { border-color:var(--m101-line)!important; }
+.m101-sidebar-foot strong { color:#50675e!important; }
+.mobile-app-nav { background:rgba(255,255,255,.96)!important; border-color:var(--m101-line)!important; padding-inline:28px!important; backdrop-filter:blur(12px); }
+.mobile-utility-nav button { min-height:38px; border:1px solid transparent!important; border-radius:10px!important; font-size:11px!important; }
+.mobile-utility-nav button:hover { background:#f2f7f4!important; border-color:#e3ece7!important; }
+.mobile-main-content { padding:28px clamp(18px,2.5vw,38px) 40px!important; background:var(--m101-canvas)!important; }
+.mobile-main-content>div { max-width:1480px!important; margin-inline:auto; }
+.mobile-main-content h1 { color:var(--m101-ink); letter-spacing:-.035em; }
+.mobile-main-content h2,.mobile-main-content h3 { letter-spacing:-.02em; }
+.mobile-main-content p { line-height:1.65; }
+.mobile-main-content [class*=rounded-3xl] { border-radius:18px!important; }
+.mobile-main-content [class*=shadow-] { box-shadow:var(--m101-shadow)!important; }
+.mobile-main-content [class*=border-slate-200] { border-color:var(--m101-line)!important; }
+
+/* Unified controls */
+.mobile-main-content button:not(.m101-side-link), .m101-dialog-panel button { font-family:inherit; }
+.mobile-main-content button:focus-visible,.m101-dialog-panel button:focus-visible,.m101-sidebar button:focus-visible { outline:3px solid rgba(23,107,92,.24)!important; outline-offset:2px!important; }
+.mobile-main-content input:not([type=checkbox]):not([type=radio]),.mobile-main-content select,.mobile-main-content textarea,
+.m101-dialog-panel input:not([type=checkbox]):not([type=radio]),.m101-dialog-panel select,.m101-dialog-panel textarea {
+  border-color:var(--m101-line-strong)!important; border-radius:10px!important; background:#fff!important; color:var(--m101-ink)!important;
+  box-shadow:none!important; font-family:inherit!important; font-size:13px!important; transition:border-color .16s,box-shadow .16s,background .16s;
+}
+.mobile-main-content input:focus,.mobile-main-content select:focus,.mobile-main-content textarea:focus,
+.m101-dialog-panel input:focus,.m101-dialog-panel select:focus,.m101-dialog-panel textarea:focus {
+  border-color:#72aa98!important; box-shadow:0 0 0 3px rgba(23,107,92,.10)!important; outline:none!important;
+}
+.mobile-main-content input::placeholder,.mobile-main-content textarea::placeholder { color:#a2aea8!important; }
+.mobile-main-content button[class*=bg-amber-500],.mobile-main-content button[class*=bg-slate-900],
+.m101-dialog-panel button[class*=bg-amber-500],.m101-dialog-panel button[class*=bg-slate-900] {
+  background:#176b5c!important; border-color:#176b5c!important; color:#fff!important; box-shadow:0 3px 8px rgba(23,107,92,.12)!important;
+}
+.mobile-main-content button[class*=bg-amber-500]:hover,.mobile-main-content button[class*=bg-slate-900]:hover,
+.m101-dialog-panel button[class*=bg-amber-500]:hover,.m101-dialog-panel button[class*=bg-slate-900]:hover { background:#10584c!important; }
+.mobile-main-content button[class*=text-rose-600],.m101-dialog-panel button[class*=text-rose-600] { color:#b65353!important; }
+.mobile-main-content button[class*=bg-rose-600],.m101-dialog-panel button[class*=bg-rose-600] { background:#b65353!important; color:white!important; }
+
+/* Page surfaces, section rhythm and directory */
+.mobile-directory-layout>div:last-child>div { background:var(--m101-surface)!important; border:1px solid var(--m101-line)!important; box-shadow:var(--m101-shadow)!important; }
+.m101-record-list { background:var(--m101-surface-soft)!important; border:1px solid var(--m101-line)!important; border-radius:15px!important; }
+.m101-record-row { border-color:#e6ede9!important; box-shadow:none!important; }
+.m101-record-row.is-selected { background:#edf6f1!important; border-color:#9dc9b7!important; }
+.m101-overview-panel,.m101-metric-card,.m101-import-flow,.m101-import-drop-card,.m101-import-guidance { border-color:var(--m101-line)!important; box-shadow:var(--m101-shadow)!important; }
+.m101-overview-header,.m101-import-header { padding-top:14px!important; }
+.m101-eyebrow { color:#82968c!important; }
+.m101-panel-heading h2,.m101-import-drop-card h2,.m101-import-guidance h2 { color:#203b34!important; }
+.m101-status-dot { flex-shrink:0; }
+.m101-recent-row { border-color:#edf1ee!important; }
+.m101-recent-row:hover { background:#f8fbf9!important; }
+.m101-dialog-overlay { background:rgba(18,39,32,.46)!important; backdrop-filter:blur(6px)!important; }
+.m101-dialog-panel { box-shadow:var(--m101-shadow-float)!important; }
+
+/* Avoid collapsing every grid at tablet width; preserve each page's designed columns. */
+@media(max-width:900px) {
+  .mobile-main-content [class*=grid-cols-] { grid-template-columns:var(--tw-grid-cols,repeat(1,minmax(0,1fr)))!important; }
+  .m101-sidebar { background:#fff!important; }
+  .mobile-main-content { padding:19px 16px 30px!important; }
+}
+@media(max-width:640px) {
+  .mobile-app-shell { min-height:100dvh!important; }
+  .m101-sidebar { position:sticky!important; top:0!important; min-height:58px!important; padding:7px 10px!important; gap:5px!important; }
+  .m101-brand { padding:0 7px 0 0!important; }
+  .m101-brand-mark { width:34px!important; height:34px!important; }
+  .m101-brand-copy strong { font-size:15px!important; }
+  .m101-side-link { min-height:38px!important; padding:0 9px!important; font-size:10px!important; }
+  .m101-side-link .material-symbols-outlined { font-size:17px!important; }
+  .mobile-app-nav { top:58px!important; min-height:50px!important; padding:5px 10px!important; }
+  .mobile-main-content { padding:15px 11px 26px!important; }
+  .m101-overview,.m101-import-workspace { padding-inline:0!important; }
+  .m101-overview-header h1,.m101-import-header h1 { font-size:25px!important; }
+}
+
+/* Dark theme uses the same semantic palette, not the old amber accent. */
+html.dark {
+  --m101-canvas:#101a16; --m101-surface:#17231e; --m101-surface-soft:#14201b; --m101-surface-raised:#1b2a23;
+  --m101-ink:#e5eee9; --m101-ink-soft:#c2d0c8; --m101-muted:#9aaba2; --m101-muted-2:#71847a;
+  --m101-line:#2a3b32; --m101-line-strong:#3a5045; --m101-accent:#67b99d; --m101-accent-hover:#83cdb1;
+  --m101-accent-soft:#1d3a2e; --m101-accent-tint:#192d24; --m101-shadow:0 3px 16px rgba(0,0,0,.14);
+}
+html.dark,html.dark body,html.dark #root { background:var(--m101-canvas)!important; color:var(--m101-ink)!important; }
+html.dark .m101-sidebar,html.dark .mobile-app-nav { background:#17231e!important; border-color:var(--m101-line)!important; }
+html.dark .m101-brand-copy strong,html.dark .m101-panel-heading h2,html.dark .m101-import-drop-card h2,html.dark .m101-import-guidance h2 { color:#e5eee9!important; }
+html.dark .m101-side-link { color:#a9b9b0!important; }
+html.dark .m101-side-link:hover { background:#1c3026!important; }
+html.dark .m101-side-link.is-active { background:#1e3b2f!important; color:#a8dfc4!important; box-shadow:inset 3px 0 0 #67b99d; }
+html.dark .m101-side-link.is-active .material-symbols-outlined { color:#8ed0b2!important; }
+html.dark .mobile-main-content { background:var(--m101-canvas)!important; }
+html.dark .mobile-main-content input:not([type=checkbox]):not([type=radio]),html.dark .mobile-main-content select,html.dark .mobile-main-content textarea,
+html.dark .m101-dialog-panel input:not([type=checkbox]):not([type=radio]),html.dark .m101-dialog-panel select,html.dark .m101-dialog-panel textarea { background:#101a16!important; border-color:#3a5045!important; color:#e5eee9!important; }
+html.dark .mobile-main-content button[class*=bg-amber-500],html.dark .mobile-main-content button[class*=bg-slate-900],
+html.dark .m101-dialog-panel button[class*=bg-amber-500],html.dark .m101-dialog-panel button[class*=bg-slate-900] { background:#26765d!important; border-color:#26765d!important; color:#fff!important; }
+html.dark .m101-overview-panel,html.dark .m101-metric-card,html.dark .m101-import-flow,html.dark .m101-import-drop-card,html.dark .m101-import-guidance { background:#17231e!important; border-color:var(--m101-line)!important; }
+html.dark .m101-metric-total { background:#1b3026!important; }
+html.dark .m101-panel-heading h2,html.dark .m101-metric-card strong,html.dark .m101-recent-main b { color:#e5eee9!important; }
+html.dark .m101-recent-row { background:transparent!important; border-color:#2a3b32!important; }
+html.dark .m101-recent-row:hover { background:#1b2a23!important; }
+html.dark .m101-record-list { background:#14201b!important; border-color:#2a3b32!important; }
+html.dark .m101-record-row { background:#192720!important; border-color:#2a3b32!important; color:#e5eee9!important; }
+html.dark .m101-record-row.is-selected { background:#1d3a2e!important; border-color:#477d68!important; }
+html.dark .m101-dialog-panel { background:#17231e!important; border-color:#30443a!important; }
+html.dark .m101-dialog-panel>div:first-child { background:#1b2a23!important; border-color:#30443a!important; }
+html.dark .m101-dialog-panel label { color:#bdcbc3!important; }
+html.dark .mobile-utility-nav button:hover { background:#20342a!important; border-color:#31483b!important; }
+html.dark .m101-button-secondary { color:#d6e7dc!important; background:#20342a!important; border-color:#3a5045!important; }
