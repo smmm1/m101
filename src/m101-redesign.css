@@ -760,3 +760,48 @@ html.dark .m101-titles-dialog form input{background:#101a16!important;border-col
  .m101-toast-stack{right:10px!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;left:10px!important;width:auto!important;max-width:none!important}
 }
 @media(prefers-reduced-motion:reduce){.m101-toast,.m101-delete-dialog,.m101-titles-dialog{animation:none!important;transition:none!important}}
+
+
+/* Import conflict review — align duplicate decisions with M101 workspace */
+.m101-conflict-overlay{background:rgba(15,35,29,.56)!important;padding:16px!important}
+.m101-conflict-dialog{background:#fff!important;border:1px solid var(--m101-line)!important;border-radius:20px!important;box-shadow:0 28px 80px rgba(18,48,39,.22)!important;gap:17px!important}
+.m101-conflict-header{border-color:var(--m101-line)!important;padding-bottom:14px!important}
+.m101-conflict-header h3{color:var(--m101-ink)!important;font-size:13px!important}
+.m101-conflict-header p,.m101-conflict-header strong{color:var(--m101-muted)!important}
+.m101-conflict-summary>div{border-radius:12px!important;border-color:var(--m101-line)!important;background:#f7faf8!important}
+.m101-conflict-summary>div:nth-child(2){background:#eef7f1!important;border-color:#d7e9dc!important}
+.m101-conflict-summary>div:nth-child(3){background:#f8f4ec!important;border-color:#eadfc9!important}
+.m101-conflict-option{border-radius:13px!important;padding:14px!important;min-width:0}
+.m101-conflict-option:not([class*=bg-neutral-900]){border-color:var(--m101-line)!important;background:#fbfdfc!important;color:var(--m101-ink)!important}
+.m101-conflict-option:not([class*=bg-neutral-900]):hover{background:#f1f7f4!important;border-color:#c7ddd2!important}
+.m101-conflict-option[class*=bg-neutral-900]{background:#1c5144!important;border-color:#1c5144!important}
+.m101-conflict-option input{accent-color:#176b5c;flex:0 0 auto;margin-top:3px}
+.m101-conflict-dialog button{min-height:38px;border-radius:10px!important}
+.m101-conflict-dialog button:focus-visible,.m101-conflict-option:focus-within{outline:3px solid rgba(8,126,115,.24);outline-offset:2px}
+.m101-conflict-dialog [class*=border-\[\#e4e4e7\]]{border-color:var(--m101-line)!important}
+.m101-conflict-dialog [class*=bg-\[\#fafafa\]]{background:#f7faf8!important}
+html.dark .m101-conflict-dialog{background:#14221f!important;border-color:#30443a!important}
+html.dark .m101-conflict-header{border-color:#30443a!important}
+html.dark .m101-conflict-header h3,html.dark .m101-conflict-header strong{color:#e2eee7!important}
+html.dark .m101-conflict-summary>div{background:#1b2c25!important;border-color:#30443a!important}
+html.dark .m101-conflict-summary>div span,html.dark .m101-conflict-summary>div strong{color:#c4d8cd!important}
+html.dark .m101-conflict-option:not([class*=bg-neutral-900]){background:#192720!important;border-color:#30443a!important;color:#e2eee7!important}
+html.dark .m101-conflict-option[class*=bg-neutral-900]{background:#245c4c!important;border-color:#397762!important}
+html.dark .m101-conflict-dialog [class*=bg-\[\#fafafa\]]{background:#192720!important}
+@media(max-width:640px){
+ .m101-conflict-overlay{align-items:flex-end!important;padding:8px!important}
+ .m101-conflict-dialog{width:100%!important;max-width:none!important;max-height:94dvh!important;overflow-y:auto!important;padding:17px!important;border-radius:18px 18px 12px 12px!important;gap:14px!important}
+ .m101-conflict-summary{gap:7px!important}
+ .m101-conflict-summary>div{padding:10px!important;min-width:0}
+ .m101-conflict-summary>div span{font-size:9px!important;line-height:1.4}
+ .m101-conflict-summary>div strong{font-size:17px!important}
+ .m101-conflict-option{padding:12px!important;gap:10px!important}
+ .m101-conflict-option span{overflow-wrap:anywhere}
+ .m101-import-dialog{align-items:flex-end!important;padding:7px!important}
+ .m101-import-dialog-panel{max-height:95dvh!important;border-radius:18px 18px 12px 12px!important}
+ .m101-import-dialog-panel>div:first-child{padding:14px 15px!important}
+ .m101-import-dialog-panel .m101-import-stepper{gap:5px;padding:10px 12px!important;overflow-x:auto}
+ .m101-import-stepper>div{gap:5px}
+ .m101-import-stepper>div b{font-size:9px}
+ .m101-import-dialog-panel .flex-1.overflow-y-auto{padding:13px!important}
+}
