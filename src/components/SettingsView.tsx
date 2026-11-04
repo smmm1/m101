@@ -134,9 +134,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-[#F8FAFC] dark:bg-[#0B0F19] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors m101-settings">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 m101-settings-header">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white font-headline tracking-tight">
             การตั้งค่าระบบ (Settings)
@@ -156,9 +156,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl m101-settings-grid">
         {/* 1. System Information Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">tune</span>
@@ -289,7 +289,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* 3. Dataset Management Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs lg:col-span-2">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs lg:col-span-2 m101-settings-card m101-settings-dataset">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">dataset</span>
