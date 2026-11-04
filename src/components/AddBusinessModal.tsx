@@ -88,7 +88,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
                 เพิ่มกิจการใหม่ (ลำดับ: #{sequenceNo})
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                กรอกข้อมูลนิติบุคคลเพื่อบันทึกลงในระบบ Mustang
+                กรอกข้อมูลนิติบุคคลเพื่อบันทึกลงในทะเบียน
               </p>
             </div>
           </div>
