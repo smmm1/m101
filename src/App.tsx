@@ -17,6 +17,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CursorProvider } from './context/CursorContext';
 import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
+import { SmartIdleScreen } from './components/SmartIdleScreen';
 
 interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
@@ -779,6 +780,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
+      <SmartIdleScreen />
       {pinSetupOpen && sessionUser && (
         <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <form onSubmit={async (event) => {
