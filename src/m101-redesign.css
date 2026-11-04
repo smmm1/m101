@@ -11,7 +11,7 @@ html,body,#root{min-height:100%;background:var(--m101-canvas);color:var(--m101-i
 .mobile-main-content [class*=rounded-3xl]{border-radius:var(--m101-radius)!important}.mobile-main-content [class*=shadow-]{box-shadow:var(--m101-shadow)!important}.mobile-main-content [class*=border-slate-200]{border-color:var(--m101-line)!important}
 .mobile-main-content button{transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}.mobile-main-content button:active{transform:translateY(1px)}.mobile-main-content :focus-visible{outline:3px solid rgba(8,126,115,.25);outline-offset:2px}
 html.dark .mobile-app-shell{background:#101816!important;color:#e7efec!important}html.dark .m101-sidebar,html.dark .mobile-app-nav{background:#151e1b!important;border-color:#26352f!important}html.dark .mobile-main-content{background:#101816!important}html.dark .m101-side-link.is-active{background:#183a33!important;color:#8de0ce!important}
-@media(max-width:900px){.mobile-app-shell{display:flex!important;flex-direction:column!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}.m101-sidebar{position:sticky;top:0;z-index:45;display:flex;flex-direction:row;align-items:center;gap:5px;min-height:60px;padding:7px 10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--m101-line)}.m101-brand{flex:0 0 auto;padding:0 8px 0 0}.m101-brand-copy span,.m101-nav-caption,.m101-sidebar-spacer,.m101-sidebar-foot{display:none}.m101-side-link{flex:0 0 auto;width:auto;min-height:40px;padding:0 10px;margin:0;white-space:nowrap}.mobile-app-nav{position:sticky;top:60px;z-index:40;min-height:54px!important;padding:5px 12px!important}.mobile-main-content{padding:16px 12px 24px!important;overflow:visible!important}.mobile-main-content>div{height:auto!important;min-height:0!important}.mobile-main-content>div>div{min-height:0!important}.mobile-main-content [class*=grid-cols-]{grid-template-columns:minmax(0,1fr)!important}}
+@media(max-width:900px){.mobile-app-shell{display:flex!important;flex-direction:column!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}.m101-sidebar{position:sticky;top:0;z-index:45;display:flex;flex-direction:row;align-items:center;gap:5px;min-height:60px;padding:7px 10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--m101-line)}.m101-brand{flex:0 0 auto;padding:0 8px 0 0}.m101-brand-copy span,.m101-nav-caption,.m101-sidebar-spacer,.m101-sidebar-foot{display:none}.m101-side-link{flex:0 0 auto;width:auto;min-height:40px;padding:0 10px;margin:0;white-space:nowrap}.mobile-app-nav{position:sticky;top:60px;z-index:40;min-height:54px!important;padding:5px 12px!important}.mobile-main-content{padding:16px 12px 24px!important;overflow:visible!important}.mobile-main-content>div{height:auto!important;min-height:0!important}.mobile-main-content>div>div{min-height:0!important}/* Keep component-defined responsive grids intact; each view owns its own column behavior. */}
 @media(max-width:480px){.m101-brand-copy strong{font-size:15px}.m101-brand-mark{width:36px;height:36px}.m101-side-link{font-size:11px;gap:6px}.mobile-main-content{padding-inline:10px!important}}
 
 /* Directory list — compact, scannable record cards */
@@ -482,3 +482,23 @@ html.dark .m101-dialog-panel [class*=bg-amber-100],
 html.dark .m101-dialog-panel [class*=bg-amber-50],
 html.dark .m101-dialog-panel [class*=bg-emerald-50],
 html.dark .m101-dialog-panel [class*=bg-slate-200]{background:#193a32!important;color:#a9e2d0!important;border-color:#31584b!important}
+
+
+/* Responsive polish — preserve information density without collapsing every grid */
+@media (max-width: 900px) {
+  .m101-overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .m101-overview-grid { grid-template-columns: minmax(0, 1fr); }
+  .m101-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .m101-settings-grid { grid-template-columns: minmax(0, 1fr); }
+  .m101-overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-main-content *, .m101-dialog-panel *, .m101-record-row, .m101-quick-action, .m101-recent-row {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
