@@ -273,7 +273,7 @@ body { font-family:'Sarabun','Plus Jakarta Sans',sans-serif; font-size:14px; lin
 
 /* Avoid collapsing every grid at tablet width; preserve each page's designed columns. */
 @media(max-width:900px) {
-  .mobile-main-content [class*=grid-cols-] { grid-template-columns:var(--tw-grid-cols,repeat(1,minmax(0,1fr)))!important; }
+  
   .m101-sidebar { background:#fff!important; }
   .mobile-main-content { padding:19px 16px 30px!important; }
 }
