@@ -213,6 +213,10 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       const companyColumn = Object.entries(mapping).find(([, field]) => field === 'companyName')?.[0];
       return companyColumn !== undefined && clean(dataRows[rowIndex]?.[Number(companyColumn)]) !== '';
     });
+    if (rowsWithNames.length === 0) {
+      onShowToast('ไม่พบแถวที่มีชื่อกิจการในรายการที่เลือก', 'ไม่มีข้อมูลให้นำเข้า', 'error');
+      return;
+    }
     if (rowsWithNames.length !== selectedRows.length) {
       onShowToast('มีแถวที่ไม่มีชื่อกิจการ ระบบจะข้ามแถวเหล่านั้น', 'ตรวจสอบข้อมูล', 'info');
     }
@@ -308,7 +312,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                     </div>
                   )}
                   {selectedRegion && (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="max-h-[380px] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
                       <table className="w-full min-w-[420px] text-left text-[11px]">
                         <tbody>{selectedRegion.rows.slice(0, 4).map((row, index) => <tr key={index} className="border-b border-slate-100 last:border-0 dark:border-slate-800">{row.map((cell, col) => <td key={col} className="max-w-[180px] truncate px-3 py-2 text-slate-600 dark:text-slate-300">{cell || '—'}</td>)}</tr>)}</tbody>
                       </table>
