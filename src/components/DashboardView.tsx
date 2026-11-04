@@ -444,13 +444,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
+          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden m101-directory-shell">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
-            <div className="flex-1 lg:w-[72%] min-h-[50vh] lg:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="flex-1 lg:w-[72%] min-h-[50vh] lg:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden m101-directory-list-panel">
               
               {/* Header & Total Counter + Add & Import Buttons */}
-              <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0">
+              <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0 m101-directory-toolbar">
                 <div className="flex flex-col">
                   <h2 className="text-xl font-extrabold text-slate-900 dark:text-white font-headline tracking-tight">
                     ทะเบียนกิจการ
@@ -516,7 +516,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Search & Sort Bar */}
-              <div className="p-3.5 sm:px-5 bg-slate-50/60 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="p-3.5 sm:px-5 bg-slate-50/60 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 m101-directory-searchbar">
                 <div className="relative flex-1 min-w-[220px]">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <span className="material-symbols-outlined text-[18px]">search</span>
@@ -541,7 +541,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Filter Tabs */}
-              <div className="px-3 sm:px-5 py-2.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2 shrink-0">
+              <div className="px-3 sm:px-5 py-2.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2 shrink-0 m101-directory-filters">
                 {[
                   { id: 'all', label: 'ทั้งหมด' },
                   { id: 'has_efiling', label: 'มีรหัส E-Filing' },
