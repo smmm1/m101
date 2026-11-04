@@ -74,6 +74,11 @@ function AppContent() {
   const availableYearsRef = React.useRef<string[]>(['69']);
   const selectedYearRef = React.useRef('69');
 
+  // Cloudflare D1 is the source of truth. Browser storage is never imported.
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
+  const [isVisitor, setIsVisitor] = useState(false);
+
   useEffect(() => {
     return initCuteClickSound();
   }, []);
@@ -121,11 +126,6 @@ function AppContent() {
 
   // Active records for currently selected fiscal year
   const currentRecords = recordsByYear[selectedYear] || [];
-
-  // Cloudflare D1 is the source of truth. Browser storage is never imported.
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
-  const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
     let active = true;
