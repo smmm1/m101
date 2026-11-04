@@ -210,9 +210,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
 
   return (
-    <div className="m101-app-shell mobile-app-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
+    <div className="m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
       
-      <aside className="m101-sidebar" aria-label="เมนูหลัก M101">
+      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก M101">
         <div className="m101-brand"><div className="m101-brand-mark">M</div><div className="m101-brand-copy"><strong>M101</strong><span>DOCUMENT WORKSPACE</span></div></div>
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
         <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
@@ -245,9 +245,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
-      <nav className="mobile-app-nav min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-end gap-2 shrink-0 z-30">
+      <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-end gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
         {/* Primary navigation is in the workspace sidebar. */}
-        <div className="mobile-utility-nav flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
@@ -679,7 +679,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* RIGHT COLUMN: DETAIL CARD VIEW (~28% - Fully visible with no truncation) */}
             <div className="w-full lg:w-[28%] flex flex-col shrink-0 overflow-y-auto no-scrollbar">
               {activeRecord ? (
-                <div className="bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/85 dark:border-slate-800 shadow-xl p-5 flex flex-col gap-4">
+                <div className="m101-selected-record-card bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/85 dark:border-slate-800 shadow-xl p-5 flex flex-col gap-4">
                   
                   {/* Card Top Tags & Company Name */}
                   <div className="flex flex-col gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
