@@ -24,7 +24,7 @@ export const EditTitlesModal: React.FC<EditTitlesModalProps> = ({ isOpen, onClos
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateConfig({
-      appName: appName.trim() || 'Mustang Directory',
+      appName: appName.trim() || 'ระบบจัดการข้อมูล',
       appTagline: appTagline.trim() || 'ระบบบริหารจัดการนิติบุคคลและทะเบียนกิจการ',
       dashboardTitle: dashboardTitle.trim() || 'ภาพรวมระบบ',
       dashboardSubtitle: dashboardSubtitle.trim() || 'ติดตามสถานะการดำเนินงาน',
