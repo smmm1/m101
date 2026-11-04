@@ -8,6 +8,7 @@ import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 const ImportDocumentView = lazy(() => import('./ImportDocumentView').then((module) => ({ default: module.ImportDocumentView })) );
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
+import '../m101-redesign.css';
 
 interface ActivityLogItem {
   id: string;
