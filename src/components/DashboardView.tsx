@@ -272,53 +272,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
+      {/* Workspace utility header */}
       <nav className="mobile-app-nav min-h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 shadow-2xs">
-        {/* Navigation Tabs */}
-        <div className="mobile-primary-nav flex flex-wrap items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'dashboard'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">grid_view</span>
-            <span>ภาพรวม</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('directory')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'directory'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-            <span>ทะเบียนกิจการ</span>
-          </button>
-
-          {isLoggedIn && (
-          <button
-            type="button"
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-            <span>การตั้งค่า</span>
-          </button>
-          )}
-        </div>
-
-        {/* Right Controls: Fiscal Year + Activity Log + Dark Mode + Profile */}
+        {/* Global utilities only — primary navigation lives in the workspace sidebar. */}
         <div className="mobile-utility-nav flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
@@ -513,7 +469,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </nav>
 
-      {/* 2. MAIN VIEW SWITCHER / CONTENT */}
+      {/* Main workspace content */}
       <div className="mobile-main-content flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
           <div className="mobile-directory-layout flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
