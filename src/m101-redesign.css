@@ -165,3 +165,6 @@ html.dark .m101-dialog-panel label{color:#b2c2ba}
 .m101-import-dialog-panel input[type=checkbox] { accent-color:#176b5c; width:15px; height:15px; }
 .dark .m101-import-stepper { background:#172720; border-color:#293b35; }.dark .m101-import-stepper>div { color:#9aaca3; }.dark .m101-import-stepper>div span { background:#20342b; border-color:#3a5145; color:#a9bbb1; }.dark .m101-import-stepper>div.is-current { color:#a5e1ca; }.dark .m101-import-stepper>div.is-current span { background:#27765f; border-color:#27765f; color:white; }.dark .m101-import-stepper>div.is-done { color:#a5d9bd; }.dark .m101-import-stepper>i { background:#35473e; }.dark .m101-import-dialog-panel .m101-import-stepper+div { background:#15201c; }.dark .m101-import-dialog-panel tbody tr:hover { background:#1b3027; }
 @media(max-width:600px){.m101-import-stepper{gap:5px;padding:11px 12px}.m101-import-stepper>div{gap:5px}.m101-import-stepper>div b{font-size:9px;white-space:normal}.m101-import-stepper>div span{width:22px;height:22px;flex:0 0 22px}.m101-import-stepper>i{min-width:5px}}
+
+.m101-import-dialog-panel input[type="checkbox"] { width:15px!important; height:15px!important; min-height:15px!important; padding:0!important; border-radius:4px!important; box-shadow:none!important; }
+.m101-import-dialog-panel select:focus { outline:2px solid rgba(23,107,92,.16); outline-offset:1px; }
