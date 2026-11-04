@@ -691,3 +691,32 @@ html.dark .m101-settings-confirm h4{color:#e2eee7!important}
 @media(prefers-reduced-motion:reduce){
  .m101-overview *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+
+/* Record dialogs — shared header, form rhythm and responsive behavior */
+.m101-dialog-header{min-height:78px!important;padding:18px 22px!important;background:#f7faf8!important;border-color:var(--m101-line)!important}
+.m101-dialog-header h2,.m101-dialog-header h3{color:var(--m101-ink)!important;line-height:1.45!important}
+.m101-dialog-header .material-symbols-outlined{color:var(--m101-accent)!important}
+.m101-form-dialog form{padding:22px!important;gap:16px!important}
+.m101-form-dialog form label{display:block;margin-bottom:6px;color:#536a63!important;font-size:11px!important;font-weight:750!important}
+.m101-form-dialog form input,.m101-form-dialog form select,.m101-form-dialog form textarea{min-height:42px;border:1px solid #dce7e2!important;border-radius:10px!important;background:#fbfdfc!important;color:#203b34!important;font-size:12px!important;transition:border-color .16s,box-shadow .16s!important}
+.m101-form-dialog form input:focus,.m101-form-dialog form select:focus,.m101-form-dialog form textarea:focus{border-color:#69a99b!important;box-shadow:0 0 0 3px rgba(8,126,115,.12)!important;outline:none!important}
+.m101-form-dialog form button{min-height:38px;border-radius:10px!important;font-size:11px!important}
+.m101-form-dialog form button[type=submit]{min-height:42px!important;background:var(--m101-accent)!important;color:#fff!important}
+.m101-form-dialog form button[type=submit]:hover{background:#10584c!important}
+.m101-form-dialog form [class*=bg-rose-50]{background:#fcf5f3!important;border-color:#f0dfda!important;color:#9b5147!important}
+.m101-detail-dialog{max-width:720px!important}
+.m101-detail-dialog>div:last-child{min-width:0}
+.m101-detail-dialog button{min-height:36px}
+.m101-dialog-panel button:focus-visible{outline:3px solid rgba(8,126,115,.28)!important;outline-offset:2px}
+html.dark .m101-dialog-header{background:#1b2a23!important;border-color:#30443a!important}
+html.dark .m101-dialog-header h2,html.dark .m101-dialog-header h3{color:#e2eee7!important}
+html.dark .m101-form-dialog form label{color:#b7c9c0!important}
+html.dark .m101-form-dialog form input,html.dark .m101-form-dialog form select,html.dark .m101-form-dialog form textarea{background:#101a16!important;border-color:#35473e!important;color:#e5eee9!important}
+html.dark .m101-form-dialog form [class*=bg-rose-50]{background:#342321!important;border-color:#593630!important;color:#efb8ae!important}
+@media(max-width:640px){
+ .m101-dialog-header{min-height:68px!important;padding:15px 16px!important}
+ .m101-form-dialog form{padding:16px!important;gap:14px!important;max-height:calc(94dvh - 68px)!important}
+ .m101-form-dialog form [class*=grid-cols-3]{grid-template-columns:1fr!important}
+ .m101-detail-dialog{max-width:none!important}
+}
