@@ -292,7 +292,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = await requireUser(request, env);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
-      if (!/^\\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const result = await env.DB.prepare(
         'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE fiscal_year = ? ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
       ).bind(fiscalYear).all();
@@ -327,11 +327,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const status = String(body.status || 'pending');
       const dueDate = String(body.dueDate || '').trim();
       const note = String(body.note || '').trim();
-      if (!/^\\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !businessName || businessName.length > 300 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) {
+      if (!/^\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !businessName || businessName.length > 300 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) {
         return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
       }
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
-      if (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
       const id = randomToken(18);
       const now = new Date().toISOString();
@@ -347,7 +347,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, id, createdAt: now, updatedAt: now }, 201);
     }
 
-    const annualTaskMatch = path.match(/^\\/api\\/annual-tasks\\/([A-Za-z0-9_-]+)$/);
+    const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
     if (annualTaskMatch && request.method === 'PUT') {
       const user = await requireUser(request, env);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
@@ -364,7 +364,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const note = String(body.note || '').trim();
       if (!businessName || businessName.length > 300 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'ข้อมูลกิจการหรือประเภทงานไม่ถูกต้อง' }, 400);
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
-      if (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
       const result = await env.DB.prepare(
         'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
