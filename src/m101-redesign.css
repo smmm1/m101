@@ -402,3 +402,83 @@ html.dark .m101-settings-card button[class*=bg-indigo]{background:#193a32!import
 html.dark .m101-directory-searchbar{background:#131f1b!important}
 html.dark .m101-directory-filters{background:#15201c!important}
 @media(prefers-reduced-motion:reduce){.mobile-main-content button{transition:none!important}}
+
+/* Shared modal and record-detail visual language */
+.m101-dialog-overlay{padding:clamp(12px,3vw,28px)!important}
+.m101-dialog-overlay>.m101-dialog-panel{
+ border:1px solid var(--m101-line)!important;
+ border-radius:20px!important;
+ box-shadow:0 24px 80px rgba(17,40,34,.22)!important;
+ background:var(--m101-surface)!important;
+ color:var(--m101-ink)!important;
+}
+.m101-dialog-panel>div:first-child:not(.fixed){
+ background:#f7faf8!important;
+ border-color:var(--m101-line)!important;
+}
+.m101-dialog-panel h3,.m101-dialog-panel h2,.m101-dialog-panel h4{letter-spacing:-.025em}
+.m101-dialog-panel input:not([type=checkbox]):not([type=radio]),
+.m101-dialog-panel select,.m101-dialog-panel textarea{
+ min-height:42px;
+ border-radius:10px!important;
+ border:1px solid var(--m101-line)!important;
+ background:#fbfdfc!important;
+ color:#203b33!important;
+ box-shadow:none!important;
+ font-size:12px!important;
+}
+.m101-dialog-panel textarea{min-height:92px}
+.m101-dialog-panel input:focus,.m101-dialog-panel select:focus,.m101-dialog-panel textarea:focus{
+ outline:none!important;border-color:#70aa9d!important;
+ box-shadow:0 0 0 3px rgba(23,107,92,.12)!important;
+}
+.m101-dialog-panel form{gap:17px!important}
+.m101-dialog-panel form label{font-size:11px!important;font-weight:700!important;color:#536a63!important}
+.m101-dialog-panel form button[type=submit]{
+ background:var(--m101-accent)!important;color:#fff!important;border:1px solid var(--m101-accent)!important;
+ border-radius:10px!important;box-shadow:none!important;min-height:40px
+}
+.m101-dialog-panel form button[type=submit]:hover{background:var(--m101-accent-hover)!important}
+.m101-dialog-panel button:not([type=submit]){box-shadow:none!important}
+.m101-dialog-panel button[class*=bg-rose-600]{background:#b65353!important}
+.m101-dialog-panel [class*=bg-amber-100],
+.m101-dialog-panel [class*=bg-amber-50],
+.m101-dialog-panel [class*=bg-emerald-50],
+.m101-dialog-panel [class*=bg-slate-200]{
+ border-color:#dce9e3!important;background:#edf5f1!important;color:#28675a!important
+}
+.m101-dialog-panel [class*=text-amber-800],
+.m101-dialog-panel [class*=text-emerald-700],
+.m101-dialog-panel [class*=text-slate-700]{color:#28675a!important}
+.m101-dialog-panel [class*=border-slate-100],
+.m101-dialog-panel [class*=border-slate-200]{border-color:var(--m101-line)!important}
+.m101-dialog-panel [class*=shadow-md],
+.m101-dialog-panel [class*=shadow-2xl]{box-shadow:none!important}
+.m101-dialog-panel .material-symbols-outlined{vertical-align:middle}
+.m101-dialog-panel .m101-detail-section,
+.m101-dialog-panel section{border-color:var(--m101-line)!important}
+.m101-dialog-panel [class*=rounded-2xl]{border-radius:12px!important}
+@media(max-width:640px){
+ .m101-dialog-overlay{align-items:flex-end!important;padding:8px!important}
+ .m101-dialog-overlay>.m101-dialog-panel{
+  width:100%!important;max-width:none!important;max-height:94dvh!important;
+  border-radius:20px 20px 12px 12px!important
+ }
+ .m101-dialog-panel>div:first-child:not(.fixed){padding:16px!important}
+ .m101-dialog-panel form{padding:16px!important;max-height:76dvh!important}
+ .m101-dialog-panel form>div[class*=justify-end]{position:sticky;bottom:-16px;background:var(--m101-surface);padding:12px 0 2px}
+ .m101-dialog-panel form button{min-height:42px}
+}
+html.dark .m101-dialog-overlay>.m101-dialog-panel{background:#15201c!important;border-color:#2a3a33!important;color:#e5eee9!important}
+html.dark .m101-dialog-panel>div:first-child:not(.fixed){background:#192720!important;border-color:#2a3a33!important}
+html.dark .m101-dialog-panel input:not([type=checkbox]):not([type=radio]),
+html.dark .m101-dialog-panel select,html.dark .m101-dialog-panel textarea{
+ background:#101a16!important;border-color:#35473e!important;color:#e5eee9!important
+}
+html.dark .m101-dialog-panel form label{color:#b7c9c0!important}
+html.dark .m101-dialog-panel [class*=border-slate-100],
+html.dark .m101-dialog-panel [class*=border-slate-200]{border-color:#2a3a33!important}
+html.dark .m101-dialog-panel [class*=bg-amber-100],
+html.dark .m101-dialog-panel [class*=bg-amber-50],
+html.dark .m101-dialog-panel [class*=bg-emerald-50],
+html.dark .m101-dialog-panel [class*=bg-slate-200]{background:#193a32!important;color:#a9e2d0!important;border-color:#31584b!important}
