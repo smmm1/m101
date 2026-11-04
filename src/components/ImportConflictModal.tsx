@@ -33,10 +33,10 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
   const totalIncoming = duplicateItems.length + newItems.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white rounded-2xl p-6 max-w-xl w-full shadow-2xl border border-[#e4e4e7] flex flex-col gap-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto no-scrollbar">
+    <div className="m101-conflict-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
+      <div className="m101-conflict-dialog bg-white rounded-2xl p-6 max-w-xl w-full shadow-2xl border border-[#e4e4e7] flex flex-col gap-5 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto no-scrollbar">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#f4f4f5]">
+        <div className="m101-conflict-header flex items-center justify-between pb-3 border-b border-[#f4f4f5]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shadow-2xs">
               <span className="material-symbols-outlined text-[22px]">
@@ -62,7 +62,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
         </div>
 
         {/* Stats Summary Box */}
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="m101-conflict-summary grid grid-cols-3 gap-2.5">
           <div className="p-3 rounded-xl border border-[#e4e4e7] bg-[#fafafa]">
             <span className="text-[11px] text-[#71717a] block">ทั้งหมดในไฟล์</span>
             <span className="text-lg font-bold font-mono text-[#18181b]">
@@ -91,7 +91,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 1: Update Existing (Recommended) */}
           <label
-            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               selectedMode === 'update_existing'
                 ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
                 : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
