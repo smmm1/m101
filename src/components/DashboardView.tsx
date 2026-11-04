@@ -444,7 +444,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
-{activeTab === 'directory' && (
           <div className="flex-1 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 min-h-[calc(100vh-100px)] max-w-[1800px] w-full mx-auto overflow-visible m101-directory-shell">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
