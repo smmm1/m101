@@ -542,6 +542,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
+        <div key={activeTab} className="m101-tab-transition min-h-full">
         {activeTab === 'directory' && (
           <div className="flex-1 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 min-h-[calc(100vh-100px)] max-w-[1800px] w-full mx-auto overflow-visible m101-directory-shell">
             
@@ -970,6 +971,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onOpenMapping={() => setIsExcelMappingOpen(true)}
           />
         )}
+        </div>
       </div>
 
       {/* Modals */}
