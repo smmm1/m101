@@ -330,7 +330,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                       {selectedRegion.rows.map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} · {row.filter(Boolean).slice(0, 3).join(' / ') || 'ไม่มีข้อความ'}</option>)}
                     </select>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">3. จับคู่คอลัมน์กับข้อมูล M101</h3><span className="text-[11px] text-slate-500">เลือก “ไม่ใช้” สำหรับคอลัมน์ที่ไม่ต้องการ</span></div>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">3. จับคู่คอลัมน์กับฟิลด์ข้อมูล</h3><span className="text-[11px] text-slate-500">เลือก “ไม่ใช้” สำหรับคอลัมน์ที่ไม่ต้องการ</span></div>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {headers.map((header, index) => (
                       <label key={index} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
