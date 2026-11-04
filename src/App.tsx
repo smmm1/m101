@@ -20,6 +20,19 @@ import { initCuteClickSound } from './utils/cuteAudio';
 
 interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
+function WorkspaceLoadingSkeleton({ label = 'กำลังโหลดข้อมูล…' }: { label?: string }) {
+  return (
+    <main className="min-h-screen bg-[#f4f5f7] p-4 sm:p-6" aria-label={label} aria-busy="true">
+      <div className="mx-auto max-w-[1500px] space-y-5">
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"><div className="space-y-2"><div className="h-4 w-36 animate-pulse rounded bg-slate-200" /><div className="h-3 w-24 animate-pulse rounded bg-slate-100" /></div><div className="h-9 w-28 animate-pulse rounded-xl bg-slate-100" /></div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0,1,2,3].map((item) => <div key={item} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5"><div className="h-3 w-20 animate-pulse rounded bg-slate-100" /><div className="h-8 w-16 animate-pulse rounded bg-slate-200" /><div className="h-2 w-28 animate-pulse rounded bg-slate-100" /></div>)}</div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]"><div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"><div className="h-5 w-40 animate-pulse rounded bg-slate-200" /><div className="h-10 w-full animate-pulse rounded-xl bg-slate-100" />{[0,1,2,3,4].map((item) => <div key={item} className="flex gap-3 border-b border-slate-100 py-4"><div className="h-9 w-9 animate-pulse rounded-lg bg-slate-100" /><div className="flex-1 space-y-2"><div className="h-3 w-2/5 animate-pulse rounded bg-slate-200" /><div className="h-2 w-1/4 animate-pulse rounded bg-slate-100" /></div></div>)}</div><div className="hidden space-y-4 rounded-2xl border border-slate-200 bg-white p-5 xl:block"><div className="h-5 w-32 animate-pulse rounded bg-slate-200" />{[0,1,2,3].map((item) => <div key={item} className="h-16 animate-pulse rounded-xl bg-slate-100" />)}</div></div>
+        <p className="text-center text-xs text-slate-400">{label}</p>
+      </div>
+    </main>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -633,11 +646,11 @@ function AppContent() {
   }
 
   if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…'}</div>;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f4f5f7]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
   }
 
   if (isVisitor && !dataReady) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-slate-600">{dataError || 'กำลังโหลดข้อมูลที่เปิดเผยได้…'}</p>{dataError && <button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button>}<button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div>;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
   }
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
