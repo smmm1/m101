@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BusinessRecord } from '../types';
+import { AnnualTasksView } from './AnnualTasksView';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
@@ -73,7 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
-  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('directory');
 
   // Filter tab: 'all' | 'has_efiling' | 'no_efiling'
   const [filterTab, setFilterTab] = useState<'all' | 'has_efiling' | 'no_efiling'>('all');
@@ -239,6 +240,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
         <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
         <button type="button" onClick={() => setActiveTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
+        {isLoggedIn && <button type="button" onClick={() => setActiveTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานประจำปี</span></button>}
         {isLoggedIn && <button type="button" onClick={() => setActiveTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span></button>}
         {isLoggedIn && <button type="button" onClick={() => setActiveTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
         <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
@@ -799,6 +801,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </article>
             </div>
 
+            {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => setActiveTab('tasks')} mode="summary" />}
+
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
                 <div className="m101-panel-heading m101-status-heading">
@@ -828,7 +832,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                   )) : <p className="m101-empty-hint">เพิ่มข้อมูลกิจการเพื่อดูกราฟเปรียบเทียบตามประเภท</p>}
                 </div>
-                <p className="m101-dashboard-data-note">หมายเหตุ: ข้อมูลปัจจุบันมีสถานะระดับกิจการ ยังไม่มีสถานะแยกตามแบบภาษีหรือวันครบกำหนด จึงยังไม่แสดงยอดงานเกินกำหนด</p>
+                <p className="m101-dashboard-data-note">สถานะส่วนนี้ใช้สรุปความคืบหน้าการจัดการทะเบียนกิจการ ไม่ใช่สถานะการยื่นแบบภาษี</p>
                 {totalCount === 0 && <p className="m101-empty-hint">ยังไม่มีข้อมูลในรอบปีนี้ เริ่มต้นด้วยการเพิ่มกิจการหรือนำเข้าไฟล์</p>}
               </section>
 
@@ -861,6 +865,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </section>
           </section>
+        )}
+
+        {activeTab === 'tasks' && isLoggedIn && (
+          <AnnualTasksView
+            records={records}
+            selectedYear={selectedYear}
+            isLoggedIn={isLoggedIn}
+            onShowToast={onShowToast}
+            mode="full"
+          />
         )}
 
         {activeTab === 'settings' && (
