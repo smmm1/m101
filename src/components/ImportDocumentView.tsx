@@ -9,7 +9,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
   <main className="m101-import-workspace w-full max-w-[1320px] mx-auto">
     <header className="m101-import-header">
       <div>
-        <p className="m101-eyebrow">DATA INTAKE / M101</p>
+        <p className="m101-eyebrow">DATA INTAKE</p>
         <h1>นำเข้าข้อมูลทะเบียน</h1>
         <p>ตรวจสอบโครงสร้างไฟล์และกำหนดปลายทางของแต่ละคอลัมน์ก่อนบันทึกเข้ารอบปีบัญชี {selectedYear}</p>
       </div>
