@@ -174,13 +174,21 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       return;
     }
     const next: Record<number, ImportField | ''> = {};
-    headers.forEach((header, index) => { next[index] = guessField(header); });
+    const used = new Set<ImportField>();
+    headers.forEach((header, index) => {
+      const guessed = guessField(header);
+      next[index] = guessed && !used.has(guessed) ? guessed : '';
+      if (next[index]) used.add(next[index] as ImportField);
+    });
     setMapping(next);
-    setSelectedRows(dataRows.map((_, index) => index));
+    const companyColumn = Object.entries(next).find(([, field]) => field === 'companyName')?.[0];
+    setSelectedRows(companyColumn === undefined
+      ? []
+      : dataRows.map((row, index) => ({ row, index })).filter(({ row }) => clean(row[Number(companyColumn)]) !== '').map(({ index }) => index));
     setStep('mapping');
   };
 
-  const preview = useMemo(() => dataRows.slice(0, 6), [dataRows]);
+  const preview = useMemo(() => dataRows, [dataRows]);
   const mappedFields = Object.values(mapping).filter(Boolean);
   const hasCompanyName = mappedFields.includes('companyName');
 
@@ -198,7 +206,14 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       return;
     }
     const now = new Date().toISOString();
-    const output: Partial<BusinessRecord>[] = selectedRows.map((rowIndex, index) => {
+    const rowsWithNames = selectedRows.filter((rowIndex) => {
+      const companyColumn = Object.entries(mapping).find(([, field]) => field === 'companyName')?.[0];
+      return companyColumn !== undefined && clean(dataRows[rowIndex]?.[Number(companyColumn)]) !== '';
+    });
+    if (rowsWithNames.length !== selectedRows.length) {
+      onShowToast('มีแถวที่ไม่มีชื่อกิจการ ระบบจะข้ามแถวเหล่านั้น', 'ตรวจสอบข้อมูล', 'info');
+    }
+    const output: Partial<BusinessRecord>[] = rowsWithNames.map((rowIndex, index) => {
       const source = dataRows[rowIndex] ?? [];
       const record: Partial<BusinessRecord> = {
         sequenceNo: '',
@@ -300,14 +315,20 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                     {headers.map((header, index) => (
                       <label key={index} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                         <span className="block truncate text-[11px] font-semibold text-slate-600 dark:text-slate-300">{header || `คอลัมน์ ${index + 1}`}</span>
-                        <select value={mapping[index] ?? ''} onChange={(event) => setMapping((current) => ({ ...current, [index]: event.target.value as ImportField | '' }))} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-800 outline-none focus:border-amber-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                        <select value={mapping[index] ?? ''} onChange={(event) => {
+                          const nextField = event.target.value as ImportField | '';
+                          setMapping((current) => ({ ...current, [index]: nextField }));
+                          if (nextField === 'companyName') {
+                            setSelectedRows(dataRows.map((row, rowIndex) => ({ row, rowIndex })).filter(({ row }) => clean(row[index]) !== '').map(({ rowIndex }) => rowIndex));
+                          }
+                        }} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-800 outline-none focus:border-amber-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                           <option value="">ไม่ใช้คอลัมน์นี้</option>
-                          {FIELD_OPTIONS.map((field) => <option key={field.value} value={field.value}>{field.label}</option>)}
+                          {FIELD_OPTIONS.map((field) => <option key={field.value} value={field.value} disabled={field.value !== mapping[index] && Object.entries(mapping).some(([column, value]) => Number(column) !== index && value === field.value)}>{field.label}</option>)}
                         </select>
                       </label>
                     ))}
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[11px] text-slate-500">ตัวอย่างข้อมูล {preview.length} จาก {dataRows.length} แถว · ต้องจับคู่ “ชื่อกิจการ” ก่อนนำเข้า</p><button type="button" onClick={toggleAll} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">{selectedRows.length === dataRows.length ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด'}</button></div>
+                  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[11px] text-slate-500">แสดงข้อมูลทั้งหมด {preview.length} แถว · ต้องจับคู่ “ชื่อกิจการ” ก่อนนำเข้า</p><button type="button" onClick={toggleAll} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">{selectedRows.length === dataRows.length ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด'}</button></div>
                   <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                     <table className="w-full min-w-[600px] text-left text-[11px]">
                       <thead className="bg-slate-50 dark:bg-slate-900"><tr><th className="px-3 py-2">นำเข้า</th>{headers.map((header, index) => <th key={index} className="px-3 py-2 font-semibold text-slate-500">{header || `คอลัมน์ ${index + 1}`}</th>)}</tr></thead>
