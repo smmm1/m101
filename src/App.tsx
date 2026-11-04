@@ -7,8 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { BusinessRecord } from './types';
 import { DashboardView } from './components/DashboardView';
 import { YearManageModal } from './components/YearManageModal';
-import { FloatingPenButton } from './components/FloatingPenButton';
-import { EditTitlesModal } from './components/EditTitlesModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import {
   ImportConflictModal,
@@ -227,7 +225,6 @@ function AppContent() {
 
   // Modals state
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
-  const [isEditTitlesModalOpen, setIsEditTitlesModalOpen] = useState(false);
 
   // Import Conflict Modal State
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
@@ -829,18 +826,6 @@ function AppContent() {
       />
 
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
-      <FloatingPenButton
-        onOpenModal={() => setIsEditTitlesModalOpen(true)}
-        isLoggedIn={isLoggedIn}
-      />
-
-      {isEditTitlesModalOpen && (
-        <EditTitlesModal
-          isOpen={isEditTitlesModalOpen}
-          onClose={() => setIsEditTitlesModalOpen(false)}
-          onShowToast={showToast}
-        />
-      )}
     </div>
   );
 }
