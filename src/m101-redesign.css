@@ -603,3 +603,48 @@ html.dark .m101-dialog-panel [class*=bg-slate-200]{background:#193a32!important;
  .m101-topbar-actions .relative>div[class*=absolute] { max-width:calc(100vw - 24px)!important; }
  .m101-selected-record-card { padding:16px!important; }
 }
+
+
+/* Settings refinement — consistent nested panels and confirmation dialog */
+.m101-settings-backup .m101-settings-card{min-width:0}
+.m101-settings-backup button{min-height:54px!important;padding:12px 14px!important;background:#f8fbf9!important;border-color:var(--m101-line)!important;color:#29463e!important}
+.m101-settings-backup button:hover{background:#edf6f2!important;border-color:#b9d9cd!important}
+.m101-settings-backup button .material-symbols-outlined{color:var(--m101-accent)!important}
+.m101-dataset-option{min-width:0;border-radius:13px!important;border-color:var(--m101-line)!important;background:#f8fbf9!important;padding:17px!important}
+.m101-dataset-option h4{font-size:12px!important;line-height:1.55!important;color:var(--m101-ink)!important}
+.m101-dataset-option p{font-size:11px!important;line-height:1.7!important;color:var(--m101-muted)!important}
+.m101-dataset-option button{min-height:38px!important;padding:9px 13px!important;font-size:11px!important}
+.m101-dataset-danger{background:#fcf8f6!important;border-color:#efdfd9!important}
+.m101-dataset-danger h4{color:#9b5147!important}
+.m101-dataset-danger p{color:#a56b60!important}
+.m101-dataset-danger button{background:#a94f46!important;color:#fff!important}
+.m101-dataset-danger button:hover{background:#8f4039!important}
+.m101-auth-status{background:#f3f7f5!important;border-color:#dce9e3!important}
+.m101-auth-status h4{color:#315e50!important}
+.m101-auth-status p{color:#657b72!important}
+.m101-auth-status button{background:var(--m101-accent)!important;color:#fff!important}
+.m101-settings-confirm>div{border:1px solid var(--m101-line)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 24px 70px rgba(18,48,39,.2)!important;padding:24px!important}
+.m101-settings-confirm h4{color:var(--m101-ink)!important}
+.m101-settings-confirm p{line-height:1.75!important}
+.m101-settings-confirm button{min-height:39px!important;border-radius:9px!important;box-shadow:none!important}
+.m101-settings-confirm button:last-child{background:#a94f46!important}
+html.dark .m101-settings-backup button{background:#192720!important;border-color:#304238!important;color:#dceae3!important}
+html.dark .m101-settings-backup button:hover{background:#20382e!important}
+html.dark .m101-dataset-option{background:#192720!important;border-color:#304238!important}
+html.dark .m101-dataset-option h4{color:#e2eee7!important}
+html.dark .m101-dataset-option p{color:#a8bbb0!important}
+html.dark .m101-dataset-danger{background:#2a201e!important;border-color:#51332e!important}
+html.dark .m101-dataset-danger h4{color:#efb8ae!important}
+html.dark .m101-auth-status{background:#1b2c25!important;border-color:#355144!important}
+html.dark .m101-auth-status h4{color:#b6dfcc!important}
+html.dark .m101-auth-status p{color:#a8bbb0!important}
+html.dark .m101-settings-confirm>div{background:#15201c!important;border-color:#304238!important}
+html.dark .m101-settings-confirm h4{color:#e2eee7!important}
+@media(max-width:640px){
+ .m101-settings-backup button{align-items:flex-start!important;gap:12px!important}
+ .m101-dataset-option{padding:14px!important}
+ .m101-settings-confirm{align-items:flex-end!important;padding:10px!important}
+ .m101-settings-confirm>div{width:100%!important;padding:19px!important;border-radius:17px 17px 13px 13px!important}
+ .m101-settings-confirm>div>div:last-child{display:flex;flex-wrap:wrap}
+ .m101-settings-confirm button{flex:1 1 auto}
+}
