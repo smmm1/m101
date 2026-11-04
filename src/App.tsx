@@ -55,6 +55,11 @@ function AppContent() {
   const pendingDatabaseWriteRef = React.useRef(false);
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
+  const undoStackRef = React.useRef<UndoSnapshot[]>([]);
+  const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
+  const availableYearsRef = React.useRef<string[]>(['69']);
+  const selectedYearRef = React.useRef('69');
 
   useEffect(() => {
     return initCuteClickSound();
@@ -64,6 +69,42 @@ function AppContent() {
   const [availableYears, setAvailableYears] = useState<string[]>(['69']);
   const [selectedYear, setSelectedYear] = useState<string>('69');
   const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>({ '69': [] });
+
+  // Keep refs current so the keyboard shortcut always restores the latest UI state.
+  recordsByYearRef.current = recordsByYear;
+  availableYearsRef.current = availableYears;
+  selectedYearRef.current = selectedYear;
+
+  const pushUndoSnapshot = () => {
+    undoStackRef.current = [
+      ...undoStackRef.current.slice(-29),
+      {
+        recordsByYear: JSON.parse(JSON.stringify(recordsByYearRef.current)) as Record<string, BusinessRecord[]>,
+        availableYears: [...availableYearsRef.current],
+        selectedYear: selectedYearRef.current,
+      },
+    ];
+  };
+
+  // Ctrl/Cmd+Z restores the previous data state. Native text-field undo remains untouched.
+  useEffect(() => {
+    const handleUndoShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z' || event.shiftKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (!isLoggedIn || !sessionUser || undoStackRef.current.length === 0) return;
+      event.preventDefault();
+      const snapshot = undoStackRef.current.pop();
+      if (!snapshot) return;
+      pendingDatabaseWriteRef.current = true;
+      setRecordsByYear(snapshot.recordsByYear);
+      setAvailableYears(snapshot.availableYears);
+      setSelectedYear(snapshot.selectedYear);
+      showToast('ย้อนกลับการเปลี่ยนแปลงล่าสุดแล้ว', 'Undo สำเร็จ', 'info');
+    };
+    window.addEventListener('keydown', handleUndoShortcut);
+    return () => window.removeEventListener('keydown', handleUndoShortcut);
+  }, [isLoggedIn, sessionUser]);
 
   // Active records for currently selected fiscal year
   const currentRecords = recordsByYear[selectedYear] || [];
@@ -143,6 +184,7 @@ function AppContent() {
           : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
         setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
@@ -177,6 +219,7 @@ function AppContent() {
         const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName('ผู้เยี่ยมชม');
         setDataReady(true);
@@ -274,6 +317,7 @@ function AppContent() {
       return;
     }
 
+    pushUndoSnapshot();
     pendingDatabaseWriteRef.current = true;
     const updatedYears = [...availableYears, newYear].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     setAvailableYears(updatedYears);
@@ -314,6 +358,7 @@ function AppContent() {
       return;
     }
 
+    pushUndoSnapshot();
     pendingDatabaseWriteRef.current = true;
     const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
     setAvailableYears(nextAvailable);
@@ -333,6 +378,7 @@ function AppContent() {
 
   // Record CRUD for the Active Year
   const updateActiveYearRecords = (updater: (prev: BusinessRecord[]) => BusinessRecord[]) => {
+    pushUndoSnapshot();
     pendingDatabaseWriteRef.current = true;
     setRecordsByYear((prev) => {
       const currentList = prev[selectedYear] || [];
@@ -779,6 +825,7 @@ function AppContent() {
         onAddYear={(yr) => handleAddYear(yr)}
         onDeleteYear={(yr) => handleDeleteYear(yr)}
         onRestoreRecords={(newRecords) => {
+          pushUndoSnapshot();
           pendingDatabaseWriteRef.current = true;
           setRecordsByYear((prev) => ({
             ...prev,
