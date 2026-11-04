@@ -4,6 +4,7 @@ import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
 import { SettingsView } from './SettingsView';
+import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 const ImportDocumentView = lazy(() => import('./ImportDocumentView').then((module) => ({ default: module.ImportDocumentView })) );
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
@@ -88,6 +89,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BusinessRecord | null>(null);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [newYearInput, setNewYearInput] = useState('');
@@ -522,6 +524,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   )}
 
                   {isLoggedIn && (
+                    <>
                     <button
                       type="button"
                       onClick={() => setIsImportModalOpen(true)}
@@ -530,6 +533,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="material-symbols-outlined text-[16px]">upload_file</span>
                       <span className="hidden sm:inline">นำเข้า</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsExcelMappingOpen(true)}
+                      title="เลือก Sheet และจับคู่คอลัมน์ก่อนนำเข้า"
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">table_chart</span>
+                      <span className="hidden sm:inline">จับคู่ไฟล์</span>
+                    </button>
+                    </>
                   )}
                   
                   {isLoggedIn && (
@@ -1111,6 +1124,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </Suspense>
           </div>
         </div>
+      )}
+
+      {isLoggedIn && (
+        <ExcelMappingImportModal
+          isOpen={isExcelMappingOpen}
+          selectedYear={selectedYear}
+          onClose={() => setIsExcelMappingOpen(false)}
+          onImportRecords={(items) => {
+            if (onImportRecords) onImportRecords(items);
+            logActivity('import', `นำเข้าแบบจับคู่ ${items.length} รายการ`);
+            setActiveTab('directory');
+          }}
+          onShowToast={onShowToast}
+        />
       )}
 
       {/* Modals */}
