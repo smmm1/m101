@@ -322,3 +322,16 @@ textarea {
 }
 
 
+
+
+/* Lightweight tab-entry motion; isolated from the scroll container and app state. */
+@keyframes m101TabEnter {
+  from { opacity: 0.82; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.m101-tab-transition {
+  animation: m101TabEnter 160ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .m101-tab-transition { animation: none; }
+}
