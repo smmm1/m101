@@ -323,3 +323,13 @@ html.dark .m101-dialog-panel>div:first-child { background:#1b2a23!important; bor
 html.dark .m101-dialog-panel label { color:#bdcbc3!important; }
 html.dark .mobile-utility-nav button:hover { background:#20342a!important; border-color:#31483b!important; }
 html.dark .m101-button-secondary { color:#d6e7dc!important; background:#20342a!important; border-color:#3a5045!important; }
+
+
+/* Normalize remaining legacy indigo/purple accents to the M101 teal identity. */
+.mobile-main-content [class*=bg-indigo-50],.mobile-main-content [class*=bg-violet-50],.mobile-main-content [class*=bg-purple-50] { background:#eaf4ef!important; }
+.mobile-main-content [class*=text-indigo-700],.mobile-main-content [class*=text-indigo-600],.mobile-main-content [class*=text-violet-700],.mobile-main-content [class*=text-purple-700] { color:#246d59!important; }
+.mobile-main-content [class*=border-indigo-200],.mobile-main-content [class*=border-violet-200],.mobile-main-content [class*=border-purple-200] { border-color:#d3e7dc!important; }
+.mobile-utility-nav button .bg-amber-500 { background:#36896e!important; }
+html.dark .mobile-main-content [class*=bg-indigo-950],html.dark .mobile-main-content [class*=bg-violet-950],html.dark .mobile-main-content [class*=bg-purple-950] { background:#1d3a2e!important; }
+html.dark .mobile-main-content [class*=text-indigo-300],html.dark .mobile-main-content [class*=text-violet-300],html.dark .mobile-main-content [class*=text-purple-300] { color:#a8dfc4!important; }
+html.dark .mobile-main-content [class*=border-indigo-800],html.dark .mobile-main-content [class*=border-violet-800],html.dark .mobile-main-content [class*=border-purple-800] { border-color:#365a48!important; }
