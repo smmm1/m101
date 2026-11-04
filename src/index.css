@@ -322,3 +322,8 @@ textarea {
 }
 
 
+
+/* Subtle page transition and reduced-motion support */
+@keyframes m101ViewEnter { from { opacity: 0.72; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.m101-view-transition { animation: m101ViewEnter 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .m101-view-transition { animation: none; } html { scroll-behavior: auto !important; } }
