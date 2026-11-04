@@ -212,8 +212,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
       
-      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก M101">
-        <div className="m101-brand"><div className="m101-brand-mark">M</div><div className="m101-brand-copy"><strong>M101</strong><span>DOCUMENT WORKSPACE</span></div></div>
+      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
+        <div className="m101-brand"><div className="m101-brand-mark">◈</div><div className="m101-brand-copy"><strong>พื้นที่จัดการข้อมูล</strong><span>DOCUMENT WORKSPACE</span></div></div>
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
         <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
         <button type="button" onClick={() => setActiveTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
@@ -744,7 +744,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <section className="m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-6">
             <header className="m101-overview-header">
               <div>
-                <p className="m101-eyebrow">M101 / WORKSPACE OVERVIEW</p>
+                <p className="m101-eyebrow">WORKSPACE OVERVIEW</p>
                 <h1>ภาพรวมทะเบียนกิจการ</h1>
                 <p>สรุปสถานะงานและเข้าถึงข้อมูลที่ต้องจัดการในรอบปีบัญชี {selectedYear}</p>
               </div>
