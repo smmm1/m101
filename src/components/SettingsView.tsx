@@ -216,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* 2. Backup & Export Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card m101-settings-backup">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">backup</span>
@@ -306,7 +306,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {isLoggedIn && (
-              <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between gap-3">
+              <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between gap-3 m101-dataset-option">
                 <div>
                   <h4 className="text-xs font-bold text-slate-800 dark:text-white">
                     โหลดข้อมูลตัวอย่างเริ่มต้น (69 รายการ)
@@ -333,7 +333,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {isLoggedIn && (
-              <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3">
+              <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3 m101-dataset-option m101-dataset-danger">
                 <div>
                   <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300">
                     ล้างข้อมูลรอบปีนี้
@@ -353,7 +353,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {/* Login / Auth Status Card */}
-            <div className="p-4 rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3 sm:col-span-2">
+            <div className="p-4 rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3 sm:col-span-2 m101-dataset-option m101-auth-status">
               <div>
                 <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[18px] text-amber-500">lock_person</span>
@@ -393,7 +393,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Confirmation Modal for Clear */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 m101-settings-confirm">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3 text-rose-600">
               <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center">
