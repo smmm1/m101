@@ -937,11 +937,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {activeTab === 'import' && (
           <ImportDocumentView
             selectedYear={selectedYear}
-            onImportRecords={(items) => {
-              if (onImportRecords) onImportRecords(items);
-              setActiveTab('directory');
-            }}
-            onShowToast={onShowToast}
+            onOpenMapping={() => setIsExcelMappingOpen(true)}
           />
         )}
       </div>
