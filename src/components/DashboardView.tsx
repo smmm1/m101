@@ -5,6 +5,7 @@ import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
 import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
+import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
 import { parseDocumentFile } from '../utils/excelHelper';
@@ -88,6 +89,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
 
   // Sync selectedId when records change or item is deleted
   useEffect(() => {
@@ -552,6 +554,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     >
                       <span className="material-symbols-outlined text-[16px]">upload_file</span>
                       <span className="hidden sm:inline">นำเข้า</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsExcelMappingOpen(true)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                      title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">table_chart</span>
+                      <span className="hidden sm:inline">จับคู่ไฟล์</span>
                     </button>
                   )}
                   
@@ -1188,6 +1199,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             logActivity('delete', `ลบรายการจำนวน ${ids.length} รายการ`);
             onShowToast(`ลบรายการสำเร็จ ${ids.length} รายการ`, 'ลบสำเร็จ', 'success');
           }}
+        />
+      )}
+      {isLoggedIn && (
+        <ExcelMappingImportModal
+          isOpen={isExcelMappingOpen}
+          selectedYear={selectedYear}
+          onClose={() => setIsExcelMappingOpen(false)}
+          onImportRecords={(items) => {
+            if (onImportRecords) onImportRecords(items);
+            logActivity('import', `นำเข้าแบบจับคู่ ${items.length} รายการ`);
+            setActiveTab('directory');
+          }}
+          onShowToast={onShowToast}
         />
       )}
     </div>
