@@ -91,6 +91,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showProfileDropdown) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowProfileDropdown(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showProfileDropdown]);
 
   // Sync selectedId when records change or item is deleted
   useEffect(() => {
@@ -446,20 +466,56 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </button>
 
-          {/* User Profile Badge */}
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-            <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-900 font-extrabold text-xs flex items-center justify-center shadow-xs">
-              S2
-            </div>
-            <div className="hidden lg:flex flex-col">
-              <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px]">{userName}</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : 'Admin'}</span>
-            </div>
-            {isVisitor && onReturnToLogin && (
-              <button type="button" onClick={onReturnToLogin} className="ml-1 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-slate-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200" title="กลับไปเข้าสู่ระบบโดยไม่ต้องรีเฟรช">
-                <span className="material-symbols-outlined mr-1 align-middle text-[16px]">login</span>
-                เข้าสู่ระบบ
-              </button>
+          {/* Profile menu */}
+          <div className="relative pl-2 border-l border-slate-200 dark:border-slate-800" ref={profileDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setShowProfileDropdown((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={showProfileDropdown}
+              aria-label="เปิดเมนูบัญชีผู้ใช้"
+              title="เมนูบัญชีผู้ใช้"
+              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            >
+              <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 font-extrabold text-xs flex items-center justify-center shadow-xs">
+                {(userName.trim().charAt(0) || 'U').toUpperCase()}
+              </span>
+              <span className="hidden lg:flex flex-col items-start min-w-0">
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[110px]">{userName}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</span>
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-slate-500 dark:text-slate-400">expand_more</span>
+            </button>
+
+            {showProfileDropdown && (
+              <div role="menu" aria-label="เมนูบัญชีผู้ใช้" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-3 py-3 border-b border-slate-100 dark:border-slate-800">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">บัญชีที่กำลังใช้งาน</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white break-words">{userName}</p>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{isVisitor ? 'โหมดผู้เยี่ยมชม · ดูข้อมูลอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</p>
+                </div>
+                {isVisitor && onReturnToLogin ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setShowProfileDropdown(false); onReturnToLogin(); }}
+                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">login</span>
+                    เข้าสู่ระบบ
+                  </button>
+                ) : isLoggedIn ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => { setShowProfileDropdown(false); onToggleLogin(); }}
+                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-left"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    ออกจากระบบ
+                  </button>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
