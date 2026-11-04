@@ -206,7 +206,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalCount = records.length;
   const completedCount = records.filter((r) => r.status === 'completed').length;
   const inProgressCount = records.filter((r) => r.status === 'in_progress').length;
-  const pendingCount = records.filter((r) => r.status === 'pending').length;
+  // Treat blank/unknown legacy statuses as not completed so the dashboard never overstates progress.
+  const pendingCount = records.filter((r) => r.status !== 'completed' && r.status !== 'in_progress').length;
+  const completionPercent = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
+  const businessTypeBreakdown = [
+    { key: 'company', label: 'บริษัท' },
+    { key: 'partnership', label: 'ห้างหุ้นส่วน' },
+    { key: 'individual', label: 'บุคคลธรรมดา' },
+    { key: 'other', label: 'อื่น ๆ / ไม่ระบุ' },
+  ].map((group) => {
+    const groupRecords = records.filter((record) =>
+      group.key === 'other'
+        ? !['company', 'partnership', 'individual'].includes(String(record.type))
+        : record.type === group.key
+    );
+    const done = groupRecords.filter((record) => record.status === 'completed').length;
+    return {
+      ...group,
+      total: groupRecords.length,
+      done,
+      notDone: groupRecords.length - done,
+      donePercent: groupRecords.length ? Math.round((done / groupRecords.length) * 100) : 0,
+    };
+  }).filter((group) => group.total > 0);
 
 
   return (
@@ -779,20 +801,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
-                <div className="m101-panel-heading">
-                  <div><p className="m101-eyebrow">WORK STATUS</p><h2>ความคืบหน้าของงาน</h2></div>
-                  <span className="m101-panel-total">{totalCount} รายการ</span>
+                <div className="m101-panel-heading m101-status-heading">
+                  <div><p className="m101-eyebrow">ANNUAL WORK STATUS</p><h2>ความคืบหน้ารอบปีบัญชี</h2><p className="m101-panel-subtitle">ภาพรวมสถานะการจัดการทะเบียนกิจการ</p></div>
+                  <div className="m101-status-completion"><strong>{completionPercent}%</strong><span>เสร็จแล้ว</span></div>
                 </div>
-                <div className="m101-progress-stack" role="img" aria-label={`เสร็จสิ้น ${completedCount} กำลังดำเนินการ ${inProgressCount} รอดำเนินการ ${pendingCount}`}>
+                <div className="m101-status-total-line"><span>รายการทั้งหมด</span><b>{totalCount.toLocaleString('th-TH')} รายการ</b></div>
+                <div className="m101-progress-stack m101-progress-stack-large" role="img" aria-label={`เสร็จสิ้น ${completedCount} กำลังดำเนินการ ${inProgressCount} รอดำเนินการหรือยังไม่ระบุ ${pendingCount}`}>
                   <span className="m101-progress-done" style={{ width: `${totalCount ? completedCount / totalCount * 100 : 0}%` }} />
                   <span className="m101-progress-active" style={{ width: `${totalCount ? inProgressCount / totalCount * 100 : 0}%` }} />
                   <span className="m101-progress-waiting" style={{ width: `${totalCount ? pendingCount / totalCount * 100 : 0}%` }} />
                 </div>
-                <div className="m101-status-legend">
-                  <span><i className="m101-status-dot m101-dot-done" />เสร็จสิ้น <b>{totalCount ? Math.round(completedCount / totalCount * 100) : 0}%</b></span>
-                  <span><i className="m101-status-dot m101-dot-progress" />กำลังดำเนินการ <b>{totalCount ? Math.round(inProgressCount / totalCount * 100) : 0}%</b></span>
-                  <span><i className="m101-status-dot m101-dot-pending" />รอดำเนินการ <b>{totalCount ? Math.round(pendingCount / totalCount * 100) : 0}%</b></span>
+                <div className="m101-status-legend m101-status-legend-counts">
+                  <span><i className="m101-status-dot m101-dot-done" />เสร็จสิ้น <b>{completedCount.toLocaleString('th-TH')} · {totalCount ? Math.round(completedCount / totalCount * 100) : 0}%</b></span>
+                  <span><i className="m101-status-dot m101-dot-progress" />กำลังดำเนินการ <b>{inProgressCount.toLocaleString('th-TH')} · {totalCount ? Math.round(inProgressCount / totalCount * 100) : 0}%</b></span>
+                  <span><i className="m101-status-dot m101-dot-pending" />รอดำเนินการ / ยังไม่ระบุ <b>{pendingCount.toLocaleString('th-TH')} · {totalCount ? Math.round(pendingCount / totalCount * 100) : 0}%</b></span>
                 </div>
+                <div className="m101-category-breakdown">
+                  <div className="m101-category-heading"><div><p className="m101-eyebrow">BY BUSINESS TYPE</p><h3>เสร็จแล้วเทียบกับยังไม่เสร็จ</h3></div><div className="m101-category-key"><span><i className="m101-category-done" />เสร็จ</span><span><i className="m101-category-notdone" />ยังไม่เสร็จ</span></div></div>
+                  {businessTypeBreakdown.length > 0 ? businessTypeBreakdown.map((group) => (
+                    <div className="m101-category-row" key={group.key}>
+                      <div className="m101-category-row-head"><b>{group.label}</b><span>{group.done}/{group.total} รายการ <strong>{group.donePercent}%</strong></span></div>
+                      <div className="m101-category-bar" role="img" aria-label={`${group.label}: เสร็จ ${group.done} จาก ${group.total} รายการ, ยังไม่เสร็จ ${group.notDone} รายการ`}>
+                        <span className="m101-category-done" style={{ width: `${group.donePercent}%` }} />
+                        <span className="m101-category-notdone" style={{ width: `${100 - group.donePercent}%` }} />
+                      </div>
+                    </div>
+                  )) : <p className="m101-empty-hint">เพิ่มข้อมูลกิจการเพื่อดูกราฟเปรียบเทียบตามประเภท</p>}
+                </div>
+                <p className="m101-dashboard-data-note">หมายเหตุ: ข้อมูลปัจจุบันมีสถานะระดับกิจการ ยังไม่มีสถานะแยกตามแบบภาษีหรือวันครบกำหนด จึงยังไม่แสดงยอดงานเกินกำหนด</p>
                 {totalCount === 0 && <p className="m101-empty-hint">ยังไม่มีข้อมูลในรอบปีนี้ เริ่มต้นด้วยการเพิ่มกิจการหรือนำเข้าไฟล์</p>}
               </section>
 
