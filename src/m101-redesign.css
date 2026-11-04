@@ -698,6 +698,23 @@ html.dark .m101-settings-confirm h4{color:#e2eee7!important}
 .m101-dialog-header h2,.m101-dialog-header h3{color:var(--m101-ink)!important;line-height:1.45!important}
 .m101-dialog-header .material-symbols-outlined{color:var(--m101-accent)!important}
 .m101-form-dialog form{padding:22px!important;gap:16px!important}
+
+/* Edit-record dialog: neutral surfaces, with teal reserved for focus and primary actions */
+.m101-form-dialog form>div[class*=rounded-2xl]{
+ background:#f6f7f6!important;
+ border-color:#e2e6e3!important;
+}
+.m101-form-dialog form input,
+.m101-form-dialog form select,
+.m101-form-dialog form textarea{
+ background:#fff!important;
+ border-color:#d9dfdb!important;
+ color:#27332e!important;
+}
+.m101-form-dialog form input::placeholder,
+.m101-form-dialog form textarea::placeholder{color:#98a39d!important}
+.m101-form-dialog form label{color:#58665f!important}
+
 .m101-form-dialog form label{display:block;margin-bottom:6px;color:#536a63!important;font-size:11px!important;font-weight:750!important}
 .m101-form-dialog form input,.m101-form-dialog form select,.m101-form-dialog form textarea{min-height:42px;border:1px solid #dce7e2!important;border-radius:10px!important;background:#fbfdfc!important;color:#203b34!important;font-size:12px!important;transition:border-color .16s,box-shadow .16s!important}
 .m101-form-dialog form input:focus,.m101-form-dialog form select:focus,.m101-form-dialog form textarea:focus{border-color:#69a99b!important;box-shadow:0 0 0 3px rgba(8,126,115,.12)!important;outline:none!important}
