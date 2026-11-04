@@ -16,11 +16,11 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-1.5 max-w-[280px] pointer-events-none">
+    <div className="m101-toast-stack fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-[320px] pointer-events-none" role="region" aria-label="การแจ้งเตือน" aria-live="polite">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="pointer-events-auto flex items-center gap-2 bg-zinc-900/90 dark:bg-zinc-900/95 backdrop-blur-xs text-zinc-100 px-3 py-2 rounded-lg shadow-lg border border-zinc-700/60 animate-in fade-in slide-in-from-bottom-3 duration-200"
+          className="m101-toast pointer-events-auto flex items-center gap-2 bg-zinc-900/90 dark:bg-zinc-900/95 backdrop-blur-xs text-zinc-100 px-3 py-2 rounded-lg shadow-lg border border-zinc-700/60 animate-in fade-in slide-in-from-bottom-3 duration-200"
         >
           {/* Subtle neutral monochrome icon */}
           <span className="material-symbols-outlined text-[15px] text-zinc-400 shrink-0 select-none">
