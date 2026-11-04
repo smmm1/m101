@@ -648,3 +648,46 @@ html.dark .m101-settings-confirm h4{color:#e2eee7!important}
  .m101-settings-confirm>div>div:last-child{display:flex;flex-wrap:wrap}
  .m101-settings-confirm button{flex:1 1 auto}
 }
+
+
+/* Dashboard finishing pass — clearer interaction states and compact screens */
+.m101-overview{width:100%;min-width:0}
+.m101-overview-header>div:first-child{min-width:0}
+.m101-overview-header p:not(.m101-eyebrow){line-height:1.7}
+.m101-overview-actions button{min-height:40px;white-space:nowrap}
+.m101-metric-card{position:relative;overflow:hidden}
+.m101-metric-card:after{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:transparent;border-radius:3px}
+.m101-metric-total:after{background:var(--m101-accent)}
+.m101-overview-panel{overflow:hidden}
+.m101-quick-action{min-height:64px;border-radius:10px;padding-inline:8px}
+.m101-quick-action:focus-visible,.m101-recent-row:focus-visible,.m101-overview-actions button:focus-visible,.m101-text-action:focus-visible{outline:3px solid rgba(8,126,115,.28);outline-offset:2px}
+.m101-recent-row{min-width:0;border-radius:9px;padding-inline:7px}
+.m101-recent-row:hover{background:#f8fbf9}
+.m101-recent-main{overflow:hidden}
+.m101-recent-status{flex:0 0 auto}
+.m101-overview-empty{min-height:150px;justify-content:center}
+.dark .m101-recent-row:hover{background:#1b2a23}
+.dark .m101-quick-action:focus-visible,.dark .m101-recent-row:focus-visible,.dark .m101-overview-actions button:focus-visible,.dark .m101-text-action:focus-visible{outline-color:rgba(115,205,175,.4)}
+@media(max-width:600px){
+ .m101-overview-header h1{font-size:25px}
+ .m101-overview-header p:not(.m101-eyebrow){font-size:12px;max-width:42rem}
+ .m101-metric-card{gap:7px}
+ .m101-metric-label{font-size:11px}
+ .m101-metric-foot{font-size:9px;line-height:1.45}
+ .m101-panel-heading{align-items:flex-start;margin-bottom:15px}
+ .m101-panel-heading h2{font-size:15px}
+ .m101-recent-row{gap:8px;padding-block:11px}
+ .m101-recent-main b{font-size:11px}
+ .m101-recent-main small{font-size:9px}
+ .m101-recent-status{max-width:88px;overflow:hidden;text-overflow:ellipsis}
+ .m101-recent-chevron{display:none}
+}
+@media(max-width:380px){
+ .m101-overview-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .m101-metric-card{padding:12px;min-height:104px}
+ .m101-metric-card strong{font-size:26px}
+ .m101-recent-status{max-width:72px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .m101-overview *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
