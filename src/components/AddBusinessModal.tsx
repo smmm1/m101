@@ -70,12 +70,12 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+    <div className="m101-dialog-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
       <div
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative m101-dialog-panel w-full max-w-lg bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 flex items-start justify-between gap-3">
