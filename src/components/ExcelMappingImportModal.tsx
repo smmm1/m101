@@ -116,13 +116,14 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   const [sheetName, setSheetName] = useState('');
   const [regions, setRegions] = useState<TableRegion[]>([]);
   const [regionId, setRegionId] = useState('');
+  const [headerRowIndex, setHeaderRowIndex] = useState(0);
   const [mapping, setMapping] = useState<Record<number, ImportField | ''>>({});
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [step, setStep] = useState<'sheet' | 'mapping'>('sheet');
 
   const selectedRegion = regions.find((region) => region.id === regionId) ?? null;
-  const headers = selectedRegion?.rows[selectedRegion.headerIndex] ?? [];
-  const dataRows = selectedRegion ? selectedRegion.rows.slice(selectedRegion.headerIndex + 1).filter((row) => row.some(Boolean)) : [];
+  const headers = selectedRegion?.rows[headerRowIndex] ?? [];
+  const dataRows = selectedRegion ? selectedRegion.rows.slice(headerRowIndex + 1).filter((row) => row.some(Boolean)) : [];
 
   const reset = () => {
     setFileName('');
@@ -130,6 +131,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     setSheetName('');
     setRegions([]);
     setRegionId('');
+    setHeaderRowIndex(0);
     setMapping({});
     setSelectedRows([]);
     setStep('sheet');
@@ -145,6 +147,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     setSheetName(name);
     setRegions(found);
     setRegionId(found.length === 1 ? found[0].id : '');
+    setHeaderRowIndex(found.length === 1 ? found[0].headerIndex : 0);
     setMapping({});
     setSelectedRows([]);
     setStep('sheet');
@@ -296,7 +299,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                   {regions.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">ไม่พบตารางข้อมูลที่มีอย่างน้อย 2 แถวใน Sheet นี้</p> : (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {regions.map((region, index) => (
-                        <button key={region.id} type="button" onClick={() => setRegionId(region.id)} className={`rounded-xl border p-3 text-left transition ${regionId === region.id ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/30' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
+                        <button key={region.id} type="button" onClick={() => { setRegionId(region.id); setHeaderRowIndex(region.headerIndex); setMapping({}); setSelectedRows([]); setStep('sheet'); }} className={`rounded-xl border p-3 text-left transition ${regionId === region.id ? 'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/30' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
                           <div className="flex items-center justify-between"><span className="text-xs font-bold text-slate-800 dark:text-slate-100">ตาราง {index + 1}</span>{regionId === region.id && <span className="material-symbols-outlined text-[17px] text-amber-600">check_circle</span>}</div>
                           <p className="mt-1 text-[11px] text-slate-500">แถว {region.startRow + 1}–{region.endRow + 1} · คอลัมน์ {region.startCol + 1}–{region.endCol + 1} · {region.rows.length} แถว</p>
                           <p className="mt-2 truncate text-[11px] text-slate-600 dark:text-slate-300">{region.rows[region.headerIndex]?.filter(Boolean).join(' · ')}</p>
@@ -317,6 +320,12 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
               {step === 'mapping' && selectedRegion && (
                 <section className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/60">
+                    <div><h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">กำหนดแถวหัวตาราง</h3><p className="mt-1 text-[10px] text-slate-500">หากระบบเลือกหัวตารางไม่ตรง สามารถเปลี่ยนแถวได้เอง</p></div>
+                    <select aria-label="เลือกแถวหัวตาราง" value={headerRowIndex} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); }} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                      {selectedRegion.rows.map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} · {row.filter(Boolean).slice(0, 3).join(' / ') || 'ไม่มีข้อความ'}</option>)}
+                    </select>
+                  </div>
                   <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">3. จับคู่คอลัมน์กับข้อมูล M101</h3><span className="text-[11px] text-slate-500">เลือก “ไม่ใช้” สำหรับคอลัมน์ที่ไม่ต้องการ</span></div>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {headers.map((header, index) => (
