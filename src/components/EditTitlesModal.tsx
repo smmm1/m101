@@ -51,10 +51,10 @@ export const EditTitlesModal: React.FC<EditTitlesModalProps> = ({ isOpen, onClos
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
 
       {/* Modal Box */}
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150 font-body flex flex-col max-h-[90vh]">
+      <div className="relative m101-titles-dialog w-full max-w-2xl bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150 font-body flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between shrink-0">
+        <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-amber-500 text-slate-900 font-extrabold flex items-center justify-center shadow-md">
               <span className="material-symbols-outlined text-[22px]">edit_square</span>
