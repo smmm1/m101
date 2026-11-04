@@ -60,7 +60,7 @@ function AppContent() {
     return initCuteClickSound();
   }, []);
 
-  const [userName, setUserName] = useState<string>('Mustang Admin');
+  const [userName, setUserName] = useState<string>('ผู้ดูแลระบบ');
   const [availableYears, setAvailableYears] = useState<string[]>(['69']);
   const [selectedYear, setSelectedYear] = useState<string>('69');
   const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -144,7 +144,7 @@ function AppContent() {
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
-        setUserName(sessionUser.email || 'Mustang Admin');
+        setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
         setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
         setIsLoggedIn(true);
         setAccessReady(true);
@@ -537,7 +537,7 @@ function AppContent() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
       setSessionUser(payload.user as SessionUser);
-      setUserName(payload.user?.email || 'Mustang Admin');
+      setUserName(payload.user?.email || 'ผู้ดูแลระบบ');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
       setAuthPassword('');
       setAuthPin('');
@@ -605,8 +605,8 @@ function AppContent() {
             <div className="flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold tracking-tight">M</div>
               <div>
-                <p className="text-sm font-semibold tracking-[0.16em]">M101</p>
-                <p className="mt-0.5 text-[11px] tracking-wide text-emerald-100/70">MUSTANG DIRECTORY</p>
+                <p className="text-sm font-semibold tracking-[0.16em]">WORKSPACE</p>
+                <p className="mt-0.5 text-[11px] tracking-wide text-emerald-100/70">ระบบจัดการข้อมูล</p>
               </div>
             </div>
 
@@ -624,7 +624,7 @@ function AppContent() {
               <div className="mt-10 hidden max-w-md rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:block">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-xs font-medium text-emerald-50/80">WORKSPACE OVERVIEW</span>
-                  <span className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[10px] font-medium text-emerald-100">M101</span>
+                  <span className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[10px] font-medium text-emerald-100">พร้อมใช้งาน</span>
                 </div>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
@@ -644,7 +644,7 @@ function AppContent() {
 
             <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-emerald-50/55">
               <span>จัดระเบียบงาน ให้เห็นภาพชัดขึ้น</span>
-              <span>© M101</span>
+              <span>พื้นที่ทำงานส่วนตัว</span>
             </div>
           </section>
 
@@ -652,7 +652,7 @@ function AppContent() {
             <div className="w-full max-w-[420px]">
               <div className="mb-8">
                 <p className="text-xs font-semibold tracking-[0.16em] text-[#39766b]">ยินดีต้อนรับกลับ</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ M101</h2>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
               </div>
 
@@ -708,9 +708,9 @@ function AppContent() {
 
               <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#edf4f1] px-3.5 py-3 text-xs leading-5 text-[#38645c]">
                 <span aria-hidden="true" className="mt-0.5">●</span>
-                <p>การเข้าสู่ระบบใช้การยืนยันตัวตนเดิมของ M101 และเชื่อมต่อข้อมูลผ่านระบบที่กำหนดไว้</p>
+                <p>การเข้าสู่ระบบใช้การยืนยันตัวตนที่ตั้งค่าไว้ และเชื่อมต่อข้อมูลอย่างปลอดภัย</p>
               </div>
-              <p className="mt-6 text-center text-[11px] text-slate-400">M101 · Mustang Directory</p>
+              <p className="mt-6 text-center text-[11px] text-slate-400">พื้นที่จัดการข้อมูล</p>
             </div>
           </section>
         </div>
