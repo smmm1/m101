@@ -596,124 +596,123 @@ function AppContent() {
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
-      <main className="m101-login-shell relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fbfbfa] px-5 py-12 text-slate-900">
-        <style>{`
-          @keyframes m101-cat-walk {
-            0% { left: -5rem; transform: translateY(0) rotate(0deg); }
-            20% { transform: translateY(-4px) rotate(-2deg); }
-            40% { transform: translateY(0) rotate(1deg); }
-            60% { transform: translateY(-5px) rotate(-1deg); }
-            80% { transform: translateY(0) rotate(2deg); }
-            100% { left: calc(100% + 5rem); transform: translateY(0) rotate(0deg); }
-          }
-          @keyframes m101-paw-fade {
-            0%, 100% { opacity: .15; transform: translateY(0); }
-            50% { opacity: .45; transform: translateY(-3px); }
-          }
-          .m101-cat-walker {
-            position: absolute;
-            bottom: 9px;
-            left: -5rem;
-            font-size: 2rem;
-            line-height: 1;
-            animation: m101-cat-walk 19s linear infinite;
-            will-change: left, transform;
-          }
-          .m101-cat-walker:nth-child(2) { bottom: 15px; animation-duration: 24s; animation-delay: -8s; font-size: 1.7rem; }
-          .m101-cat-walker:nth-child(3) { bottom: 7px; animation-duration: 21s; animation-delay: -15s; font-size: 2.15rem; }
-          .m101-paw { animation: m101-paw-fade 3s ease-in-out infinite; }
-          @media (prefers-reduced-motion: reduce) {
-            .m101-cat-walker, .m101-paw { animation: none !important; }
-            .m101-cat-walker { left: auto; }
-          }
-        `}</style>
-
-        <div aria-hidden="true" className="pointer-events-none absolute left-[12%] top-[14%] h-32 w-32 rounded-full bg-amber-50/80 blur-2xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute bottom-[18%] right-[12%] h-40 w-40 rounded-full bg-stone-100 blur-3xl" />
-
-        <section className="relative z-10 w-full max-w-[390px] animate-[fadeIn_.45s_ease-out]">
-          <div className="mb-7 text-center">
-            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[1.4rem] border border-amber-100 bg-[#fffaf0] shadow-sm transition-transform duration-300 hover:-rotate-3 hover:scale-105" role="img" aria-label="แมวลายสลิดน่ารัก">
-              <svg viewBox="0 0 64 64" className="h-12 w-12" aria-hidden="true">
-                <path d="M12 27 10 9 25 18 Q32 15 39 18 L54 9 52 28 Q57 35 54 44 Q49 56 32 56 Q15 56 10 44 Q7 35 12 27Z" fill="#d6a36e" stroke="#8c6242" strokeWidth="2" strokeLinejoin="round"/>
-                <path d="M15 23 14 15 23 21Z" fill="#eaa6a0"/><path d="M49 23 50 15 41 21Z" fill="#eaa6a0"/>
-                <path d="M23 19 27 25 M32 17 32 24 M41 19 37 25 M13 31 20 33 M51 31 44 33" stroke="#8c6242" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
-                <path d="M21 34 Q25 30 29 34 M35 34 Q39 30 43 34" stroke="#49382e" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-                <ellipse cx="32" cy="40" rx="3.4" ry="2.6" fill="#d8797d"/>
-                <path d="M32 42 Q29 46 25 43 M32 42 Q35 46 39 43" stroke="#49382e" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-                <path d="M23 41 12 39 M23 44 12 45 M41 41 52 39 M41 44 52 45" stroke="#8c6242" strokeWidth="1.2" strokeLinecap="round"/>
-                <path d="M26 51 Q32 48 38 51" stroke="#8c6242" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-              </svg>
-            </div>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Time to work , my love.</h1>
-            
-          </div>
-
-          <form onSubmit={handleLoginSubmit} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-35px_rgba(15,23,42,0.28)] sm:p-8">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-800">เข้าสู่ระบบ</h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> ปลอดภัย
-              </span>
+      <main className="min-h-screen bg-[#f6f8f7] text-slate-900">
+        <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
+          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#123f39] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold tracking-tight">M</div>
+              <div>
+                <p className="text-sm font-semibold tracking-[0.16em]">M101</p>
+                <p className="mt-0.5 text-[11px] tracking-wide text-emerald-100/70">MUSTANG DIRECTORY</p>
+              </div>
             </div>
 
-            {authMode === 'password' && (
-              <>
-                <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
-              </>
-            )}
+            <div className="relative z-10 mt-12 max-w-xl lg:my-auto lg:py-16">
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-100/20 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> พื้นที่จัดการข้อมูลกิจการ
+              </p>
+              <h1 className="max-w-lg text-3xl font-semibold leading-[1.25] tracking-tight sm:text-4xl lg:text-[2.8rem]">
+                ข้อมูลสำคัญ<br className="hidden sm:block" /> จัดการได้อย่างเป็นระบบ
+              </h1>
+              <p className="mt-5 max-w-md text-sm leading-7 text-emerald-50/75 sm:text-base">
+                รวมรายการ เอกสาร และข้อมูลกิจการไว้ในพื้นที่เดียว พร้อมเครื่องมือนำเข้าข้อมูลที่ตรวจสอบได้ก่อนบันทึก
+              </p>
 
-            <div className="mb-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
-              <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>รหัสผ่าน</button>
-              <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'pin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>PIN</button>
-            </div>
-            {authMode === 'password' ? (
-              <>
-                <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน Money102" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
-              </>
-            ) : (
-              <>
-                <label className="mb-3 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
-                <div className="mb-4 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
-                  {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3 w-3 rounded-full border ${index < authPin.length ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'}`} />)}
+              <div className="mt-10 hidden max-w-md rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:block">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-xs font-medium text-emerald-50/80">WORKSPACE OVERVIEW</span>
+                  <span className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[10px] font-medium text-emerald-100">M101</span>
                 </div>
-                <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
-                  {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
-                    <button key={key} type="button" disabled={authBusy} onClick={() => {
-                      setAuthError('');
-                      if (key === 'clear') setAuthPin('');
-                      else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
-                      else setAuthPin((value) => value.length < 6 ? value + key : value);
-                    }} className="h-12 rounded-xl border border-slate-200 bg-white text-lg font-semibold text-slate-800 transition hover:bg-slate-50 active:scale-95 disabled:opacity-50">
-                      {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
-                    </button>
-                  ))}
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-200/15 text-emerald-100">01</span>
+                    <div className="flex-1"><div className="h-2 w-28 rounded-full bg-white/70" /><div className="mt-2 h-1.5 w-40 max-w-full rounded-full bg-white/20" /></div>
+                    <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-emerald-100">02</span>
+                    <div className="flex-1"><div className="h-2 w-20 rounded-full bg-white/55" /><div className="mt-2 h-1.5 w-32 max-w-full rounded-full bg-white/20" /></div>
+                    <span className="h-2 w-2 rounded-full bg-amber-200" />
+                  </div>
                 </div>
-                <p className="mt-2 text-center text-xs text-slate-400">กดตัวเลขจากคีย์บอร์ดหรือแป้นบนหน้าจอได้เลย · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
-              </>
-            )}
+                <p className="mt-3 text-[10px] tracking-wide text-emerald-50/45">A CLEAR VIEW OF YOUR WORK</p>
+              </div>
+            </div>
 
-            {authError && <p role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
+            <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-emerald-50/55">
+              <span>จัดระเบียบงาน ให้เห็นภาพชัดขึ้น</span>
+              <span>© M101</span>
+            </div>
+          </section>
 
-            <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition duration-200 hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
-            </button>
+          <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
+            <div className="w-full max-w-[420px]">
+              <div className="mb-8">
+                <p className="text-xs font-semibold tracking-[0.16em] text-[#39766b]">ยินดีต้อนรับกลับ</p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ M101</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
+              </div>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-100" /><span>หรือ</span><span className="h-px flex-1 bg-slate-100" /></div>
+              <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
+                  <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#eaf3f0] text-[#20584f] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
+                  <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#eaf3f0] text-[#20584f] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
+                </div>
 
-            <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
-          </form>
+                {authMode === 'password' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
+                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#39766b] focus:ring-4 focus:ring-[#39766b]/10" />
+                    </div>
+                    <div>
+                      <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#39766b] focus:ring-4 focus:ring-[#39766b]/10" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5">
+                    <label className="mb-4 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
+                    <div className="mb-5 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
+                      {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3.5 w-3.5 rounded-full border transition-colors ${index < authPin.length ? 'border-[#28685d] bg-[#28685d]' : 'border-slate-300 bg-white'}`} />)}
+                    </div>
+                    <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
+                      {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
+                        <button key={key} type="button" disabled={authBusy} onClick={() => {
+                          setAuthError('');
+                          if (key === 'clear') setAuthPin('');
+                          else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
+                          else setAuthPin((value) => value.length < 6 ? value + key : value);
+                        }} className="h-12 rounded-xl border border-slate-200 bg-[#fbfcfb] text-lg font-semibold text-slate-800 transition hover:border-[#9bbdb4] hover:bg-[#edf5f2] active:scale-[0.98] disabled:opacity-50">
+                          {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-4 text-center text-xs leading-5 text-slate-500">ใช้แป้นตัวเลขบนหน้าจอหรือคีย์บอร์ดได้ · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
+                  </div>
+                )}
 
-          <p className="mt-6 text-center text-xs text-slate-400">อะ มีแมวกี่ตัว ?</p>
-          <div aria-hidden="true" className="m101-paw pointer-events-none absolute -right-7 top-2 text-lg text-stone-300">🐾</div>
-        </section>
+                {authError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm leading-6 text-rose-700">{authError}</p>}
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-14 overflow-hidden border-t border-stone-100/80 bg-white/70">
-          <span className="m101-cat-walker">🐈</span>
-          <span className="m101-cat-walker">🐈‍⬛</span>
-          <span className="m101-cat-walker">🐈</span>
+                <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#20584f] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#17483f] focus:outline-none focus:ring-4 focus:ring-[#39766b]/20 disabled:cursor-not-allowed disabled:opacity-60">
+                  {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
+                </button>
+
+                <div className="flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>หรือ</span><span className="h-px flex-1 bg-slate-200" /></div>
+
+                <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
+              </form>
+
+              <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#edf4f1] px-3.5 py-3 text-xs leading-5 text-[#38645c]">
+                <span aria-hidden="true" className="mt-0.5">●</span>
+                <p>การเข้าสู่ระบบใช้การยืนยันตัวตนเดิมของ M101 และเชื่อมต่อข้อมูลผ่านระบบที่กำหนดไว้</p>
+              </div>
+              <p className="mt-6 text-center text-[11px] text-slate-400">M101 · Mustang Directory</p>
+            </div>
+          </section>
         </div>
       </main>
     );
