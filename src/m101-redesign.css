@@ -822,3 +822,41 @@ html.dark .m101-conflict-dialog [class*=bg-\[\#fafafa\]]{background:#192720!impo
  .m101-import-stepper>div b{font-size:9px}
  .m101-import-dialog-panel .flex-1.overflow-y-auto{padding:13px!important}
 }
+
+
+/* Final dialog readability pass: remove alternating tinted surfaces in preview and edit popups */
+.m101-detail-dialog .m101-dialog-header,
+.m101-detail-dialog [class*="bg-slate-50"],
+.m101-detail-dialog [class*="bg-slate-100"],
+.m101-form-dialog .m101-dialog-header,
+.m101-form-dialog form>div[class*=rounded-2xl]{
+  background:#fff!important;
+  border-color:#e5e9e7!important;
+}
+.m101-detail-dialog [class*="bg-white"],
+.m101-form-dialog form input,
+.m101-form-dialog form select,
+.m101-form-dialog form textarea{
+  background:#fff!important;
+}
+.m101-form-dialog form>div[class*=rounded-2xl]{
+  box-shadow:none!important;
+}
+.m101-detail-dialog [class*="bg-slate-50"] *,
+.m101-detail-dialog [class*="bg-slate-100"] *{
+  --tw-bg-opacity:1;
+}
+html.dark .m101-detail-dialog .m101-dialog-header,
+html.dark .m101-detail-dialog [class*="bg-slate-50"],
+html.dark .m101-detail-dialog [class*="bg-slate-100"],
+html.dark .m101-form-dialog .m101-dialog-header,
+html.dark .m101-form-dialog form>div[class*=rounded-2xl]{
+  background:#17211d!important;
+  border-color:#304038!important;
+}
+html.dark .m101-detail-dialog [class*="bg-white"],
+html.dark .m101-form-dialog form input,
+html.dark .m101-form-dialog form select,
+html.dark .m101-form-dialog form textarea{
+  background:#17211d!important;
+}
