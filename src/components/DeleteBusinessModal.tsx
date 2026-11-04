@@ -31,8 +31,8 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
 
   return (
     <div className="m101-dialog-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="m101-dialog-panel bg-white dark:bg-[#111827] rounded-3xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/80 dark:border-slate-800 animate-in zoom-in-95 duration-150 font-body">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="m101-dialog-panel m101-delete-dialog bg-white dark:bg-[#111827] rounded-3xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/80 dark:border-slate-800 animate-in zoom-in-95 duration-150 font-body">
+        <div className="m101-dialog-header flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
@@ -112,7 +112,7 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                       <div
                         key={r.id}
                         onClick={() => toggleSelect(r.id)}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer border ${
+                        className={`m101-delete-row flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer border ${
                           isChecked
                             ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40'
                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border-transparent'
