@@ -75,10 +75,10 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className="relative m101-dialog-panel w-full max-w-lg bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative m101-dialog-panel m101-form-dialog w-full max-w-lg bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 flex items-start justify-between gap-3">
+        <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-md">
               <span className="material-symbols-outlined text-[20px]">add_business</span>
