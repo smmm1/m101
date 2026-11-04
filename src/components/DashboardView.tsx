@@ -8,6 +8,7 @@ import { ImportDocumentView } from './ImportDocumentView';
 import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
+import '../m101-redesign.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 
 interface ActivityLogItem {
