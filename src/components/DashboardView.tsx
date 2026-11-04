@@ -77,7 +77,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
-  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import'>('dashboard');
 
   // Filter tab: 'all' | 'has_efiling' | 'no_efiling'
   const [filterTab, setFilterTab] = useState<'all' | 'has_efiling' | 'no_efiling'>('all');
@@ -229,7 +229,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="mobile-app-shell flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
-      
+      <aside className="m101-sidebar" aria-label="เมนูหลัก M101">
+        <div className="m101-brand">
+          <div className="m101-brand-mark">M</div>
+          <div className="m101-brand-copy"><strong>M101</strong><span>DOCUMENT WORKSPACE</span></div>
+        </div>
+        <div className="m101-nav-caption">พื้นที่ทำงาน</div>
+        <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}>
+          <span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span>
+        </button>
+        <button type="button" onClick={() => setActiveTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}>
+          <span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span>
+        </button>
+        {isLoggedIn && (
+          <button type="button" onClick={() => setIsImportModalOpen(true)} className="m101-side-link">
+            <span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span>
+          </button>
+        )}
+        {isLoggedIn && (
+          <button type="button" onClick={() => setActiveTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}>
+            <span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span>
+          </button>
+        )}
+        <div className="m101-sidebar-spacer" />
+        <div className="m101-sidebar-foot">
+          <span className="m101-status-dot" />
+          <div><strong>เชื่อมต่อฐานข้อมูล</strong><span>Cloudflare D1</span></div>
+        </div>
+      </aside>
+
       {/* Floating 3-second Notification Toast */}
       {currentNotification && (
         <div className="fixed top-20 right-6 z-50 bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200 border border-slate-700 dark:border-amber-400">
@@ -877,6 +905,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* 3. OVERVIEW / ภาพรวม SCREEN WITH WIDER LEFT COMPACT LIST (WITH SEARCH & POPUP MODAL & NUMERICALLY SORTED SEQUENTIAL NUMBERING) AND RIGHT 2D BAR CHART */}
         {activeTab === 'dashboard' && (
           <div className="mobile-dashboard-layout flex-1 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-hidden p-1">
+            <section className="m101-kpi-grid" aria-label="สรุปสถานะทะเบียนกิจการ">
+              <article className="m101-kpi-card m101-kpi-total"><span className="m101-kpi-label">กิจการทั้งหมด</span><strong>{totalCount.toLocaleString('th-TH')}</strong><span className="m101-kpi-foot"><span className="material-symbols-outlined">domain</span> รอบปีบัญชี {selectedYear}</span></article>
+              <article className="m101-kpi-card m101-kpi-complete"><span className="m101-kpi-label">ดำเนินการเสร็จสิ้น</span><strong>{completedCount.toLocaleString('th-TH')}</strong><span className="m101-kpi-foot"><span className="material-symbols-outlined">check_circle</span> {totalCount ? Math.round(completedCount / totalCount * 100) : 0}% ของรายการทั้งหมด</span></article>
+              <article className="m101-kpi-card m101-kpi-progress"><span className="m101-kpi-label">กำลังดำเนินการ</span><strong>{inProgressCount.toLocaleString('th-TH')}</strong><span className="m101-kpi-foot"><span className="material-symbols-outlined">pending</span> อยู่ระหว่างติดตาม</span></article>
+              <article className="m101-kpi-card m101-kpi-pending"><span className="m101-kpi-label">รอดำเนินการ</span><strong>{pendingCount.toLocaleString('th-TH')}</strong><span className="m101-kpi-foot"><span className="material-symbols-outlined">schedule</span> ต้องตรวจสอบต่อ</span></article>
+            </section>
             
             {/* LEFT SIDE: Wider Compact List with Search, Numerically Sorted Sequential Numbering & Popup Modal Trigger */}
             <div className="w-full lg:w-[58%] flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
