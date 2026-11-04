@@ -130,7 +130,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 2: Skip Duplicates */}
           <label
-            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               selectedMode === 'skip_duplicates'
                 ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
                 : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
@@ -160,7 +160,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 3: Import All as New (Allow duplicates) */}
           <label
-            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               selectedMode === 'import_all'
                 ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
                 : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
