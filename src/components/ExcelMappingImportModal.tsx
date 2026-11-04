@@ -250,8 +250,8 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
-      <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-[#111827] flex flex-col">
+    <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
+      <div className="m101-dialog-panel m101-import-dialog-panel w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-[#111827] flex flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
           <div className="min-w-0">
             <h2 id="excel-mapping-title" className="text-base font-extrabold text-slate-900 dark:text-white">นำเข้า Excel ใหม่</h2>
@@ -260,6 +260,13 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
           <button type="button" onClick={close} className="rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">ปิด</button>
         </div>
 
+        <div className="m101-import-stepper" aria-label="ขั้นตอนนำเข้า">
+          <div className={workbook ? 'is-done' : 'is-current'}><span>1</span><b>เลือกไฟล์</b></div>
+          <i />
+          <div className={workbook ? (step === 'sheet' ? 'is-current' : 'is-done') : ''}><span>2</span><b>เลือก Sheet / ตาราง</b></div>
+          <i />
+          <div className={step === 'mapping' ? 'is-current' : ''}><span>3</span><b>จับคู่และตรวจสอบ</b></div>
+        </div>
         <div className="flex-1 overflow-y-auto p-5">
           {!workbook ? (
             <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/50">
