@@ -88,7 +88,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [newYearInput, setNewYearInput] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
 
@@ -209,38 +208,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const inProgressCount = records.filter((r) => r.status === 'in_progress').length;
   const pendingCount = records.filter((r) => r.status === 'pending').length;
 
-  const maxStatCount = Math.max(1, completedCount, inProgressCount, pendingCount);
-  const completedHeight = Math.round((completedCount / maxStatCount) * 100);
-  const inProgressHeight = Math.round((inProgressCount / maxStatCount) * 100);
-  const pendingHeight = Math.round((pendingCount / maxStatCount) * 100);
-
-  // Overview left side search state with correct numeric sorting (1, 2, 3... 189)
-  const [overviewSearch, setOverviewSearch] = useState('');
-  const filteredOverviewRecords = useMemo(() => {
-    return records
-      .map((r, idx) => ({ ...r, originalIndex: idx + 1 }))
-      .filter((r) => {
-        if (!overviewSearch.trim()) return true;
-        const q = overviewSearch.toLowerCase().trim();
-        return [
-          r.companyName,
-          r.taxId,
-          r.sequenceNo,
-          r.eFilingCode,
-          r.ssoCode,
-          r.remark,
-          r.topic,
-          r.auditorDate,
-          r.type === 'partnership' ? 'หจก ห้างหุ้นส่วน partnership' : 'บจก บริษัท company',
-          r.status === 'completed' ? 'เสร็จสิ้น completed' : r.status === 'in_progress' ? 'กำลังทำ กำลังดำเนินการ in progress' : 'รอดำเนินการ pending',
-        ].some((field) => String(field ?? '').toLocaleLowerCase('th-TH').includes(q));
-      })
-      .sort((a, b) => {
-        const numA = parseInt((a.sequenceNo || '').replace(/\D/g, '') || '0', 10);
-        const numB = parseInt((b.sequenceNo || '').replace(/\D/g, '') || '0', 10);
-        return numA - numB;
-      });
-  }, [records, overviewSearch]);
 
   return (
     <div className="m101-app-shell mobile-app-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
