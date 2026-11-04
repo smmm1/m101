@@ -444,10 +444,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden m101-directory-shell">
+{activeTab === 'directory' && (
+          <div className="flex-1 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 min-h-[calc(100vh-100px)] max-w-[1800px] w-full mx-auto overflow-visible m101-directory-shell">
             
             {/* LEFT COLUMN: LIST VIEW (~72% - Scrollable with NO row limits) */}
-            <div className="flex-1 lg:w-[72%] min-h-[50vh] lg:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden m101-directory-list-panel">
+            <div className="min-w-0 min-h-[60vh] xl:min-h-0 flex flex-col bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden m101-directory-list-panel">
               
               {/* Header & Total Counter + Add & Import Buttons */}
               <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0 m101-directory-toolbar">
@@ -515,169 +516,74 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* Search & Sort Bar */}
-              <div className="p-3.5 sm:px-5 bg-slate-50/60 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 m101-directory-searchbar">
-                <div className="relative flex-1 min-w-[220px]">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <span className="material-symbols-outlined text-[18px]">search</span>
-                  </span>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ค้นหาชื่อ เลขภาษี ลำดับ รหัส E-Filing / SSO สถานะ หรือหมายเหตุ"
-                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all shadow-2xs"
-                  />
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                >
-                  <span className="material-symbols-outlined text-[16px]">sort</span>
-                  <span>เรียงตามลำดับ ({sortOrder === 'asc' ? 'น้อยไปมาก' : 'มากไปน้อย'})</span>
-                </button>
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="px-3 sm:px-5 py-2.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2 shrink-0 m101-directory-filters">
-                {[
-                  { id: 'all', label: 'ทั้งหมด' },
-                  { id: 'has_efiling', label: 'มีรหัส E-Filing' },
-                  { id: 'no_efiling', label: 'ยังไม่มีรหัส' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setFilterTab(tab.id as any)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      filterTab === tab.id
-                        ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                    }`}
-                  >
-                    {tab.label}
+              {/* Directory controls */}
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
+                <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+                  <div className="relative flex-1 min-w-0">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><span className="material-symbols-outlined text-[19px]">search</span></span>
+                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน เลขภาษี E-Filing หรือ SSO" className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all" />
+                  </div>
+                  <button type="button" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:border-teal-500 transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">swap_vert</span> ลำดับ {sortOrder === 'asc' ? 'น้อย → มาก' : 'มาก → น้อย'}
                   </button>
-                ))}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2" role="group" aria-label="กรองรายการ">
+                    {[
+                      { id: 'all', label: 'ทั้งหมด', count: records.length },
+                      { id: 'has_efiling', label: 'มี E-Filing', count: records.filter((r) => Boolean(r.eFilingCode?.trim())).length },
+                      { id: 'no_efiling', label: 'ไม่มี E-Filing', count: records.filter((r) => !r.eFilingCode?.trim()).length },
+                    ].map((tab) => (
+                      <button key={tab.id} type="button" onClick={() => setFilterTab(tab.id as any)} className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold border transition-colors ${filterTab === tab.id ? 'bg-teal-700 border-teal-700 text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-teal-400'}`}>
+                        {tab.label}<span className={`text-[10px] ${filterTab === tab.id ? 'text-teal-100' : 'text-slate-400'}`}>{tab.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filteredRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
+                </div>
               </div>
-
-              {/* Scrollable List Items container with NO row limits */}
-              <div className="m101-record-list flex-1 overflow-y-auto min-h-0">
+              <div className="m101-record-list flex-1 overflow-auto min-h-0 bg-white dark:bg-slate-950">
                 {filteredRecords.length === 0 ? (
-                  <div className="py-16 text-center text-slate-400 text-xs">
-                    ไม่พบรายการนิติบุคคลที่ค้นหา
+                  <div className="min-h-[280px] flex flex-col items-center justify-center text-center px-6">
+                    <span className="material-symbols-outlined text-4xl text-slate-300 mb-3">search_off</span>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">ไม่พบกิจการที่ตรงกับการค้นหา</p>
+                    <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+                    <button type="button" onClick={() => { setSearchQuery(''); setFilterTab('all'); }} className="mt-4 text-xs font-bold text-teal-700 hover:underline">ล้างตัวกรอง</button>
                   </div>
                 ) : (
-                  filteredRecords.map((r, idx) => {
-                    const isSelected = activeRecord?.id === r.id;
-                    const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
-
-                    return (
-                      <div
-                        key={r.id}
-                        onClick={() => setSelectedId(r.id)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(r.id); } }}
-                        className={`m101-record-row px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all group ${
-                          isSelected
-                            ? 'is-selected'
-                            : 'is-unselected'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 min-w-0 pr-3">
-                          <span
-                            className={`font-mono text-xs font-bold w-6 shrink-0 ${
-                              isSelected ? 'text-amber-400' : 'text-slate-400'
-                            }`}
-                          >
-                            {seqNum}
-                          </span>
-                          <div className="flex flex-col min-w-0">
-                            <h4
-                              className={`text-xs sm:text-sm font-bold truncate font-headline ${
-                                isSelected ? 'text-white dark:text-amber-300' : 'text-slate-900 dark:text-slate-100 group-hover:text-amber-600'
-                              }`}
-                            >
-                              {r.companyName}
-                            </h4>
-                            <span
-                              className={`text-[11px] font-mono truncate ${
-                                isSelected ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'
-                              }`}
-                            >
-                              {isLoggedIn ? (r.taxId || '0000000000000') : `${(r.taxId || '0000000000000').slice(0, 4)}*********`}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Status & Quick Edit button on the right - Larger Score Bar */}
-                        <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <span
-                            className={`px-3.5 py-1.5 rounded-2xl text-xs font-extrabold inline-flex items-center gap-2 shadow-xs ${
-                              r.status === 'completed'
-                                ? isSelected
-                                  ? 'bg-emerald-950 text-emerald-200 border border-emerald-700'
-                                  : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700'
-                                : r.status === 'in_progress'
-                                ? isSelected
-                                  ? 'bg-amber-950 text-amber-200 border border-amber-700'
-                                  : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
-                                : isSelected
-                                ? 'bg-slate-800 text-amber-300 border border-slate-700'
-                                : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700'
-                            }`}
-                          >
-                            <span
-                              className={`w-2.5 h-2.5 rounded-full ${
-                                r.status === 'completed'
-                                  ? 'bg-emerald-500 animate-pulse'
-                                  : r.status === 'in_progress'
-                                  ? 'bg-amber-500 animate-pulse'
-                                  : 'bg-rose-500 animate-pulse'
-                              }`}
-                            />
-                            <span>
-                              {r.status === 'completed'
-                                ? 'เสร็จสิ้น'
-                                : r.status === 'in_progress'
-                                ? 'กำลังทำ'
-                                : 'รอดำเนินการ'}
-                            </span>
-                          </span>
-
-                          {/* Quick Edit Button on the back of row */}
-                          {isLoggedIn && (
-                            <button
-                              type="button"
-                              onClick={() => setEditingRecord(r)}
-                              className={`p-2 rounded-xl transition-colors ${
-                                isSelected
-                                  ? 'text-slate-300 hover:text-white hover:bg-slate-700'
-                                  : 'text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-                              }`}
-                              title="แก้ไขข้อมูล"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                  <table className="w-full min-w-[820px] border-collapse text-left">
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
+                      <tr className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                        <th className="px-4 py-3 font-bold w-16">ลำดับ</th><th className="px-4 py-3 font-bold">กิจการ / เลขประจำตัวผู้เสียภาษี</th><th className="px-4 py-3 font-bold">E-Filing</th><th className="px-4 py-3 font-bold">ประกันสังคม</th><th className="px-4 py-3 font-bold">สถานะงาน</th><th className="px-4 py-3 font-bold w-16 text-right">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRecords.map((r, idx) => {
+                        const isSelected = activeRecord?.id === r.id;
+                        const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
+                        const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
+                        const statusTone = r.status === 'completed' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-950/50 dark:text-emerald-300' : r.status === 'in_progress' ? 'bg-amber-50 text-amber-700 ring-amber-600/15 dark:bg-amber-950/50 dark:text-amber-300' : 'bg-slate-100 text-slate-600 ring-slate-500/15 dark:bg-slate-800 dark:text-slate-300';
+                        return (
+                          <tr key={r.id} onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-teal-50 dark:focus:bg-teal-950/30 ${isSelected ? 'bg-teal-50/80 dark:bg-teal-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'}`}>
+                            <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-teal-700 dark:text-teal-300' : 'text-slate-400'}`}>{seqNum}</span></td>
+                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' : r.type === 'individual' ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-teal-900 dark:text-teal-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
+                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
+                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
+                            <td className="px-4 py-4 align-middle"><span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ring-1 ring-inset ${statusTone}`}>{statusLabel}</span></td>
+                            <td className="px-4 py-4 align-middle text-right">{isLoggedIn ? <button type="button" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="inline-flex w-8 h-8 items-center justify-center rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors" title="แก้ไขกิจการ"><span className="material-symbols-outlined text-[18px]">edit</span></button> : <span className="text-slate-300">›</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 )}
               </div>
-
-              {/* List Footer Info */}
-              <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-between shrink-0">
-                <span>แสดง {filteredRecords.length} จาก {records.length} รายการ</span>
-                <span className="font-mono">Mustang Directory v2.5</span>
-              </div>
+              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filteredRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
             </div>
-
+            {/* RIGHT COLUMN: DETAIL CARD VIEW */}
             {/* RIGHT COLUMN: DETAIL CARD VIEW (~28% - Fully visible with no truncation) */}
-            <div className="w-full lg:w-[28%] flex flex-col shrink-0 overflow-y-auto no-scrollbar">
+            <div className="w-full xl:w-[360px] flex flex-col shrink-0 overflow-y-auto no-scrollbar">
               {activeRecord ? (
                 <div className="m101-selected-record-card bg-white dark:bg-[#111827] rounded-3xl border border-slate-200/85 dark:border-slate-800 shadow-xl p-5 flex flex-col gap-4">
                   
