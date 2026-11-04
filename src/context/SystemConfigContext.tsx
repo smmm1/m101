@@ -50,8 +50,8 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   accentColor: '#d97706',
 
   // Brand
-  appName: 'Mustang Directory',
-  appShortName: 'Mustang',
+  appName: 'ระบบจัดการข้อมูล',
+  appShortName: 'ข้อมูล',
   appInitial: 'M',
   appTagline: 'ระบบบริหารจัดการนิติบุคคลและทะเบียนกิจการ',
   systemNotice: '',
