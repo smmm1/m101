@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import type { User } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import React, { useState, useEffect } from 'react';
 import { BusinessRecord } from './types';
 import { DashboardView } from './components/DashboardView';
 import { YearManageModal } from './components/YearManageModal';
@@ -20,14 +18,9 @@ import {
 import { ThemeProvider } from './context/ThemeContext';
 import { CursorProvider } from './context/CursorContext';
 import { SystemConfigProvider } from './context/SystemConfigContext';
-import { INITIAL_BUSINESS_RECORDS } from './data/initialData';
 import { initCuteClickSound } from './utils/cuteAudio';
 
-const STORAGE_KEY_YEARS = 'directory_years_v1';
-const STORAGE_KEY_SELECTED_YEAR = 'directory_selected_year_v1';
-const STORAGE_KEY_RECORDS_BY_YEAR = 'directory_records_by_year_v1';
-const STORAGE_KEY_OLD_RECORDS = 'directory_records_v1';
-const STORAGE_KEY_USER = 'app_directory_user_v1';
+interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
 export default function App() {
   return (
@@ -43,157 +36,85 @@ export default function App() {
 
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sessionUser, setSessionUser] = useState<User | null>(null);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const [authMode, setAuthMode] = useState<'password' | 'pin'>('password');
+  const [authPin, setAuthPin] = useState('');
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [pinSetupOpen, setPinSetupOpen] = useState(false);
+  const [pinSetupValue, setPinSetupValue] = useState('');
+  const [pinSetupConfirm, setPinSetupConfirm] = useState('');
+  const [pinSetupError, setPinSetupError] = useState('');
+  const [pinSetupBusy, setPinSetupBusy] = useState(false);
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
-  const remoteYearsRef = useRef<Set<string>>(new Set());
-  const pendingDatabaseWriteRef = useRef(false);
-  const pendingSuccessToastsRef = useRef<Array<{ message: string; title?: string }>>([]);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDatabaseWriteRef = React.useRef(false);
+  const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
+  const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return initCuteClickSound();
   }, []);
 
-  const [userName, setUserName] = useState<string>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY_USER) || 'Mustang Admin';
-    } catch {
-      return 'Mustang Admin';
-    }
-  });
-
-  // Multi-Year state (defaults to year 69)
-  const [availableYears, setAvailableYears] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_YEARS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((y: string) => (y === '2569' ? '69' : String(y)));
-        }
-      }
-    } catch {}
-    return ['69'];
-  });
-
-  const [selectedYear, setSelectedYear] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
-      if (saved === '2569') return '69';
-      return saved || '69';
-    } catch {
-      return '69';
-    }
-  });
-
-  // Records by fiscal year - guarantees initial records exist so table is never empty
-  const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed === 'object' && parsed !== null && Object.keys(parsed).length > 0) {
-          if (parsed['2569'] && !parsed['69']) {
-            parsed['69'] = parsed['2569'];
-            delete parsed['2569'];
-          }
-          // If '69' has records, return parsed
-          if (parsed['69'] && parsed['69'].length > 0) {
-            return parsed;
-          }
-          // If empty array for '69', populate with INITIAL_BUSINESS_RECORDS
-          parsed['69'] = INITIAL_BUSINESS_RECORDS;
-          return parsed;
-        }
-      }
-    } catch {}
-
-    // Fallback: check legacy single-year records
-    try {
-      const legacy = localStorage.getItem(STORAGE_KEY_OLD_RECORDS);
-      if (legacy) {
-        const parsed = JSON.parse(legacy);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return { '69': parsed };
-        }
-      }
-    } catch {}
-
-    return {
-      '69': INITIAL_BUSINESS_RECORDS,
-    };
-  });
+  const [userName, setUserName] = useState<string>('Mustang Admin');
+  const [availableYears, setAvailableYears] = useState<string[]>(['69']);
+  const [selectedYear, setSelectedYear] = useState<string>('69');
+  const [recordsByYear, setRecordsByYear] = useState<Record<string, BusinessRecord[]>>({ '69': [] });
 
   // Active records for currently selected fiscal year
   const currentRecords = recordsByYear[selectedYear] || [];
 
-  // Keep a local cache only after Supabase has loaded successfully.
-  useEffect(() => {
-    if (!dataReady) return;
-    try {
-      localStorage.setItem(STORAGE_KEY_RECORDS_BY_YEAR, JSON.stringify(recordsByYear));
-    } catch {}
-  }, [recordsByYear, dataReady]);
-
-  // Persist available years
-  useEffect(() => {
-    if (!dataReady) return;
-    try {
-      localStorage.setItem(STORAGE_KEY_YEARS, JSON.stringify(availableYears));
-    } catch {}
-  }, [availableYears, dataReady]);
-
-  // Persist selected year
-  useEffect(() => {
-    if (!dataReady) return;
-    try {
-      localStorage.setItem(STORAGE_KEY_SELECTED_YEAR, selectedYear);
-    } catch {}
-  }, [selectedYear, dataReady]);
-
-  // Access is granted only by a real Supabase session and the database allowlist.
+  // Cloudflare D1 is the source of truth. Browser storage is never imported.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
   const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setAuthReady(true);
-      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Publishable Key ใน Vercel');
-      return;
-    }
-
     let active = true;
-    const client = supabase;
-    client.auth.getSession().then(({ data, error }) => {
-      if (!active) return;
-      if (error) setAuthError('ตรวจสอบเซสชันไม่สำเร็จ กรุณาลองใหม่');
-      setSessionUser(data.session?.user ?? null);
-      setAuthReady(true);
-    }).catch(() => {
-      if (active) {
-        setAuthError('เชื่อมต่อระบบยืนยันตัวตนไม่สำเร็จ');
-        setAuthReady(true);
+    const initialize = async () => {
+      try {
+        const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
+        const session = await sessionResponse.json();
+        if (!active) return;
+        if (session.user) setSessionUser(session.user as SessionUser);
+      } catch {
+        if (active) setAuthError('เชื่อมต่อระบบ Cloudflare ไม่สำเร็จ กรุณาลองใหม่');
+      } finally {
+        if (active) setAuthReady(true);
       }
-    });
-
-    const { data: authSubscription } = client.auth.onAuthStateChange((_event, session) => {
-      if (active) setSessionUser(session?.user ?? null);
-    });
-
-    return () => {
-      active = false;
-      authSubscription.subscription.unsubscribe();
     };
+    void initialize();
+    return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!sessionUser) {
+      setPinEnabled(false);
+      return () => { active = false; };
+    }
+    fetch('/api/auth/pin/status', { credentials: 'same-origin' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'PIN status unavailable');
+        return payload;
+      })
+      .then((payload) => {
+        if (!active) return;
+        setPinEnabled(Boolean(payload.enabled));
+      })
+      .catch(() => {
+        if (active) setPinEnabled(false);
+      });
+    return () => { active = false; };
+  }, [sessionUser]);
 
   useEffect(() => {
     let active = true;
@@ -207,239 +128,92 @@ function AppContent() {
 
     setAccessReady(false);
     setDataReady(false);
-    setAuthError('');
-    const checkAllowlist = async () => {
-      try {
-        if (!supabase || !sessionUser.email) throw new Error('บัญชีนี้ไม่มีอีเมลที่ตรวจสอบได้');
-        const { data, error } = await supabase
-          .from('allowed_users')
-          .select('email, role')
-          .eq('email', sessionUser.email.toLowerCase())
-          .maybeSingle();
-        if (error) throw error;
-        if (!data) {
-          await supabase.auth.signOut();
-          if (active) {
-            setAuthError('บัญชีนี้ยังไม่ได้รับอนุญาตให้เข้าใช้งาน M101');
-            setIsLoggedIn(false);
-            setAccessReady(true);
-          }
-          return;
-        }
-        if (active) {
-          setUserName(sessionUser.email || 'Mustang Admin');
-          setUserRole(data.role === 'admin' ? 'admin' : 'member');
-          setIsLoggedIn(true);
-          setAccessReady(true);
-        }
-      } catch {
-        if (active) {
-          setAuthError('ตรวจสอบสิทธิ์ผู้ใช้ไม่สำเร็จ กรุณาลองใหม่');
-          setIsLoggedIn(false);
-          setAccessReady(true);
-        }
-      }
-    };
-    void checkAllowlist();
-    return () => { active = false; };
-  }, [sessionUser]);
-
-  useEffect(() => {
-    const client = supabase;
-    if (!isLoggedIn || !accessReady || !sessionUser || !client) return;
-    let active = true;
-    setDataReady(false);
     setDataError('');
-
-    const loadRemoteData = async () => {
-      try {
-        // Preserve a copy of all pre-Supabase local data before switching the app to the database.
-        const backupPairs: Array<[string, string]> = [
-          [STORAGE_KEY_YEARS, 'directory_years_v1_backup_before_supabase'],
-          [STORAGE_KEY_SELECTED_YEAR, 'directory_selected_year_v1_backup_before_supabase'],
-          [STORAGE_KEY_RECORDS_BY_YEAR, 'directory_records_by_year_v1_backup_before_supabase'],
-          [STORAGE_KEY_OLD_RECORDS, 'directory_records_v1_backup_before_supabase'],
-        ];
-        for (const [sourceKey, backupKey] of backupPairs) {
-          const existing = localStorage.getItem(sourceKey);
-          if (existing !== null && localStorage.getItem(backupKey) === null) {
-            localStorage.setItem(backupKey, existing);
-          }
-        }
-
-        const { data: rows, error } = await client
-          .from('directory_year_data')
-          .select('fiscal_year, records, updated_at')
-          .order('fiscal_year', { ascending: true });
-        if (error) throw error;
+    fetch('/api/data', { credentials: 'same-origin' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
+        return payload;
+      })
+      .then((payload) => {
         if (!active) return;
-
-        if (rows && rows.length > 0) {
-          const nextRecords: Record<string, BusinessRecord[]> = {};
-          for (const row of rows) {
-            const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
-            if (Object.prototype.hasOwnProperty.call(nextRecords, year)) {
-              throw new Error(`พบข้อมูลปีบัญชีซ้ำหลังปรับรูปแบบเป็น ${year} กรุณาตรวจสอบข้อมูลในฐานข้อมูลก่อนแก้ไขต่อ`);
-            }
-            nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
-          }
-          remoteYearsRef.current = new Set(rows.map((row) => row.fiscal_year === '2569' ? '69' : String(row.fiscal_year)));
-          const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-          const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
-          const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
-          setRecordsByYear(nextRecords);
-          setAvailableYears(years.length ? years : ['69']);
-          setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : (years[0] || '69'));
-        } else {
-          // Only migrate actual user-saved browser data when the remote table is empty.
-          let localRecords: Record<string, BusinessRecord[]> | null = null;
-          const savedByYear = localStorage.getItem(STORAGE_KEY_RECORDS_BY_YEAR);
-          if (savedByYear) {
-            try {
-              const parsed = JSON.parse(savedByYear);
-              if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) localRecords = parsed;
-            } catch {}
-          }
-          if (!localRecords) {
-            const legacy = localStorage.getItem(STORAGE_KEY_OLD_RECORDS);
-            if (legacy) {
-              try {
-                const parsed = JSON.parse(legacy);
-                if (Array.isArray(parsed) && parsed.length) localRecords = { '69': parsed };
-              } catch {}
-            }
-          }
-          if (!localRecords) localRecords = { '69': INITIAL_BUSINESS_RECORDS };
-          if (localRecords['2569'] && !localRecords['69']) {
-            localRecords['69'] = localRecords['2569'];
-            delete localRecords['2569'];
-          }
-          const savedYears = localStorage.getItem(STORAGE_KEY_YEARS);
-          let years = Object.keys(localRecords);
-          if (savedYears) {
-            try {
-              const parsed = JSON.parse(savedYears);
-              if (Array.isArray(parsed)) years = Array.from(new Set([...years, ...parsed.map((y: string) => y === '2569' ? '69' : String(y))]));
-            } catch {}
-          }
-          years = years.length ? years.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })) : ['69'];
-          const migrationRows = years.map((year) => ({
-            fiscal_year: year,
-            records: Array.isArray(localRecords?.[year]) ? localRecords[year] : [],
-            updated_by: sessionUser.id,
-            updated_at: new Date().toISOString(),
-          }));
-          const { error: migrateError } = await client
-            .from('directory_year_data')
-            .upsert(migrationRows, { onConflict: 'fiscal_year' });
-          if (migrateError) throw migrateError;
-          if (!active) return;
-          remoteYearsRef.current = new Set(years);
-          setRecordsByYear(Object.fromEntries(years.map((year) => [year, Array.isArray(localRecords?.[year]) ? localRecords[year] : []])));
-          setAvailableYears(years);
-          const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
-          const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
-          setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : years[0]);
-        }
-        if (active) setDataReady(true);
-      } catch (error) {
-        if (active) {
-          setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลจาก Supabase ไม่สำเร็จ');
-          setDataReady(false);
-        }
-      }
-    };
-
-    void loadRemoteData();
-    return () => { active = false; };
-  }, [isLoggedIn, accessReady, sessionUser, dataReloadKey]);
-
-
-  // Visitors use a database view that masks sensitive fields before data reaches the browser.
-  useEffect(() => {
-    const client = supabase;
-    if (!isVisitor || sessionUser || !client || !isSupabaseConfigured) return;
-    let active = true;
-    setDataReady(false);
-    setDataError('');
-
-    const loadPublicData = async () => {
-      try {
-        const { data: rows, error } = await client
-          .from('directory_year_data_public')
-          .select('fiscal_year, records, updated_at')
-          .order('fiscal_year', { ascending: true });
-        if (error) throw error;
-        if (!active) return;
-
-        const nextRecords: Record<string, BusinessRecord[]> = {};
-        for (const row of rows || []) {
-          const year = row.fiscal_year === '2569' ? '69' : String(row.fiscal_year);
-          nextRecords[year] = Array.isArray(row.records) ? row.records as BusinessRecord[] : [];
-        }
-        const years = Object.keys(nextRecords).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTED_YEAR);
-        const normalizedSelection = savedSelection === '2569' ? '69' : savedSelection;
+        const nextRecords = payload.recordsByYear && Object.keys(payload.recordsByYear).length
+          ? payload.recordsByYear as Record<string, BusinessRecord[]>
+          : { '69': [] };
+        const years = Array.isArray(payload.availableYears) && payload.availableYears.length
+          ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
+          : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
-        setSelectedYear(normalizedSelection && years.includes(normalizedSelection) ? normalizedSelection : (years[0] || '69'));
+        setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
+        setUserName(sessionUser.email || 'Mustang Admin');
+        setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
+        setIsLoggedIn(true);
+        setAccessReady(true);
+        setDataReady(true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
+        setAccessReady(true);
+        setDataReady(false);
+        if (error instanceof Error && error.message.includes('401')) setSessionUser(null);
+      });
+    return () => { active = false; };
+  }, [sessionUser, dataReloadKey]);
+
+  useEffect(() => {
+    let active = true;
+    if (!isVisitor || sessionUser) return () => { active = false; };
+    setDataReady(false);
+    setDataError('');
+    fetch('/api/public/data', { credentials: 'same-origin' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
+        return payload;
+      })
+      .then((payload) => {
+        if (!active) return;
+        const nextRecords = payload.recordsByYear || {};
+        const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
+        setRecordsByYear(nextRecords);
+        setAvailableYears(years.length ? years : ['69']);
+        setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName('ผู้เยี่ยมชม');
         setDataReady(true);
-      } catch {
-        if (active) {
-          setDataError('โหลดข้อมูลสาธารณะไม่สำเร็จ กรุณาลองใหม่');
-          setDataReady(false);
-        }
-      }
-    };
-
-    void loadPublicData();
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
+        setDataReady(false);
+      });
     return () => { active = false; };
   }, [isVisitor, sessionUser, dataReloadKey]);
 
-  // Persist each fiscal-year document to Supabase. The local cache is never treated as authoritative.
+  // Save changes to the isolated M101 D1 database.
   useEffect(() => {
-    const client = supabase;
-    if (!dataReady || !isLoggedIn || !sessionUser || !client) return;
+    if (!dataReady || !isLoggedIn || !sessionUser) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      const currentYears = Array.from(new Set([...availableYears, ...Object.keys(recordsByYear)]))
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const rowsToSave = currentYears.map((year) => ({
-        fiscal_year: year,
-        records: Array.isArray(recordsByYear[year]) ? recordsByYear[year] : [],
-        updated_by: sessionUser.id,
-        updated_at: new Date().toISOString(),
-      }));
       void (async () => {
         try {
-          const { error: saveError } = await client
-            .from('directory_year_data')
-            .upsert(rowsToSave, { onConflict: 'fiscal_year' });
-          if (saveError) throw saveError;
-          const removedYears = Array.from(remoteYearsRef.current).filter((year) => !currentYears.includes(year));
-          if (removedYears.length) {
-            const { error: deleteError } = await client
-              .from('directory_year_data')
-              .delete()
-              .in('fiscal_year', removedYears);
-            if (deleteError) throw deleteError;
-          }
-          remoteYearsRef.current = new Set(currentYears);
+          const response = await fetch('/api/data', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ availableYears, recordsByYear }),
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
         } catch (error) {
-          // Keep failed edits recoverable locally; do not announce success.
-          try {
-            localStorage.setItem('directory_records_by_year_v1_unsynced_backup', JSON.stringify(recordsByYear));
-            localStorage.setItem('directory_years_v1_unsynced_backup', JSON.stringify(availableYears));
-          } catch {}
           pendingDatabaseWriteRef.current = false;
           pendingSuccessToastsRef.current = [];
           showToast(
-            error instanceof Error ? `บันทึก Supabase ไม่สำเร็จ: ${error.message}` : 'บันทึก Supabase ไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ',
+            error instanceof Error ? `บันทึก Cloudflare D1 ไม่สำเร็จ: ${error.message}` : 'บันทึกข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ',
             'ข้อมูลยังไม่ซิงก์',
             'error'
           );
@@ -612,7 +386,7 @@ function AppContent() {
 
       return {
         id: `import-${selectedYear}-${baseTimestamp}-${String(idx).padStart(4, '0')}`,
-        sequenceNo: String(calculatedSeq),
+        sequenceNo: item.sequenceNo?.trim() || String(calculatedSeq),
         taxId: item.taxId !== undefined ? item.taxId : '',
         companyName: item.companyName || `กิจการนำเข้า ${calculatedSeq}`,
         type: item.type || 'company',
@@ -752,35 +526,71 @@ function AppContent() {
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsVisitor(false);
-    if (!supabase || !isSupabaseConfigured) {
-      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Publishable Key');
-      return;
-    }
     setAuthBusy(true);
     setAuthError('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: authEmail.trim().toLowerCase(),
-        password: authPassword,
+      const response = await fetch(authMode === 'pin' ? '/api/auth/pin/login' : '/api/auth/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authMode === 'pin'
+          ? { pin: authPin }
+          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
       });
-      if (error) setAuthError('เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน');
-    } catch {
-      setAuthError('เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      setSessionUser(payload.user as SessionUser);
+      setUserName(payload.user?.email || 'Mustang Admin');
+      setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
+      setAuthPassword('');
+      setAuthPin('');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
+      if (authMode === 'pin') setAuthPin('');
     } finally {
       setAuthBusy(false);
     }
   };
 
+  useEffect(() => {
+    if (authMode === 'pin' && authPin.length === 6 && !authBusy) {
+      void handleLoginSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
+    }
+  }, [authMode, authPin, authBusy]);
+
+  // PIN login accepts physical keyboard input without requiring the keypad to be focused.
+  useEffect(() => {
+    if (authMode !== 'pin' || isVisitor || isLoggedIn) return;
+
+    const handlePinKeyDown = (event: KeyboardEvent) => {
+      if (authBusy) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        setAuthError('');
+        setAuthPin((current) => current.length < 6 ? current + event.key : current);
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        setAuthError('');
+        setAuthPin((current) => current.slice(0, -1));
+      } else if (event.key === 'Escape') {
+        setAuthError('');
+        setAuthPin('');
+      }
+    };
+
+    window.addEventListener('keydown', handlePinKeyDown);
+    return () => window.removeEventListener('keydown', handlePinKeyDown);
+  }, [authMode, authBusy, isVisitor, isLoggedIn]);
+
   if (!authReady) {
     return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
   }
 
-  if (!isSupabaseConfigured || !supabase) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">ยังไม่ได้ตั้งค่า Supabase</h1><p className="mt-3 text-sm text-slate-600">ตรวจสอบ VITE_SUPABASE_URL และ VITE_SUPABASE_PUBLISHABLE_KEY ใน Vercel แล้ว Deploy ใหม่</p></div></div>;
-  }
-
   if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Supabase…'}</div>;
+    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">{dataError ? <div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div> : 'กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…'}</div>;
   }
 
   if (isVisitor && !dataReady) {
@@ -850,16 +660,48 @@ function AppContent() {
               </span>
             </div>
 
-            <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-            <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+            {authMode === 'password' && (
+              <>
+                <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
+                <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+              </>
+            )}
 
-            <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-            <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+            <div className="mb-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+              <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>รหัสผ่าน</button>
+              <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} className={`rounded-lg px-3 py-2 text-sm font-medium transition ${authMode === 'pin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>PIN</button>
+            </div>
+            {authMode === 'password' ? (
+              <>
+                <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+                <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่าน Money102" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100" />
+              </>
+            ) : (
+              <>
+                <label className="mb-3 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
+                <div className="mb-4 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
+                  {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3 w-3 rounded-full border ${index < authPin.length ? 'border-slate-900 bg-slate-900' : 'border-slate-300 bg-white'}`} />)}
+                </div>
+                <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
+                  {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
+                    <button key={key} type="button" disabled={authBusy} onClick={() => {
+                      setAuthError('');
+                      if (key === 'clear') setAuthPin('');
+                      else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
+                      else setAuthPin((value) => value.length < 6 ? value + key : value);
+                    }} className="h-12 rounded-xl border border-slate-200 bg-white text-lg font-semibold text-slate-800 transition hover:bg-slate-50 active:scale-95 disabled:opacity-50">
+                      {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-center text-xs text-slate-400">กดตัวเลขจากคีย์บอร์ดหรือแป้นบนหน้าจอได้เลย · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
+              </>
+            )}
 
             {authError && <p role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
 
-            <button type="submit" disabled={authBusy} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition duration-200 hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>เข้าสู่ระบบ <span aria-hidden="true">→</span></>}
+            <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition duration-200 hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
+              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
             </button>
 
             <div className="my-5 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-100" /><span>หรือ</span><span className="h-px flex-1 bg-slate-100" /></div>
@@ -882,6 +724,47 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
+      {pinSetupOpen && sessionUser && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <form onSubmit={async (event) => {
+            event.preventDefault();
+            setPinSetupError('');
+            if (!/^\d{6}$/.test(pinSetupValue)) { setPinSetupError('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+            if (pinSetupValue !== pinSetupConfirm) { setPinSetupError('PIN ทั้งสองช่องไม่ตรงกัน'); return; }
+            setPinSetupBusy(true);
+            try {
+              const response = await fetch('/api/auth/pin/setup', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: pinSetupValue }),
+              });
+              const payload = await response.json();
+              if (!response.ok) throw new Error(payload.error || 'บันทึก PIN ไม่สำเร็จ');
+              setPinEnabled(true);
+              setPinSetupOpen(false);
+              setPinSetupValue('');
+              setPinSetupConfirm('');
+              showToast('ตั้งค่า PIN เรียบร้อยแล้ว', 'PIN พร้อมใช้งาน');
+            } catch (error) {
+              setPinSetupError(error instanceof Error ? error.message : 'บันทึก PIN ไม่สำเร็จ');
+            } finally {
+              setPinSetupBusy(false);
+            }
+          }} className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div><h2 className="text-lg font-semibold text-slate-900">{pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}</h2><p className="mt-1 text-xs text-slate-500">กำหนดรหัสตัวเลข 6 หลักสำหรับเข้าสู่ระบบ</p></div>
+              {pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="rounded-full px-3 py-1 text-slate-400 hover:bg-slate-100">✕</button>}
+            </div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">PIN ใหม่</label>
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            <label className="mb-2 block text-sm font-medium text-slate-700">ยืนยัน PIN</label>
+            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
+            {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{pinSetupError}</p>}
+            <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
+            {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
+          </form>
+        </div>
+      )}
       <DashboardView
         records={currentRecords}
         userName={userName}
@@ -911,9 +794,12 @@ function AppContent() {
         isVisitor={isVisitor}
         onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
-          void supabase?.auth.signOut().then(({ error }) => {
-            if (error) showToast('ออกจากระบบไม่สำเร็จ กรุณาลองใหม่', 'ข้อผิดพลาด', 'error');
-          });
+          void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+            .finally(() => {
+              setSessionUser(null);
+              setIsLoggedIn(false);
+              setDataReady(false);
+            });
         }}
       />
 

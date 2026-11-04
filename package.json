@@ -1,14 +1,14 @@
 {
-  "name": "react-example",
+  "name": "m101-directory",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "npm run build && wrangler pages dev dist",
     "build": "vite build",
-    "start": "tsx server.ts",
-    "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "start": "wrangler pages dev dist",
+    "preview": "wrangler pages dev dist",
+    "clean": "rm -rf dist .wrangler",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
@@ -24,8 +24,7 @@
     "react-dom": "^19.0.1",
     "vite": "^8.3.0",
     "ws": "^8.22.0",
-    "xlsx": "^0.18.5",
-    "@supabase/supabase-js": "^2.57.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
@@ -39,6 +38,7 @@
     "esbuild": "^0.28.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.45.0"
   }
 }
