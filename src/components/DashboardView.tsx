@@ -242,8 +242,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [records, overviewSearch]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen lg:h-screen overflow-y-auto lg:overflow-hidden bg-[#f4f5f7] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 font-body select-none transition-colors relative">
+    <div className="m101-app-shell mobile-app-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
       
+      <aside className="m101-sidebar" aria-label="เมนูหลัก M101">
+        <div className="m101-brand"><div className="m101-brand-mark">M</div><div className="m101-brand-copy"><strong>M101</strong><span>DOCUMENT WORKSPACE</span></div></div>
+        <div className="m101-nav-caption">พื้นที่ทำงาน</div>
+        <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
+        <button type="button" onClick={() => setActiveTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
+        {isLoggedIn && <button type="button" onClick={() => setActiveTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => setActiveTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
+        <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
+      </aside>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -267,53 +277,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
-      <nav className="min-h-16 bg-white dark:bg-[#111827] border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 shadow-2xs">
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'dashboard'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">grid_view</span>
-            <span>ภาพรวม</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('directory')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'directory'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-            <span>ทะเบียนกิจการ</span>
-          </button>
-
-          {isLoggedIn && (
-          <button
-            type="button"
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-amber-500 text-slate-900 shadow-md font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-            <span>การตั้งค่า</span>
-          </button>
-          )}
-        </div>
-
-        {/* Right Controls: Fiscal Year + Activity Log + Dark Mode + Profile */}
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <nav className="mobile-app-nav min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-end gap-2 shrink-0 z-30">
+        {/* Primary navigation is in the workspace sidebar. */}
+        <div className="mobile-utility-nav flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
@@ -508,7 +474,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
+      <div className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
           <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
             
