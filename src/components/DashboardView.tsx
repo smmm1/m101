@@ -596,7 +596,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Scrollable List Items container with NO row limits */}
-              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 min-h-0">
+              <div className="m101-record-list flex-1 overflow-y-auto min-h-0">
                 {filteredRecords.length === 0 ? (
                   <div className="py-16 text-center text-slate-400 text-xs">
                     ไม่พบรายการนิติบุคคลที่ค้นหา
@@ -610,10 +610,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div
                         key={r.id}
                         onClick={() => setSelectedId(r.id)}
-                        className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all group ${
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(r.id); } }}
+                        className={`m101-record-row px-5 py-3.5 flex items-center justify-between cursor-pointer transition-all group ${
                           isSelected
-                            ? 'bg-[#0f172a] text-white dark:bg-slate-800 dark:ring-1 dark:ring-amber-500/50'
-                            : 'bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-900 dark:text-slate-100'
+                            ? 'is-selected'
+                            : 'is-unselected'
                         }`}
                       >
                         <div className="flex items-center gap-4 min-w-0 pr-3">
