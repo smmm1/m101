@@ -333,3 +333,72 @@ html.dark .m101-button-secondary { color:#d6e7dc!important; background:#20342a!i
 html.dark .mobile-main-content [class*=bg-indigo-950],html.dark .mobile-main-content [class*=bg-violet-950],html.dark .mobile-main-content [class*=bg-purple-950] { background:#1d3a2e!important; }
 html.dark .mobile-main-content [class*=text-indigo-300],html.dark .mobile-main-content [class*=text-violet-300],html.dark .mobile-main-content [class*=text-purple-300] { color:#a8dfc4!important; }
 html.dark .mobile-main-content [class*=border-indigo-800],html.dark .mobile-main-content [class*=border-violet-800],html.dark .mobile-main-content [class*=border-purple-800] { border-color:#365a48!important; }
+
+/* M101 workspace refinement — directory and settings */
+@media(max-width:900px){
+  .mobile-main-content [class*=grid-cols-]{grid-template-columns:revert!important}
+  .m101-overview-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .m101-overview-grid{grid-template-columns:minmax(0,1fr)}
+}
+.m101-directory-shell{gap:18px!important}
+.m101-directory-list-panel{border-radius:18px!important;box-shadow:0 5px 22px rgba(24,55,48,.045)!important}
+.m101-directory-toolbar{padding:22px 22px 17px!important;align-items:flex-start!important}
+.m101-directory-toolbar h2{font-size:21px!important;letter-spacing:-.035em}
+.m101-directory-toolbar p{line-height:1.65!important;max-width:560px}
+.m101-directory-actions{flex-wrap:wrap;justify-content:flex-end}
+.m101-directory-actions button{min-height:39px;border-radius:10px!important;box-shadow:none!important}
+.m101-directory-searchbar{padding:13px 20px!important;background:#f8faf9!important}
+.m101-directory-searchbar input{min-height:42px!important;border-radius:11px!important;font-size:12px!important}
+.m101-directory-filters{padding:12px 20px!important;background:#fff}
+.m101-directory-filters button{min-height:32px;padding-inline:13px!important}
+.m101-directory-shell>div:last-child{border-radius:18px!important;box-shadow:0 5px 22px rgba(24,55,48,.045)!important}
+.m101-settings{background:var(--m101-canvas)!important;color:var(--m101-ink)!important}
+.m101-settings-header{padding:5px 2px 15px;border-bottom:1px solid var(--m101-line)}
+.m101-settings-header h1{font-size:clamp(23px,2.5vw,30px)!important;letter-spacing:-.04em!important;color:var(--m101-ink)!important}
+.m101-settings-header p{font-size:12px!important;line-height:1.7!important;color:var(--m101-muted)!important}
+.m101-settings-header>div:last-child{display:flex;flex-wrap:wrap;gap:8px}
+.m101-settings-header>div:last-child span{border-radius:9px!important;background:#edf5f2!important;color:#28675a!important;border:1px solid #dcebe5!important}
+.m101-settings-grid{width:100%;gap:18px!important}
+.m101-settings-card{border:1px solid var(--m101-line)!important;border-radius:17px!important;background:var(--m101-surface)!important;padding:22px!important;box-shadow:var(--m101-shadow)!important}
+.m101-settings-card>div:first-child{padding-bottom:15px!important;border-color:var(--m101-line)!important}
+.m101-settings-card>div:first-child h3{font-size:14px!important;color:var(--m101-ink)!important}
+.m101-settings-card>div:first-child p{font-size:11px!important;color:var(--m101-muted)!important}
+.m101-settings-card>div:first-child>div:first-child{width:38px!important;height:38px!important;border-radius:11px!important;background:var(--m101-accent-soft)!important;color:var(--m101-accent)!important}
+.m101-settings-card label{font-size:11px!important;color:#536a63!important}
+.m101-settings-card input{min-height:42px!important;border-radius:10px!important;background:#fbfdfc!important;border-color:var(--m101-line)!important;font-size:12px!important}
+.m101-settings-card input:focus{border-color:#69a99b!important;box-shadow:0 0 0 3px rgba(8,126,115,.12)!important}
+.m101-settings-card button{border-radius:10px!important;box-shadow:none!important}
+.m101-settings-card button[class*=bg-indigo]{background:#e8f4f1!important;color:#176b5c!important;border-color:#cfe5dd!important}
+.m101-settings-card button[class*=hover\:bg-indigo]:hover{background:#dcefe9!important}
+.m101-settings-card [class*=text-indigo]{color:#176b5c!important}
+.m101-settings-card [class*=border-indigo]{border-color:#cfe5dd!important}
+.m101-settings-card [class*=bg-indigo-50]{background:#e8f4f1!important}
+.m101-settings-card [class*=bg-emerald-600]{background:#176b5c!important}
+.m101-settings-card [class*=bg-amber-50]{background:#f8f5ec!important}
+.m101-settings-dataset{grid-column:1/-1}
+.m101-settings-dataset>div:last-child>div{border-radius:13px!important}
+@media(max-width:640px){
+ .m101-directory-toolbar{flex-direction:column!important;align-items:stretch!important;padding:17px!important}
+ .m101-directory-actions{justify-content:flex-start;width:100%}
+ .m101-directory-actions button{flex:1 1 auto;justify-content:center}
+ .m101-directory-searchbar{padding:12px!important}
+ .m101-directory-searchbar>div{min-width:100%!important}
+ .m101-directory-searchbar>button{width:100%;justify-content:center}
+ .m101-directory-filters{padding:10px 12px!important}
+ .m101-settings{padding:16px 12px 24px!important}
+ .m101-settings-card{padding:17px!important}
+ .m101-settings-header>div:last-child{justify-content:flex-start}
+ .m101-settings-dataset{grid-column:auto}
+}
+html.dark .m101-settings-header{border-color:#293a33}
+html.dark .m101-settings-header h1{color:#e7efec!important}
+html.dark .m101-settings-header>div:last-child span{background:#193a32!important;color:#a9e2d0!important;border-color:#31584b!important}
+html.dark .m101-settings-card{background:#15201c!important;border-color:#2a3a33!important;color:#e5eee9}
+html.dark .m101-settings-card>div:first-child{border-color:#2a3a33!important}
+html.dark .m101-settings-card>div:first-child h3{color:#e5eee9!important}
+html.dark .m101-settings-card label{color:#b7c9c0!important}
+html.dark .m101-settings-card input{background:#101a16!important;border-color:#35473e!important;color:#e5eee9!important}
+html.dark .m101-settings-card button[class*=bg-indigo]{background:#193a32!important;color:#a9e2d0!important;border-color:#31584b!important}
+html.dark .m101-directory-searchbar{background:#131f1b!important}
+html.dark .m101-directory-filters{background:#15201c!important}
+@media(prefers-reduced-motion:reduce){.mobile-main-content button{transition:none!important}}
