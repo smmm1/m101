@@ -547,23 +547,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   )}
 
                   {isLoggedIn && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                      <span className="hidden sm:inline">นำเข้า</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsExcelMappingOpen(true)}
-                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                      title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">table_chart</span>
-                      <span className="hidden sm:inline">จับคู่ไฟล์</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                        <span className="hidden sm:inline">นำเข้า</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsExcelMappingOpen(true)}
+                        className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                        title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">table_chart</span>
+                        <span className="hidden sm:inline">จับคู่ไฟล์</span>
+                      </button>
+                    </>
                   )}
                   
                   {isLoggedIn && (
