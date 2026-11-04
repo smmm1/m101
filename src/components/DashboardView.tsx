@@ -95,17 +95,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = mainContentRef.current;
-    if (!container) return;
-    const handleScroll = () => {
-      scrollPositionsRef.current[activeTabRef.current] = container.scrollTop;
-      setShowScrollTop(container.scrollTop > 360);
-    };
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
     if (!showProfileDropdown) return;
     const handlePointerDown = (event: MouseEvent) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
