@@ -115,6 +115,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [sheetName, setSheetName] = useState('');
   const [regions, setRegions] = useState<TableRegion[]>([]);
+  const [sheetMatrix, setSheetMatrix] = useState<string[][]>([]);
   const [regionId, setRegionId] = useState('');
   const [mapping, setMapping] = useState<Record<number, ImportField | ''>>({});
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -129,6 +130,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     setWorkbook(null);
     setSheetName('');
     setRegions([]);
+    setSheetMatrix([]);
     setRegionId('');
     setMapping({});
     setSelectedRows([]);
@@ -142,6 +144,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     const sheet = book.Sheets[name];
     const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: false, defval: '' });
     const found = detectRegions(matrix);
+    setSheetMatrix(matrix.map((row) => Array.isArray(row) ? row.map(clean) : []));
     setSheetName(name);
     setRegions(found);
     setRegionId(found.length === 1 ? found[0].id : '');
@@ -258,19 +261,8 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                 <div className="min-w-0"><p className="text-xs font-bold text-slate-800 dark:text-slate-100">{fileName}</p><p className="text-[11px] text-slate-500">{workbook.SheetNames.length} Sheet · เลือก Sheet ที่ต้องการเองได้</p></div>
                 <button type="button" onClick={reset} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">เปลี่ยนไฟล์</button>
               </div>
-              <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-                <section className="space-y-2">
-                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">1. เลือก Sheet</h3>
-                  <div className="space-y-1 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
-                    {workbook.SheetNames.map((name) => (
-                      <button key={name} type="button" onClick={() => loadSheet(workbook, name)} className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${sheetName === name ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
-                        <span className="material-symbols-outlined mr-2 align-middle text-[15px]">table_view</span>{name}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-                <section className="min-w-0 space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">2. เลือกตารางใน Sheet นี้</h3><span className="text-[11px] text-slate-500">พบ {regions.length} ตาราง</span></div>
+              <section className="min-w-0 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xs font-bold text-slate-700 dark:text-slate-200">1. ดูข้อมูลใน Sheet และเลือกตาราง</h3><span className="text-[11px] text-slate-500">{sheetMatrix.length} แถว · {Math.max(0, ...sheetMatrix.map((row) => row.length))} คอลัมน์ · พบ {regions.length} ตาราง</span></div>
                   {regions.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">ไม่พบตารางข้อมูลที่มีอย่างน้อย 2 แถวใน Sheet นี้</p> : (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {regions.map((region, index) => (
@@ -282,16 +274,18 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                       ))}
                     </div>
                   )}
-                  {selectedRegion && (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                      <table className="w-full min-w-[420px] text-left text-[11px]">
-                        <tbody>{selectedRegion.rows.slice(0, 4).map((row, index) => <tr key={index} className="border-b border-slate-100 last:border-0 dark:border-slate-800">{row.map((cell, col) => <td key={col} className="max-w-[180px] truncate px-3 py-2 text-slate-600 dark:text-slate-300">{cell || '—'}</td>)}</tr>)}</tbody>
+                  <div className="overflow-hidden rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900"><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Worksheet preview</span><span className="text-[10px] text-slate-400">แสดงสูงสุด 200 แถว × 30 คอลัมน์</span></div>
+                    <div className="max-h-[360px] overflow-auto">
+                      <table className="w-max min-w-full border-collapse text-[11px]">
+                        <thead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-800"><tr><th className="sticky left-0 z-30 min-w-10 border border-slate-200 bg-slate-100 px-2 py-1 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-800">#</th>{Array.from({ length: Math.min(30, Math.max(0, ...sheetMatrix.map((row) => row.length))) }, (_, col) => <th key={col} className="min-w-28 border border-slate-200 px-2 py-1 text-center font-bold text-slate-500 dark:border-slate-700">{String.fromCharCode(65 + (col % 26))}{col >= 26 ? String(Math.floor(col / 26)) : ''}</th>)}</tr></thead>
+                        <tbody>{sheetMatrix.slice(0, 200).map((row, rowIndex) => <tr key={rowIndex}><th className="sticky left-0 z-10 border border-slate-200 bg-slate-50 px-2 py-1 text-center font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-900">{rowIndex + 1}</th>{Array.from({ length: Math.min(30, Math.max(0, ...sheetMatrix.map((r) => r.length))) }, (_, col) => { const inRegion = selectedRegion && rowIndex >= selectedRegion.startRow && rowIndex <= selectedRegion.endRow && col >= selectedRegion.startCol && col <= selectedRegion.endCol; return <td key={col} className={`max-w-56 truncate border border-slate-200 px-2 py-1.5 dark:border-slate-800 ${inRegion ? 'bg-amber-50 text-slate-900 dark:bg-amber-500/10 dark:text-slate-100' : 'text-slate-600 dark:text-slate-300'}`} title={row[col] || ''}>{row[col] || ''}</td>; })}</tr>)}</tbody>
                       </table>
                     </div>
-                  )}
-                  <div className="flex justify-end"><button type="button" disabled={!selectedRegion} onClick={beginMapping} className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-amber-500 dark:text-slate-900">เลือกตารางนี้และจับคู่คอลัมน์</button></div>
-                </section>
-              </div>
+                    <div className="flex items-end gap-1 overflow-x-auto border-t border-slate-200 bg-slate-100 px-2 pt-2 dark:border-slate-800 dark:bg-slate-900">{workbook.SheetNames.map((name) => <button key={name} type="button" onClick={() => loadSheet(workbook, name)} className={`max-w-48 shrink-0 truncate rounded-t-lg border border-b-0 px-4 py-2 text-[11px] font-semibold ${sheetName === name ? 'border-slate-300 bg-white text-amber-700 dark:border-slate-700 dark:bg-slate-950 dark:text-amber-300' : 'border-transparent bg-slate-200 text-slate-500 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'}`}>{name}</button>)}</div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[11px] text-slate-500">เลือกตารางจากรายการด้านบน แล้วดูกรอบสีเหลืองในตารางตัวอย่าง</p><button type="button" disabled={!selectedRegion} onClick={beginMapping} className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-amber-500 dark:text-slate-900">เลือกตารางนี้และจับคู่คอลัมน์</button></div>
+              </section>
 
               {step === 'mapping' && selectedRegion && (
                 <section className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
