@@ -899,3 +899,69 @@ html.dark .mobile-utility-nav > button:hover { background: #243b37 !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Login surface follows the same M101 identity without altering authentication. */
+.m101-login-shell {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 500px) minmax(360px, 430px);
+  align-content: center; justify-content: center; align-items: center;
+  gap: clamp(38px, 7vw, 104px);
+  padding: 56px clamp(22px, 5vw, 80px) !important;
+  background: #f1f6f4 !important;
+}
+.m101-login-shell::before {
+  content: "M101\A DOCUMENT WORKSPACE\A\A จัดการทะเบียนกิจการ\A ตรวจสอบข้อมูล และนำเข้าเอกสาร\A ในพื้นที่ทำงานเดียว";
+  white-space: pre-line;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 500px; padding: clamp(38px, 5vw, 66px);
+  border-radius: 28px; background: #123b37; color: #f1faf7;
+  font: 600 clamp(21px, 2.3vw, 31px)/1.55 'Sarabun', sans-serif;
+  letter-spacing: -.025em;
+  box-shadow: 0 26px 60px rgba(18,59,55,.12);
+}
+.m101-login-shell section { width: 100% !important; max-width: 430px !important; margin: 0 !important; }
+.m101-login-shell section > div:first-child { margin-bottom: 22px !important; text-align: left !important; }
+.m101-login-shell section > div:first-child > div:first-child { display: none !important; }
+.m101-login-shell section > div:first-child h1 {
+  margin: 0 !important; font-size: 0 !important; line-height: 1.2;
+}
+.m101-login-shell section > div:first-child h1::before {
+  content: "เข้าสู่พื้นที่ทำงาน"; display: block; color: #173b36;
+  font: 800 27px/1.35 'Sarabun', sans-serif; letter-spacing: -.03em;
+}
+.m101-login-shell section > div:first-child h1::after {
+  content: "ลงชื่อเข้าใช้เพื่อจัดการข้อมูล M101"; display: block; margin-top: 7px;
+  color: #82938e; font: 400 13px/1.6 'Sarabun', sans-serif; letter-spacing: 0;
+}
+.m101-login-shell form {
+  border: 1px solid #e0eae6 !important; border-radius: 20px !important;
+  padding: 28px !important; background: #fff !important;
+  box-shadow: 0 16px 42px rgba(23,59,54,.07) !important;
+}
+.m101-login-shell form h2 { color: #203d38 !important; font-size: 15px !important; }
+.m101-login-shell form input {
+  min-height: 47px; border-radius: 11px !important; border-color: #dce7e2 !important;
+  background: #fbfdfc !important;
+}
+.m101-login-shell form button[type="submit"] {
+  border-radius: 11px !important; background: #087e73 !important; color: #fff !important;
+}
+.m101-login-shell form button[type="submit"]:hover { background: #06675f !important; }
+.m101-login-shell form .bg-slate-100 { background: #eff5f2 !important; }
+.m101-login-shell form .bg-white { color: #0b7167 !important; box-shadow: 0 1px 3px rgba(23,59,54,.08) !important; }
+.m101-cat-walker, .m101-paw { display: none !important; }
+@media (max-width: 767px) {
+  .m101-login-shell {
+    display: flex !important; flex-direction: column; gap: 0;
+    justify-content: center; padding: 34px 18px !important;
+  }
+  .m101-login-shell::before { display: none; }
+  .m101-login-shell section { max-width: 430px !important; }
+  .m101-login-shell section > div:first-child { text-align: center !important; }
+  .m101-login-shell form { padding: 22px !important; }
+}
+@media (min-width: 768px) and (max-width: 1050px) {
+  .m101-login-shell { grid-template-columns: minmax(250px, 380px) minmax(340px, 400px); gap: 30px; }
+  .m101-login-shell::before { min-height: 440px; padding: 34px; font-size: 22px; }
+}
