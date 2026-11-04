@@ -89,7 +89,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BusinessRecord | null>(null);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
@@ -243,7 +242,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span>
         </button>
         {isLoggedIn && (
-          <button type="button" onClick={() => setIsImportModalOpen(true)} className="m101-side-link">
+          <button type="button" onClick={() => setActiveTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}>
             <span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span>
           </button>
         )}
@@ -471,6 +470,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Main workspace content */}
       <div className="mobile-main-content flex-1 min-h-0 overflow-visible lg:overflow-hidden flex flex-col p-3 sm:p-5">
+        {activeTab === 'import' && isLoggedIn && (
+          <section className="m101-import-workspace" aria-label="พื้นที่นำเข้าข้อมูล">
+            <div className="m101-page-heading">
+              <div><span className="m101-eyebrow">DATA WORKSPACE</span><h1>นำเข้าข้อมูล</h1><p>นำเข้าเอกสาร ตรวจสอบโครงสร้าง และจับคู่คอลัมน์ก่อนบันทึกเข้าทะเบียน</p></div>
+              <button type="button" className="m101-secondary-action" onClick={() => setActiveTab('directory')}><span className="material-symbols-outlined">arrow_back</span>กลับทะเบียน</button>
+            </div>
+            <div className="m101-import-surface">
+              <Suspense fallback={<div className="m101-loading">กำลังเตรียมเครื่องมือนำเข้า…</div>}>
+                <ImportDocumentView
+                  selectedYear={selectedYear}
+                  onClose={() => setActiveTab('directory')}
+                  onImportRecords={(items) => {
+                    if (onImportRecords) onImportRecords(items);
+                    setActiveTab('directory');
+                    logActivity('import', `นำเข้ารายการจำนวน ${items.length} รายการ`);
+                  }}
+                  onShowToast={onShowToast}
+                />
+              </Suspense>
+            </div>
+          </section>
+        )}
+
         {activeTab === 'directory' && (
           <div className="mobile-directory-layout flex-1 flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)] max-w-[1700px] w-full mx-auto overflow-visible lg:overflow-hidden">
             
@@ -1097,25 +1119,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
 
       </div>
-
-      {isLoggedIn && isImportModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="นำเข้าเอกสารและเลือกข้อมูล">
-          <div className="relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#090a0f] sm:rounded-3xl">
-            <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-sm text-slate-500">กำลังเปิดเครื่องมือนำเข้า...</div>}>
-              <ImportDocumentView
-                selectedYear={selectedYear}
-                onClose={() => setIsImportModalOpen(false)}
-                onImportRecords={(items) => {
-                  if (onImportRecords) onImportRecords(items);
-                  setIsImportModalOpen(false);
-                  logActivity('import', `นำเข้ารายการจำนวน ${items.length} รายการ`);
-                }}
-                onShowToast={onShowToast}
-              />
-            </Suspense>
-          </div>
-        </div>
-      )}
 
       {isLoggedIn && (
         <ExcelMappingImportModal
