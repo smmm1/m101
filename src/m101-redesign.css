@@ -720,3 +720,43 @@ html.dark .m101-form-dialog form [class*=bg-rose-50]{background:#342321!importan
  .m101-form-dialog form [class*=grid-cols-3]{grid-template-columns:1fr!important}
  .m101-detail-dialog{max-width:none!important}
 }
+
+
+/* Utility dialogs and feedback — final consistency pass */
+.m101-delete-dialog{max-width:680px!important}
+.m101-delete-dialog .m101-dialog-header{margin:-24px -24px 14px;padding:16px 20px!important}
+.m101-delete-dialog .m101-delete-row{min-height:54px;border-radius:11px!important}
+.m101-delete-dialog .m101-delete-row:hover{background:#f6faf8!important}
+.m101-delete-dialog input[type=checkbox]{accent-color:#176b5c;width:16px;height:16px}
+.m101-delete-dialog button{min-height:38px;border-radius:10px!important}
+.m101-delete-dialog button[class*=bg-rose-600]{background:#a94f46!important}
+.m101-delete-dialog button[class*=bg-rose-600]:hover{background:#8f4039!important}
+.m101-titles-dialog .m101-dialog-header{background:#f7faf8!important}
+.m101-titles-dialog form{padding:22px!important;gap:18px!important}
+.m101-titles-dialog form>div{border-radius:14px!important;border-color:var(--m101-line)!important;background:#f8fbf9!important;padding:17px!important}
+.m101-titles-dialog form h3{color:var(--m101-accent)!important;font-size:10px!important;letter-spacing:.09em!important}
+.m101-titles-dialog form label{font-size:11px!important;color:#536a63!important}
+.m101-titles-dialog form input{min-height:42px!important;border:1px solid #dce7e2!important;border-radius:10px!important;background:#fff!important;color:#203b34!important;font-size:12px!important}
+.m101-titles-dialog form input:focus{border-color:#69a99b!important;box-shadow:0 0 0 3px rgba(8,126,115,.12)!important}
+.m101-titles-dialog form button{min-height:40px;border-radius:10px!important}
+.m101-toast-stack{width:min(360px,calc(100vw - 28px));}
+.m101-toast{min-height:54px;border-radius:13px!important;padding:11px 13px!important;background:#19372e!important;border:1px solid #315b4d!important;box-shadow:0 12px 32px rgba(13,42,33,.2)!important}
+.m101-toast .material-symbols-outlined{color:#9ed2ba!important}
+.m101-toast button{min-width:28px;min-height:28px;display:grid;place-items:center;border-radius:7px}
+.m101-toast button:hover{background:rgba(255,255,255,.1)!important}
+html.dark .m101-delete-dialog .m101-delete-row:hover{background:#1d3028!important}
+html.dark .m101-titles-dialog .m101-dialog-header{background:#1b2a23!important}
+html.dark .m101-titles-dialog form>div{background:#192720!important;border-color:#304238!important}
+html.dark .m101-titles-dialog form h3{color:#9dd2bb!important}
+html.dark .m101-titles-dialog form label{color:#b7c9c0!important}
+html.dark .m101-titles-dialog form input{background:#101a16!important;border-color:#35473e!important;color:#e5eee9!important}
+@media(max-width:640px){
+ .m101-delete-dialog{max-height:94dvh!important;padding:18px!important}
+ .m101-delete-dialog .m101-dialog-header{margin:-18px -18px 12px;padding:14px 16px!important}
+ .m101-delete-dialog .m101-delete-row{padding:10px!important;gap:9px!important}
+ .m101-titles-dialog{max-height:94dvh!important}
+ .m101-titles-dialog form{padding:15px!important;gap:13px!important}
+ .m101-titles-dialog form>div{padding:13px!important}
+ .m101-toast-stack{right:10px!important;bottom:calc(12px + env(safe-area-inset-bottom))!important;left:10px!important;width:auto!important;max-width:none!important}
+}
+@media(prefers-reduced-motion:reduce){.m101-toast,.m101-delete-dialog,.m101-titles-dialog{animation:none!important;transition:none!important}}
