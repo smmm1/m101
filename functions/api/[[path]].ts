@@ -366,9 +366,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
       if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
-      const result = await env.DB.prepare(
-        'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
-      ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id).run();
+      let result;
+      try {
+        result = await env.DB.prepare(
+          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
+        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id).run();
+      } catch (error) {
+        const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ?').bind(id).first() as { fiscal_year?: string; business_id?: string } | null;
+        if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+        const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(current.fiscal_year, current.business_id, taskCode, id).first();
+        if (duplicate) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
+        throw error;
+      }
       if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
       return json({ ok: true });
     }
