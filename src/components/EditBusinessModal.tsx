@@ -121,19 +121,19 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
         {/* Header */}
         <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-start justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
               <span className="material-symbols-outlined text-[22px]">edit_note</span>
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
                   {type === 'partnership' ? 'ห้างหุ้นส่วนจำกัด' : 'บริษัทจำกัด'}
                 </span>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 font-mono">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
                   ลำดับ #{sequenceNo || '-'}
                 </span>
               </div>
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate font-headline leading-tight">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate font-headline leading-tight">
                 แก้ไขข้อมูล: {companyName || 'ระบุชื่อกิจการ'}
               </h2>
             </div>
@@ -161,7 +161,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 1. Status Bar & Fast Switcher */}
           <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">สถานะการดำเนินงาน:</span>
+              <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">สถานะการดำเนินงาน:</span>
               <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${currentBadge.bg}`}>
                 <span className={`w-2 h-2 rounded-full ${currentBadge.dot}`} />
                 <span>{currentBadge.label}</span>
@@ -180,7 +180,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                     onClick={() => setStatus(s)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       isCurrent
-                        ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 shadow-xs'
+                        ? 'bg-teal-700 dark:bg-teal-600 text-white shadow-sm'
                         : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700'
                     }`}
                   >
@@ -195,8 +195,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 2. Primary Tax & Legal Information */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">badge</span>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
+              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">badge</span>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
                 ข้อมูลนิติบุคคลและผู้เสียภาษี
               </h3>
             </div>
@@ -211,14 +211,14 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 value={companyName}
                 onChange={(e) => handleCompanyNameChange(e.target.value)}
                 placeholder="ระบุชื่อนิติบุคคล"
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Sequence No */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block font-mono">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   ลำดับ
                 </label>
                 <input
@@ -226,13 +226,13 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={sequenceNo}
                   onChange={(e) => setSequenceNo(e.target.value)}
                   placeholder="เช่น 01"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
 
               {/* Tax ID */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block font-mono">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   เลขประจำตัวผู้เสียภาษี (13 หลัก)
                 </label>
                 <input
@@ -240,19 +240,19 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
                   placeholder="เช่น 0105500000000"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
 
               {/* Business Type */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   ประเภทนิติบุคคล
                 </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as BusinessType)}
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 transition-all shadow-2xs cursor-pointer"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-teal-600 transition-all shadow-2xs cursor-pointer"
                 >
                   <option value="company">บริษัทจำกัด (บจก.)</option>
                   <option value="partnership">ห้างหุ้นส่วนจำกัด (หจก.)</option>
@@ -265,8 +265,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">key</span>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
+              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">key</span>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
                 รหัสผ่านและข้อมูลการยื่นแบบ
               </h3>
             </div>
@@ -274,7 +274,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Password */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block font-mono">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสผ่าน (Password)
                 </label>
                 <input
@@ -282,13 +282,13 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="ระบุรหัสผ่าน e-Filing"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-semibold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
 
               {/* e-Filing Code */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block font-mono">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสยื่น e-Filing
                 </label>
                 <input
@@ -296,13 +296,13 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={eFilingCode}
                   onChange={(e) => setEFilingCode(e.target.value)}
                   placeholder="ระบุรหัสยื่น"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-semibold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
 
               {/* SSO Code */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block font-mono">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสประกันสังคม (สปส.)
                 </label>
                 <input
@@ -310,7 +310,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={ssoCode}
                   onChange={(e) => setSsoCode(e.target.value)}
                   placeholder="ระบุรหัส สปส."
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-semibold focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
             </div>
@@ -319,15 +319,15 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 4. Auditor & Remarks */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">description</span>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
+              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">description</span>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
                 ข้อมูลผู้สอบบัญชีและหมายเหตุ
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   วันที่แจ้งผู้สอบบัญชี / ผู้สอบบัญชี
                 </label>
                 <input
@@ -335,12 +335,12 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={auditorDate}
                   onChange={(e) => setAuditorDate(e.target.value)}
                   placeholder="ระบุวันที่แจ้ง หรือชื่อผู้สอบบัญชี"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   หมายเหตุ / รหัสใหม่
                 </label>
                 <input
@@ -348,7 +348,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={remark}
                   onChange={(e) => setRemark(e.target.value)}
                   placeholder="ระบุหมายเหตุเพิ่มเติม"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
                 />
               </div>
             </div>
@@ -357,14 +357,14 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 5. Source File and Topic */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">history</span>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
+              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">history</span>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
                 ข้อมูลการนำเข้าและหัวข้อ
               </h3>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 block">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                 ชุดข้อมูล / หัวข้อ / ที่มาไฟล์
               </label>
               <input
@@ -372,7 +372,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="เช่น ชุดไฟล์นำเข้าปี 69, บันทึกข้อมูลเอง"
-                className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
               />
             </div>
           </div>
@@ -388,7 +388,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-900 text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-teal-700 dark:bg-teal-600 hover:bg-teal-800 dark:hover:bg-teal-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">save</span>
               <span>บันทึกการแก้ไข</span>
