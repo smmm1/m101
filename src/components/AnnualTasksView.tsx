@@ -30,6 +30,14 @@ const TASK_TYPES = [
   { code: 'DBD_FS', name: 'นำส่งงบการเงินต่อ DBD', description: 'งานนำส่งงบการเงินประจำปี' },
   { code: 'AGM', name: 'ประชุมสามัญผู้ถือหุ้น', description: 'งานประชุมสามัญผู้ถือหุ้นประจำปี' },
 ];
+const customTaskCode = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `CUSTOM_${(hash >>> 0).toString(36).toUpperCase()}`;
+};
 const todayISO = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -118,7 +126,7 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
     const preset = TASK_TYPES.find((item) => item.code === typeCode);
     const taskName = typeCode === 'CUSTOM' ? customName.trim() : (preset?.name || '');
     const taskCode = typeCode === 'CUSTOM'
-      ? (editing?.taskCode.startsWith('CUSTOM_') ? editing.taskCode : `CUSTOM_${Math.random().toString(36).slice(2, 10).toUpperCase()}`)
+      ? (editing?.taskCode.startsWith('CUSTOM_') ? editing.taskCode : customTaskCode(taskName))
       : typeCode;
     if (!business || !taskName) { onShowToast('กรุณาเลือกกิจการและระบุประเภทงาน', 'ข้อมูลไม่ครบ', 'error'); return; }
     setSaving(true);
