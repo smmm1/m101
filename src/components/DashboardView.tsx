@@ -93,6 +93,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isExcelMappingOpen, setIsExcelMappingOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const scrollPositionsRef = useRef<Record<string, number>>({});
+  const activeTabRef = useRef(activeTab);
+
+  // Save the outgoing tab's scroll position before switching views.
+  const navigateToTab = (nextTab: typeof activeTab) => {
+    const container = mainContentRef.current;
+    if (container) scrollPositionsRef.current[activeTabRef.current] = container.scrollTop;
+    activeTabRef.current = nextTab;
+    setActiveTab(nextTab);
+  };
+
+  // Restore the destination tab's position after React has rendered it.
+  useEffect(() => {
+    const container = mainContentRef.current;
+    if (!container) return;
+    container.scrollTo({ top: scrollPositionsRef.current[activeTab] ?? 0, behavior: 'auto' });
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   useEffect(() => {
     if (!showProfileDropdown) return;
@@ -213,7 +232,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       if (parsed.length > 0 && onImportRecords) {
         onImportRecords(parsed);
         logActivity('import', `นำเข้าไฟล์จำนวน ${parsed.length} รายการ (${file.name})`);
-        setActiveTab('directory');
+        navigateToTab('directory');
       } else {
         onShowToast(`ไม่พบข้อมูลในไฟล์ ${file.name}`, 'แจ้งเตือน', 'error');
       }
@@ -258,11 +277,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
         <div className="m101-brand"><div className="m101-brand-mark">◈</div><div className="m101-brand-copy"><strong>พื้นที่จัดการข้อมูล</strong><span>DOCUMENT WORKSPACE</span></div></div>
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
-        <button type="button" onClick={() => setActiveTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
-        <button type="button" onClick={() => setActiveTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
-        {isLoggedIn && <button type="button" onClick={() => setActiveTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานประจำปี</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => setActiveTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => setActiveTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
+        <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
+        <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานประจำปี</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
         <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
       </aside>
 
@@ -522,7 +541,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
-      <div className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
+      <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         {activeTab === 'directory' && (
           <div className="flex-1 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 min-h-[calc(100vh-100px)] max-w-[1800px] w-full mx-auto overflow-visible m101-directory-shell">
             
@@ -829,8 +848,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p>สรุปสถานะงานและเข้าถึงข้อมูลที่ต้องจัดการในรอบปีบัญชี {selectedYear}</p>
               </div>
               <div className="m101-overview-actions">
-                <button type="button" onClick={() => setActiveTab('directory')} className="m101-button-secondary">เปิดทะเบียนทั้งหมด <span aria-hidden="true">→</span></button>
-                {isLoggedIn && <button type="button" onClick={() => setActiveTab('import')} className="m101-button-primary">นำเข้าข้อมูล</button>}
+                <button type="button" onClick={() => navigateToTab('directory')} className="m101-button-secondary">เปิดทะเบียนทั้งหมด <span aria-hidden="true">→</span></button>
+                {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className="m101-button-primary">นำเข้าข้อมูล</button>}
               </div>
             </header>
 
@@ -857,7 +876,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </article>
             </div>
 
-            {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => setActiveTab('tasks')} mode="summary" />}
+            {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} mode="summary" />}
 
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
@@ -894,8 +913,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <section className="m101-overview-panel m101-quick-panel">
                 <div className="m101-panel-heading"><div><p className="m101-eyebrow">QUICK ACCESS</p><h2>ทางลัดการทำงาน</h2></div></div>
-                <button type="button" className="m101-quick-action" onClick={() => setActiveTab('directory')}><span className="m101-quick-icon">▤</span><span><b>ค้นหาทะเบียนกิจการ</b><small>ค้นหาและตรวจสอบข้อมูลนิติบุคคล</small></span><span className="m101-quick-arrow">→</span></button>
-                {isLoggedIn && <button type="button" className="m101-quick-action" onClick={() => setActiveTab('import')}><span className="m101-quick-icon">↥</span><span><b>นำเข้าจาก Excel / CSV</b><small>เพิ่มข้อมูลจากไฟล์และตรวจสอบก่อนบันทึก</small></span><span className="m101-quick-arrow">→</span></button>}
+                <button type="button" className="m101-quick-action" onClick={() => navigateToTab('directory')}><span className="m101-quick-icon">▤</span><span><b>ค้นหาทะเบียนกิจการ</b><small>ค้นหาและตรวจสอบข้อมูลนิติบุคคล</small></span><span className="m101-quick-arrow">→</span></button>
+                {isLoggedIn && <button type="button" className="m101-quick-action" onClick={() => navigateToTab('import')}><span className="m101-quick-icon">↥</span><span><b>นำเข้าจาก Excel / CSV</b><small>เพิ่มข้อมูลจากไฟล์และตรวจสอบก่อนบันทึก</small></span><span className="m101-quick-arrow">→</span></button>}
                 {isLoggedIn && <button type="button" className="m101-quick-action" onClick={() => setIsAddModalOpen(true)}><span className="m101-quick-icon">＋</span><span><b>เพิ่มกิจการใหม่</b><small>สร้างรายการทะเบียนด้วยตนเอง</small></span><span className="m101-quick-arrow">→</span></button>}
               </section>
             </div>
@@ -903,7 +922,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <section className="m101-overview-panel m101-recent-panel">
               <div className="m101-panel-heading">
                 <div><p className="m101-eyebrow">RECENT RECORDS</p><h2>รายการกิจการล่าสุด</h2><p className="m101-panel-subtitle">เลือกกิจการเพื่อเปิดดูรายละเอียด</p></div>
-                <button type="button" className="m101-text-action" onClick={() => setActiveTab('directory')}>ดูทะเบียนทั้งหมด →</button>
+                <button type="button" className="m101-text-action" onClick={() => navigateToTab('directory')}>ดูทะเบียนทั้งหมด →</button>
               </div>
               {records.length === 0 ? (
                 <div className="m101-overview-empty"><span>▤</span><b>ยังไม่มีรายการกิจการ</b><p>เพิ่มข้อมูลใหม่หรือนำเข้าไฟล์เพื่อเริ่มใช้งานทะเบียน</p></div>
@@ -1027,7 +1046,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           onImportRecords={(items) => {
             if (onImportRecords) onImportRecords(items);
             logActivity('import', `นำเข้าแบบจับคู่ ${items.length} รายการ`);
-            setActiveTab('directory');
+            navigateToTab('directory');
           }}
           onShowToast={onShowToast}
         />
