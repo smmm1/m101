@@ -971,3 +971,25 @@ html.dark .m101-form-dialog form textarea{
  .m101-task-toolbar{flex-direction:column}.m101-task-toolbar select{width:100%}
 }
 @media(max-width:420px){.m101-task-form{padding:18px}.m101-task-form-grid{grid-template-columns:1fr}.m101-task-row-actions{flex-direction:column}}
+
+
+/* M101 interaction layer — restrained motion, no runtime listeners. */
+.m101-command-palette{animation:m101PaletteIn 150ms cubic-bezier(.2,.75,.25,1) both}
+@keyframes m101PaletteIn{from{opacity:0;transform:translateY(-7px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+.m101-overview{position:relative;isolation:isolate}
+.m101-overview:before{content:"";position:absolute;z-index:-1;inset:-18px -14px auto;height:210px;pointer-events:none;background:radial-gradient(ellipse at 12% 0%,rgba(16,128,91,.055),transparent 65%),radial-gradient(ellipse at 88% 0%,rgba(59,130,246,.035),transparent 62%)}
+@media(hover:hover) and (pointer:fine){
+ .m101-metric-card,.m101-overview-panel{transition:transform 180ms ease,box-shadow 180ms ease,border-color 180ms ease;transform-style:preserve-3d}
+ .m101-metric-card:hover{transform:perspective(900px) translateY(-2px) rotateX(.45deg);box-shadow:0 10px 26px rgba(24,49,45,.075);border-color:#cbded3}
+ .m101-overview-panel:hover{box-shadow:0 8px 24px rgba(24,49,45,.055)}
+ .m101-quick-action{transition:transform 160ms ease,box-shadow 160ms ease,border-color 160ms ease}
+ .m101-quick-action:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(24,49,45,.06)}
+}
+.m101-metric-card{overflow:hidden}
+.m101-metric-card:focus-within{outline:2px solid rgba(15,118,110,.35);outline-offset:2px}
+.m101-skeleton-shimmer{position:relative;overflow:hidden;background:#edf1ee}
+.m101-skeleton-shimmer:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.62),transparent);animation:m101Shimmer 1.5s ease-in-out infinite}
+@keyframes m101Shimmer{to{transform:translateX(100%)}}
+.dark .m101-skeleton-shimmer{background:#26352e}
+.dark .m101-skeleton-shimmer:after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)}
+@media(prefers-reduced-motion:reduce){.m101-command-palette{animation:none}.m101-metric-card,.m101-overview-panel,.m101-quick-action{transition:none!important}.m101-metric-card:hover,.m101-quick-action:hover{transform:none}.m101-skeleton-shimmer:after{animation:none}}
