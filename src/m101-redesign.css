@@ -1024,3 +1024,19 @@ html.dark .m101-form-dialog form textarea{
 html.dark .m101-top-loading{background:rgba(110,210,185,.12)}
 html.dark .m101-top-loading>span{background:linear-gradient(90deg,#42b99d 0%,#8be0c6 100%);box-shadow:0 0 10px rgba(66,185,157,.4)}
 @media(prefers-reduced-motion:reduce){.m101-top-loading>span{animation-duration:.01ms}}
+
+
+/* Hybrid page transitions: soft fade/slide for tabs, restrained morph cues for shared surfaces. */
+.m101-tab-transition{animation:m101PageEnter 300ms cubic-bezier(.22,.72,.2,1) both;transform-origin:50% 8%;will-change:opacity,transform}
+@keyframes m101PageEnter{from{opacity:0;transform:translate3d(0,10px,0) scale(.997);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+.m101-tab-transition .m101-directory-list-panel,
+.m101-tab-transition .m101-selected-record-card,
+.m101-tab-transition .m101-overview-panel{animation:m101SurfaceSettle 360ms cubic-bezier(.2,.75,.25,1) both}
+.m101-tab-transition .m101-selected-record-card{animation-delay:35ms}
+@keyframes m101SurfaceSettle{from{opacity:.82;transform:translateY(5px) scale(.995)}to{opacity:1;transform:translateY(0) scale(1)}}
+/* Dialogs and floating panels use a compact scale-and-fade morph rather than a full-page wipe. */
+.m101-detail-dialog,.m101-form-dialog,.m101-task-form{animation:m101SurfaceMorph 190ms cubic-bezier(.2,.8,.2,1) both;transform-origin:center}
+@keyframes m101SurfaceMorph{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+ .m101-tab-transition,.m101-tab-transition .m101-directory-list-panel,.m101-tab-transition .m101-selected-record-card,.m101-tab-transition .m101-overview-panel,.m101-detail-dialog,.m101-form-dialog,.m101-task-form{animation:none!important;filter:none!important;transform:none!important;will-change:auto}
+}
