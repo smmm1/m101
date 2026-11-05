@@ -252,7 +252,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
           {!workbook ? (
             <div className="mx-auto flex min-h-[320px] max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><span className="material-symbols-outlined text-4xl">upload_file</span></div>
-              <div><h3 className="text-base font-bold text-slate-900 dark:text-white">เลือกไฟล์ที่ต้องการนำเข้า</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">ลากไฟล์มาวางหรือเลือกจากอุปกรณ์ของคุณ</p><p className="mt-2 text-xs text-slate-400">รองรับ Excel และ CSV · .xlsx, .xls, .csv</p></div>
+              <div><h3 className="text-base font-bold text-slate-900 dark:text-white">เลือกไฟล์ที่ต้องการนำเข้า</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">เลือกไฟล์จากอุปกรณ์ของคุณ</p><p className="mt-2 text-xs text-slate-400">รองรับ Excel และ CSV · .xlsx, .xls, .csv</p></div>
               <button type="button" onClick={() => inputRef.current?.click()} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800">เลือกไฟล์</button>
               <p className="text-xs text-slate-500">ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p>
             </div>
