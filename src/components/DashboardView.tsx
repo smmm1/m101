@@ -96,21 +96,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [draggedRecordId, setDraggedRecordId] = useState<string | null>(null);
   const [dragOverRecordId, setDragOverRecordId] = useState<string | null>(null);
-  const canReorderRecords = isLoggedIn && Boolean(onRestoreRecords) && !searchQuery?.trim() && filterTab === 'all' && sortOrder === 'asc';
-  const reorderRecords = (targetId: string) => {
-    if (!draggedRecordId || draggedRecordId === targetId || !canReorderRecords || !onRestoreRecords) return;
-    const reordered = [...filteredRecords];
-    const from = reordered.findIndex((record) => record.id === draggedRecordId);
-    const to = reordered.findIndex((record) => record.id === targetId);
-    if (from < 0 || to < 0) return;
-    const [moved] = reordered.splice(from, 1);
-    reordered.splice(to, 0, moved);
-    const withSequence = reordered.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
-    onRestoreRecords(withSequence);
-    onShowToast('จัดลำดับกิจการและบันทึกแล้ว', 'เปลี่ยนลำดับสำเร็จ', 'success');
-    setDraggedRecordId(null);
-    setDragOverRecordId(null);
-  };
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
@@ -300,6 +285,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         return sortOrder === 'asc' ? comp : -comp;
       });
   }, [records, filterTab, searchQuery, sortOrder]);
+  const canReorderRecords = isLoggedIn && Boolean(onRestoreRecords) && !searchQuery?.trim() && filterTab === 'all' && sortOrder === 'asc';
+  const reorderRecords = (targetId: string) => {
+    if (!draggedRecordId || draggedRecordId === targetId || !canReorderRecords || !onRestoreRecords) return;
+    const reordered = [...filteredRecords];
+    const from = reordered.findIndex((record) => record.id === draggedRecordId);
+    const to = reordered.findIndex((record) => record.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    const withSequence = reordered.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
+    onRestoreRecords(withSequence);
+    onShowToast('จัดลำดับกิจการและบันทึกแล้ว', 'เปลี่ยนลำดับสำเร็จ', 'success');
+    setDraggedRecordId(null);
+    setDragOverRecordId(null);
+  };
+
 
   const copyToClipboard = (text: string, label: string) => {
     if (!text) return;
