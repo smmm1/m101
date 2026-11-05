@@ -9,6 +9,10 @@ function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   const responseHeaders = new Headers(headers);
   responseHeaders.set('Content-Type', 'application/json; charset=utf-8');
   responseHeaders.set('Cache-Control', 'no-store');
+  responseHeaders.set('X-Content-Type-Options', 'nosniff');
+  responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  responseHeaders.set('X-Frame-Options', 'DENY');
+  responseHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   return new Response(JSON.stringify(data), { status, headers: responseHeaders });
 }
 
@@ -78,7 +82,34 @@ async function requireUser(request: Request, env: Env) {
 }
 
 function cleanRecordForVisitor(record: Record<string, unknown>) {
-  return { ...record, taxId: '', password: '', eFilingCode: '', ssoCode: '' };
+  // Public/visitor mode is an explicit allowlist. Never spread private record fields.
+  return {
+    id: String(record.id || ''),
+    sequenceNo: String(record.sequenceNo || ''),
+    taxId: '',
+    companyName: String(record.companyName || ''),
+    type: record.type,
+    auditorDate: String(record.auditorDate || ''),
+    password: '',
+    remark: '',
+    eFilingCode: '',
+    ssoCode: '',
+    status: record.status,
+    isVerifiedDbd: Boolean(record.isVerifiedDbd),
+    createdAt: String(record.createdAt || ''),
+    updatedAt: String(record.updatedAt || ''),
+  };
+}
+
+function isSameOriginMutation(request: Request, url: URL) {
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== url.origin) return false;
+  const fetchSite = request.headers.get('Sec-Fetch-Site');
+  if (fetchSite === 'cross-site') return false;
+  // Browser fetch requests for state changes should carry Origin. Reject ambiguous
+  // browser requests rather than silently accepting a cross-site form submission.
+  if (!origin && fetchSite !== 'same-origin') return false;
+  return true;
 }
 
 export async function onRequest(context: { request: Request; env: Env }) {
@@ -87,6 +118,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
   const path = url.pathname.replace(/\/+$/, '') || '/';
   if (!path.startsWith('/api/')) return new Response('Not found', { status: 404 });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isSameOriginMutation(request, url)) {
+    return json({ error: 'คำขอไม่ผ่านการตรวจสอบแหล่งที่มา กรุณาโหลดหน้าเว็บใหม่' }, 403);
+  }
 
   try {
     if (path === '/api/health' && request.method === 'GET') {
@@ -197,7 +231,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const pin = String(body.pin || '');
       if (!/^\d{6}$/.test(pin)) return json({ error: 'กรุณากรอก PIN 6 หลัก' }, 400);
       const now = Math.floor(Date.now() / 1000);
-      const attemptKey = '__pin_gate__';
+      // Rate-limit PIN guesses per Cloudflare client IP; never store the raw IP.
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
+      const attemptKey = `__pin_gate__:${await digest(clientIp)}`;
       const windowStart = now - 15 * 60;
       const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM pin_login_attempts WHERE email = ? AND attempted_at > ?')
         .bind(attemptKey, windowStart).first() as { count?: number } | null;
