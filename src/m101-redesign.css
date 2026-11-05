@@ -993,3 +993,25 @@ html.dark .m101-form-dialog form textarea{
 .dark .m101-skeleton-shimmer{background:#26352e}
 .dark .m101-skeleton-shimmer:after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)}
 @media(prefers-reduced-motion:reduce){.m101-command-palette{animation:none}.m101-metric-card,.m101-overview-panel,.m101-quick-action{transition:none!important}.m101-metric-card:hover,.m101-quick-action:hover{transform:none}.m101-skeleton-shimmer:after{animation:none}}
+
+/* Smart toast lifetime indicator */
+.m101-toast{position:relative;overflow:hidden}
+.m101-toast-progress{position:absolute;left:0;bottom:0;height:2px;width:100%;transform-origin:left;background:rgba(110,231,183,.85);animation:m101ToastProgress 3s linear forwards}
+@keyframes m101ToastProgress{to{transform:scaleX(0)}}
+/* Spotlight follows pointer position without React state updates or layout work. */
+.m101-metric-card,.m101-overview-panel,.m101-task-row{--spot-x:50%;--spot-y:50%;position:relative;isolation:isolate}
+.m101-metric-card:after,.m101-overview-panel:after,.m101-task-row:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;background:radial-gradient(220px circle at var(--spot-x) var(--spot-y),rgba(16,128,91,.075),transparent 72%);transition:opacity 180ms ease}
+@media(hover:hover) and (pointer:fine){.m101-metric-card:hover:after,.m101-overview-panel:hover:after,.m101-task-row:hover:after{opacity:1}}
+/* Small success celebration; deliberately CSS-only and short-lived. */
+.m101-success-burst{position:relative}
+.m101-success-burst:after{content:"✦  ·  ✧  ·  ✦";position:absolute;right:18px;top:10px;color:#1b9a70;font-size:13px;letter-spacing:5px;pointer-events:none;animation:m101SuccessBurst 850ms ease-out both}
+@keyframes m101SuccessBurst{0%{opacity:0;transform:translateY(7px) scale(.7)}25%{opacity:1}100%{opacity:0;transform:translateY(-15px) scale(1.08)}}
+.m101-task-context-backdrop{position:fixed;inset:0;z-index:80}
+.m101-task-context-menu{position:fixed;z-index:81;min-width:150px;padding:5px;border:1px solid #e3eae5;border-radius:12px;background:#fff;box-shadow:0 12px 32px rgba(20,45,34,.16);animation:m101PaletteIn 120ms ease-out both}
+.m101-task-context-menu button{display:flex;width:100%;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;text-align:left;font-size:12px;color:#42564a}
+.m101-task-context-menu button:hover{background:#edf7f1}
+.m101-task-context-menu button.is-delete{color:#c34d4d}
+.dark .m101-task-context-menu{background:#14221b;border-color:#304238}
+.dark .m101-task-context-menu button{color:#dce9e1}
+.dark .m101-task-context-menu button:hover{background:#20372b}
+@media(prefers-reduced-motion:reduce){.m101-toast-progress{animation:none;transform:scaleX(0)}.m101-success-burst:after{animation:none;display:none}.m101-task-context-menu{animation:none}}
