@@ -63,6 +63,19 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
   const [status, setStatus] = useState<TaskStatus>('pending');
   const [dueDate, setDueDate] = useState('');
   const [note, setNote] = useState('');
+  const [contextTask, setContextTask] = useState<{ task: AnnualTask; x: number; y: number } | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    if (!celebrate) return;
+    const timer = window.setTimeout(() => setCelebrate(false), 900);
+    return () => window.clearTimeout(timer);
+  }, [celebrate]);
+  useEffect(() => {
+    if (!contextTask) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setContextTask(null); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [contextTask]);
 
   const loadTasks = async () => {
     if (!isLoggedIn) { setTasks([]); setLoading(false); return; }
@@ -142,6 +155,7 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'บันทึกงานไม่สำเร็จ');
       onShowToast(editing ? 'อัปเดตงานเรียบร้อย' : 'เพิ่มงานประจำปีเรียบร้อย', 'บันทึกสำเร็จ', 'success');
+      setCelebrate(true);
       resetForm();
       await loadTasks();
     } catch (error) {
@@ -194,7 +208,7 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
   }
 
   return (
-    <section className="m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-5">
+    <section className={`m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-5 ${celebrate ? 'm101-success-burst' : ''}`}>
       <header className="m101-overview-header">
         <div><p className="m101-eyebrow">ANNUAL TASK MANAGEMENT</p><h1>งานประจำปี</h1><p>ติดตามงานภาษี บัญชี และงานตามรอบปี แยกตามกิจการ · ปี {selectedYear}</p></div>
         <div className="m101-overview-actions"><button type="button" onClick={openCreate} disabled={!records.length} className="m101-button-primary">＋ เพิ่มงาน</button></div>
@@ -215,7 +229,9 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
         </div>
         {loading ? <div className="m101-task-empty">กำลังโหลดรายการงาน…</div> : loadError ? <div className="m101-task-empty is-error">{loadError}<button type="button" onClick={() => void loadTasks()}>ลองอีกครั้ง</button></div> : visibleTasks.length ? (
           <div className="m101-task-table">
-            {visibleTasks.map((task) => <article className="m101-task-row" key={task.id}>
+            {visibleTasks.map((task) => <article className="m101-task-row" key={task.id}
+              onContextMenu={(event) => { event.preventDefault(); setContextTask({ task, x: Math.min(event.clientX, window.innerWidth - 180), y: Math.min(event.clientY, window.innerHeight - 110) }); }}
+              onPointerMove={(event) => { const rect = event.currentTarget.getBoundingClientRect(); event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`); event.currentTarget.style.setProperty('--spot-y', `${event.clientY - rect.top}px`); }}>
               <div className="m101-task-row-main"><div className="m101-task-row-title"><strong>{task.taskName}</strong><span className="m101-task-status" style={{ color: statusColor(task), backgroundColor: `${statusColor(task)}18` }}>{statusLabel(task)}</span></div><span>{task.businessName}</span>{task.note && <small>{task.note}</small>}</div>
               <div className="m101-task-row-due"><span>กำหนดส่ง</span><strong className={isOverdue(task) ? 'is-overdue' : ''}>{task.dueDate ? new Date(`${task.dueDate}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ยังไม่กำหนด'}</strong></div>
               <div className="m101-task-row-actions"><button type="button" onClick={() => openEdit(task)}>แก้ไข</button><button type="button" className="is-delete" onClick={() => void deleteTask(task)}>ลบ</button></div>
@@ -223,6 +239,13 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
           </div>
         ) : <div className="m101-task-empty">{tasks.length ? 'ไม่พบงานที่ตรงกับตัวกรอง' : 'ยังไม่มีงานในรอบปีนี้ เพิ่มงานแรกเพื่อเริ่มติดตามสถานะ'}</div>}
       </section>
+      {contextTask && <>
+        <button type="button" className="m101-task-context-backdrop" aria-label="ปิดเมนู" onClick={() => setContextTask(null)} />
+        <div className="m101-task-context-menu" role="menu" style={{ left: contextTask.x, top: contextTask.y }}>
+          <button type="button" role="menuitem" onClick={() => { openEdit(contextTask.task); setContextTask(null); }}><span className="material-symbols-outlined text-[16px]">edit</span>แก้ไขงานนี้</button>
+          <button type="button" role="menuitem" className="is-delete" onClick={() => { const taskToDelete = contextTask.task; setContextTask(null); void deleteTask(taskToDelete); }}><span className="material-symbols-outlined text-[16px]">delete</span>ลบงานนี้</button>
+        </div>
+      </>}
       {showForm && <div className="m101-task-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resetForm(); }}>
         <form className="m101-task-form" onSubmit={saveTask}>
           <div className="m101-task-form-header"><div><p className="m101-eyebrow">{editing ? 'EDIT ANNUAL TASK' : 'NEW ANNUAL TASK'}</p><h2>{editing ? 'แก้ไขงานประจำปี' : 'เพิ่มงานประจำปี'}</h2></div><button type="button" onClick={resetForm} aria-label="ปิด">×</button></div>
