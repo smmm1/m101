@@ -10,9 +10,11 @@ export interface ToastMessage {
 interface ToastProps {
   toasts: ToastMessage[];
   onDismiss: (id: string) => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
 }
 
-export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
+export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss, onUndo, canUndo = false }) => {
   if (toasts.length === 0) return null;
 
   return (
@@ -38,10 +40,11 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
             </span>
           </div>
 
+          {canUndo && onUndo && toast.type !== 'error' && <button type="button" onClick={() => { onUndo(); onDismiss(toast.id); }} className="ml-auto shrink-0 rounded-md border border-emerald-700/60 px-2 py-1 text-[10px] font-semibold text-emerald-300 transition-colors hover:bg-emerald-900/40">ย้อนกลับ</button>}
           <button
             type="button"
             onClick={() => onDismiss(toast.id)}
-            className="text-zinc-500 hover:text-zinc-200 p-0.5 ml-auto cursor-pointer transition-colors shrink-0"
+            className="text-zinc-500 hover:text-zinc-200 p-0.5 cursor-pointer transition-colors shrink-0"
             title="ปิด"
           >
             <span className="material-symbols-outlined text-[14px]">close</span>
