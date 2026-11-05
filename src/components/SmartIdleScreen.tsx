@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const IDLE_AFTER_MS = 180000;
 
-export function SmartIdleScreen() {
+export function SmartIdleScreen({ ownerPreviewEnabled = false }: { ownerPreviewEnabled?: boolean }) {
   const [isIdle, setIsIdle] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastActivity = useRef(Date.now());
@@ -31,6 +31,8 @@ export function SmartIdleScreen() {
   }, [schedule]);
 
   useEffect(() => {
+    const preview = () => { if (ownerPreviewEnabled) setIsIdle(true); };
+    window.addEventListener('m101:owner-preview-afk', preview);
     const visibility = () => {
       if (document.visibilityState === 'hidden') {
         clearTimer();
@@ -47,11 +49,12 @@ export function SmartIdleScreen() {
     schedule();
     return () => {
       clearTimer();
+      window.removeEventListener('m101:owner-preview-afk', preview);
       events.forEach((name) => window.removeEventListener(name, activity));
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('pageshow', visibility);
     };
-  }, [activity, clearTimer, schedule]);
+  }, [activity, clearTimer, schedule, ownerPreviewEnabled]);
 
   if (!isIdle) return null;
   return (
