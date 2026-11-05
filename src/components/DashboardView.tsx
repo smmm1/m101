@@ -106,6 +106,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
   const commandInputRef = useRef<HTMLInputElement>(null);
+  const ownerTapRef = useRef<{ count: number; lastTap: number }>({ count: 0, lastTap: 0 });
+  const handleOwnerLogoTap = () => {
+    if (!isAdmin) return;
+    const now = Date.now();
+    if (now - ownerTapRef.current.lastTap > 1800) ownerTapRef.current.count = 0;
+    ownerTapRef.current.lastTap = now;
+    ownerTapRef.current.count += 1;
+    if (ownerTapRef.current.count >= 5) {
+      ownerTapRef.current.count = 0;
+      window.dispatchEvent(new Event('m101:mobile-owner-access'));
+    }
+  };
   const commandItems = [
     { id: 'directory', label: 'ทะเบียนกิจการ', hint: 'เปิดรายการกิจการ', icon: 'folder_open', action: () => navigateToTab('directory') },
     { id: 'dashboard', label: 'ภาพรวม', hint: 'ดูสถิติและสถานะงาน', icon: 'space_dashboard', action: () => navigateToTab('dashboard') },
@@ -443,7 +455,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
-      <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-end gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
+      <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
+        {isAdmin ? <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M</button> : <span /> }
         {/* Primary navigation is in the workspace sidebar. */}
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
