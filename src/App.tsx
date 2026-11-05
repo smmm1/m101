@@ -18,6 +18,7 @@ import { CursorProvider } from './context/CursorContext';
 import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
 import { SmartIdleScreen } from './components/SmartIdleScreen';
+import { AdminControlCenter } from './components/AdminControlCenter';
 
 interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
@@ -50,6 +51,7 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authEmail, setAuthEmail] = useState('');
@@ -83,6 +85,28 @@ function AppContent() {
   useEffect(() => {
     return initCuteClickSound();
   }, []);
+
+
+  // Hidden owner tools require a verified server-backed admin session.
+  useEffect(() => {
+    const handleOwnerShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'm')) return;
+      if (!isLoggedIn || !sessionUser || sessionUser.role !== 'admin') return;
+      event.preventDefault();
+      setAdminPanelOpen((open) => !open);
+    };
+    window.addEventListener('keydown', handleOwnerShortcut);
+    return () => window.removeEventListener('keydown', handleOwnerShortcut);
+  }, [isLoggedIn, sessionUser]);
+
+  useEffect(() => {
+    if (!adminPanelOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAdminPanelOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [adminPanelOpen]);
 
   const [userName, setUserName] = useState<string>('ผู้ดูแลระบบ');
   const [availableYears, setAvailableYears] = useState<string[]>(['69']);
@@ -784,7 +808,14 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
-      <SmartIdleScreen />
+      <SmartIdleScreen ownerPreviewEnabled={isLoggedIn && userRole === 'admin'} />
+      {adminPanelOpen && isLoggedIn && userRole === 'admin' && (
+        <AdminControlCenter
+          onClose={() => setAdminPanelOpen(false)}
+          onNavigate={(tab) => { window.dispatchEvent(new CustomEvent('m101:owner-navigate', { detail: { tab } })); setAdminPanelOpen(false); }}
+          onPreviewAfk={() => { setAdminPanelOpen(false); window.dispatchEvent(new Event('m101:owner-preview-afk')); }}
+        />
+      )}
       {pinSetupOpen && sessionUser && (
         <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <form onSubmit={async (event) => {
