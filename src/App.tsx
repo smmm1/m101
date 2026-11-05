@@ -105,7 +105,17 @@ function AppContent() {
     ];
   };
 
-  // Ctrl/Cmd+Z restores the previous data state. Native text-field undo remains untouched.
+  // Ctrl/Cmd+Z and the toast Undo action share the same safe restore path.
+  const handleUndo = () => {
+    if (!isLoggedIn || !sessionUser || undoStackRef.current.length === 0) return;
+    const snapshot = undoStackRef.current.pop();
+    if (!snapshot) return;
+    pendingDatabaseWriteRef.current = true;
+    setRecordsByYear(snapshot.recordsByYear);
+    setAvailableYears(snapshot.availableYears);
+    setSelectedYear(snapshot.selectedYear);
+    showToast('ย้อนกลับการเปลี่ยนแปลงล่าสุดแล้ว', 'Undo สำเร็จ', 'info');
+  };
   useEffect(() => {
     const handleUndoShortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z' || event.shiftKey || event.altKey) return;
@@ -113,13 +123,7 @@ function AppContent() {
       if (target?.isContentEditable || target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       if (!isLoggedIn || !sessionUser || undoStackRef.current.length === 0) return;
       event.preventDefault();
-      const snapshot = undoStackRef.current.pop();
-      if (!snapshot) return;
-      pendingDatabaseWriteRef.current = true;
-      setRecordsByYear(snapshot.recordsByYear);
-      setAvailableYears(snapshot.availableYears);
-      setSelectedYear(snapshot.selectedYear);
-      showToast('ย้อนกลับการเปลี่ยนแปลงล่าสุดแล้ว', 'Undo สำเร็จ', 'info');
+      handleUndo();
     };
     window.addEventListener('keydown', handleUndoShortcut);
     return () => window.removeEventListener('keydown', handleUndoShortcut);
@@ -886,7 +890,7 @@ function AppContent() {
         onClose={() => setIsConflictModalOpen(false)}
       />
 
-      <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
+      <ToastContainer toasts={toasts} onDismiss={handleDismissToast} onUndo={handleUndo} canUndo={isLoggedIn && undoStackRef.current.length > 0} />
     </div>
   );
 }
