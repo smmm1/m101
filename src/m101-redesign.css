@@ -1015,3 +1015,12 @@ html.dark .m101-form-dialog form textarea{
 .dark .m101-task-context-menu button{color:#dce9e1}
 .dark .m101-task-context-menu button:hover{background:#20372b}
 @media(prefers-reduced-motion:reduce){.m101-toast-progress{animation:none;transform:scaleX(0)}.m101-success-burst:after{animation:none;display:none}.m101-task-context-menu{animation:none}}
+
+
+/* Slim top progress indicator for in-app navigation */
+.m101-top-loading{position:fixed;inset:0 0 auto 0;height:3px;z-index:220;pointer-events:none;overflow:hidden;background:rgba(8,126,115,.10)}
+.m101-top-loading>span{display:block;width:100%;height:100%;transform-origin:left center;background:linear-gradient(90deg,#087e73 0%,#48b69b 55%,#9adbc6 100%);animation:m101-top-progress .52s cubic-bezier(.22,.75,.25,1) both;box-shadow:0 0 8px rgba(8,126,115,.28)}
+@keyframes m101-top-progress{0%{transform:scaleX(0);opacity:.65}18%{transform:scaleX(.32);opacity:1}72%{transform:scaleX(.82);opacity:1}100%{transform:scaleX(1);opacity:0}}
+html.dark .m101-top-loading{background:rgba(110,210,185,.12)}
+html.dark .m101-top-loading>span{background:linear-gradient(90deg,#42b99d 0%,#8be0c6 100%);box-shadow:0 0 10px rgba(66,185,157,.4)}
+@media(prefers-reduced-motion:reduce){.m101-top-loading>span{animation-duration:.01ms}}
