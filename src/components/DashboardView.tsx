@@ -101,6 +101,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('directory');
+  const [showNavigationProgress, setShowNavigationProgress] = useState(false);
+  const navigationProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
   const commandInputRef = useRef<HTMLInputElement>(null);
@@ -168,11 +170,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Save the outgoing tab's scroll position before switching views.
   const navigateToTab = (nextTab: typeof activeTab) => {
+    if (nextTab === activeTabRef.current) return;
     const container = mainContentRef.current;
     if (container) scrollPositionsRef.current[activeTabRef.current] = container.scrollTop;
     activeTabRef.current = nextTab;
+    setShowNavigationProgress(true);
+    if (navigationProgressTimerRef.current) clearTimeout(navigationProgressTimerRef.current);
+    navigationProgressTimerRef.current = setTimeout(() => {
+      setShowNavigationProgress(false);
+      navigationProgressTimerRef.current = null;
+    }, 520);
     setActiveTab(nextTab);
   };
+
+  useEffect(() => () => {
+    if (navigationProgressTimerRef.current) clearTimeout(navigationProgressTimerRef.current);
+  }, []);
 
   // Restore the destination tab's position after React has rendered it.
   useEffect(() => {
@@ -358,6 +371,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
+      {showNavigationProgress && (
+        <div className="m101-top-loading" role="progressbar" aria-label="กำลังเปลี่ยนหน้า" aria-valuemin={0} aria-valuemax={100}>
+          <span />
+        </div>
+      )}
       {commandOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/35 px-4 pt-[12vh] backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCommandOpen(false); }}>
           <section className="m101-command-palette w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900" role="dialog" aria-modal="true" aria-labelledby="m101-command-title">
