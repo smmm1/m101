@@ -1,53 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-<title id="title">Monochrome hand-drawn sunset</title>
-<desc id="desc">A quiet pencil-and-ink drawing of the sun setting behind distant hills, with soft clouds, birds and ripples on the water. Black and white only.</desc>
+<title id="title">M101 terminal idle screen</title>
+<desc id="desc">A dark developer terminal showing system status, User AFK / Away From Keyboard, and a blinking emerald cursor.</desc>
 <defs>
-  <pattern id="paper" width="34" height="34" patternUnits="userSpaceOnUse">
-    <path d="M2 8l7-2M20 25l8-3M11 32l4-1" stroke="#777" stroke-width="1" opacity=".12"/>
-  </pattern>
-  <clipPath id="sunClip"><circle cx="805" cy="425" r="170"/></clipPath>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101719"/><stop offset="1" stop-color="#080d10"/></linearGradient>
+  <linearGradient id="panel" x2="0" y2="1"><stop stop-color="#151f22"/><stop offset="1" stop-color="#101719"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#8aa6a0" stroke-opacity=".045"/></pattern>
+  <style>
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}
+    .muted{fill:#71817f}.white{fill:#dce8e4}.green{fill:#59e1a5}.cyan{fill:#65d9e8}.amber{fill:#d9b978}
+    .cursor{animation:blink 1.05s steps(2,start) infinite}
+    @keyframes blink{to{visibility:hidden}}
+  </style>
 </defs>
-<rect width="1600" height="900" fill="#f7f7f4"/>
-<rect width="1600" height="900" fill="url(#paper)"/>
-<!-- fine pencil clouds -->
-<g fill="none" stroke="#292929" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".82">
-  <path d="M190 255q30-48 79-22 25-54 82-27 28 14 31 43 48-4 58 35H190q-24-10 0-29z"/>
-  <path d="M1120 205q27-42 69-20 22-47 71-24 24 12 29 39 39-4 50 29h-220q-20-8 1-24z"/>
-  <path d="M480 160q23-28 54-10 21-35 58-15 18 10 21 30 32-2 40 23H475q-13-8 5-28z" opacity=".55"/>
-  <path d="M125 300q28-9 55 2M1300 280q40-13 76 1M1020 300q30-9 60 1" opacity=".5"/>
-</g>
-<!-- sun, drawn with pencil hatching -->
-<circle cx="805" cy="425" r="170" fill="#eeeeea" stroke="#171717" stroke-width="7"/>
-<g clip-path="url(#sunClip)" stroke="#777" stroke-width="2" opacity=".42">
-  <path d="M620 320l250 250M650 290l260 260M700 260l260 260M750 250l260 260M600 390l220 220M790 240l230 230M570 450l190 190" />
-  <path d="M600 340l230-100M610 390l280-120M630 450l300-130M650 500l300-130M690 550l280-120" />
-</g>
-<!-- distant ridge -->
-<path d="M0 555q130-90 250-54 100-108 225-44 95-54 205-10 110-78 215-12 120-82 230-22 115-68 220-4 120-75 255 13V900H0Z" fill="#e7e7e2" stroke="#222" stroke-width="6" stroke-linejoin="round"/>
-<path d="M0 575q140-70 255-32 115-90 220-40 110-45 205-3 110-62 218-5 115-65 226-14 120-53 235 4 125-54 241 20" fill="none" stroke="#555" stroke-width="3" opacity=".8"/>
-<!-- sun dipping below the ridge -->
-<path d="M635 545q170-24 340 0" fill="none" stroke="#1d1d1d" stroke-width="7"/>
-<path d="M665 565q140-18 280 0M690 580q120-12 230 0" fill="none" stroke="#555" stroke-width="3" opacity=".7"/>
-<!-- foreground water and reflections -->
-<path d="M0 625q180-25 360 0t360 0 360 0 360 0 360 0V900H0Z" fill="#f1f1ed" stroke="#242424" stroke-width="5"/>
-<g fill="none" stroke="#252525" stroke-linecap="round">
-  <path d="M90 680q95-12 190 0m60 22q80-10 160 0m-370 42q65-8 130 0m150 30q110-12 220 0m-275 65q75-8 150 0" stroke-width="4"/>
-  <path d="M800 635q-110 20-210 0m220 38q-145 22-290 0m300 40q-120 16-240 0m270 43q-95 14-190 0m240 38q-70 12-140 0m-15 40q-55 8-110 0" stroke-width="5"/>
-  <path d="M1100 680q120-12 240 0m-190 48q80-8 160 0m-90 58q100-10 200 0M80 820q105-10 210 0m1020 28q90-8 180 0" stroke-width="3" opacity=".75"/>
-  <path d="M520 650l80-5m-130 22l55-4m270 90l75-5m-60 38l45-3m-390 60l90-5m590-140l70-4" stroke-width="2" opacity=".65"/>
-</g>
-<!-- small birds -->
-<g fill="none" stroke="#171717" stroke-width="5" stroke-linecap="round">
-  <path d="M390 360q25-28 50 0 24-28 49 0M1080 340q20-22 41 0 20-22 41 0M1190 390q16-18 32 0 16-18 32 0"/>
-</g>
-<!-- grasses on the banks -->
-<g fill="none" stroke="#292929" stroke-width="4" stroke-linecap="round">
-  <path d="M70 900q25-95 8-160m-8 95l-35-42m40 15l32-45m-4 137q45-100 65-135m-45 75l-35-8m126 68q5-70 35-115m-25 70l-28-28"/>
-  <path d="M1450 900q-12-100 22-165m-10 100l-42-42m48 14l38-47m-8 140q32-85 74-115m-48 72l-33-5m100 48q-3-62 30-104m-23 63l-27-23"/>
-</g>
-<!-- loose hand-drawn frame accents -->
-<g fill="none" stroke="#333" stroke-width="3" opacity=".55">
-  <path d="M48 55q210-12 390 0M1160 55q190-10 390 2M48 55v90M1550 55v90"/>
-  <path d="M55 840q190 12 350 0M1190 840q180 10 350 0"/>
-</g>
+<rect width="1600" height="900" fill="url(#bg)"/>
+<rect width="1600" height="900" fill="url(#grid)"/>
+<circle cx="1320" cy="190" r="280" fill="#1c8067" opacity=".055"/>
+<circle cx="270" cy="760" r="340" fill="#087f91" opacity=".045"/>
+<!-- terminal window -->
+<rect x="170" y="112" width="1260" height="676" rx="22" fill="#05090b" opacity=".5"/>
+<rect x="160" y="100" width="1280" height="676" rx="18" fill="url(#panel)" stroke="#31413f" stroke-width="2"/>
+<path d="M160 158H1440" stroke="#31413f" stroke-width="2"/>
+<rect x="160" y="100" width="1280" height="58" rx="18" fill="#1b2729"/>
+<path d="M160 140V158H1440V140" fill="#1b2729"/>
+<circle cx="199" cy="129" r="7" fill="#e17b75"/><circle cx="225" cy="129" r="7" fill="#d8b66e"/><circle cx="251" cy="129" r="7" fill="#63c995"/>
+<text x="800" y="136" text-anchor="middle" class="mono muted" font-size="17">M101 / SYSTEM MONITOR — IDLE SESSION</text>
+<text x="208" y="213" class="mono green" font-size="18">m101@directory</text><text x="382" y="213" class="mono white" font-size="18">:</text><text x="397" y="213" class="mono cyan" font-size="18">~</text><text x="420" y="213" class="mono white" font-size="18">$ systemctl status user-session</text>
+<text x="208" y="263" class="mono green" font-size="16">● user-session.service</text><text x="468" y="263" class="mono white" font-size="16"> - Interactive user session monitor</text>
+<text x="208" y="300" class="mono muted" font-size="15">     Loaded: loaded (/etc/m101/session.service; enabled)</text>
+<text x="208" y="334" class="mono muted" font-size="15">     Active: <tspan class="green">active (running)</tspan> · monitoring input events</text>
+<text x="208" y="397" class="mono cyan" font-size="15">[ SYSTEM LOG ]</text>
+<text x="208" y="438" class="mono muted" font-size="15">[15:42:08]</text><text x="326" y="438" class="mono green" font-size="15">INFO</text><text x="390" y="438" class="mono white" font-size="15"> Input monitor initialized</text>
+<text x="208" y="473" class="mono muted" font-size="15">[15:42:09]</text><text x="326" y="473" class="mono green" font-size="15">INFO</text><text x="390" y="473" class="mono white" font-size="15"> No keyboard or pointer activity detected</text>
+<text x="208" y="508" class="mono muted" font-size="15">[15:45:09]</text><text x="326" y="508" class="mono amber" font-size="15">WARN</text><text x="390" y="508" class="mono white" font-size="15"> Idle threshold reached · 180 seconds</text>
+<path d="M208 552H1392" stroke="#31413f" stroke-width="1"/>
+<rect x="208" y="588" width="8" height="8" rx="2" fill="#59e1a5" filter="url(#glow)"/>
+<text x="237" y="598" class="mono green" font-size="17" letter-spacing="2">USER STATUS</text>
+<text x="208" y="668" class="mono white" font-size="54" font-weight="700" letter-spacing="1">USER AFK</text>
+<text x="210" y="706" class="mono cyan" font-size="21">Away From Keyboard</text>
+<text x="208" y="746" class="mono muted" font-size="14">Session paused · Waiting for user activity</text>
+<text x="208" y="836" class="mono muted" font-size="14">M101 DIRECTORY</text>
+<text x="1392" y="836" text-anchor="end" class="mono muted" font-size="14">PRESS ANY KEY / MOVE POINTER TO RESUME</text>
+<rect class="cursor" x="485" y="688" width="13" height="27" rx="1" fill="#59e1a5"/>
 </svg>
