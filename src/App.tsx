@@ -89,6 +89,15 @@ function AppContent() {
 
   // Hidden owner tools require a verified server-backed admin session.
   useEffect(() => {
+    const handleMobileOwnerAccess = () => {
+      if (!isLoggedIn || !sessionUser || sessionUser.role !== 'admin') return;
+      setAdminPanelOpen((open) => !open);
+    };
+    window.addEventListener('m101:mobile-owner-access', handleMobileOwnerAccess);
+    return () => window.removeEventListener('m101:mobile-owner-access', handleMobileOwnerAccess);
+  }, [isLoggedIn, sessionUser]);
+
+  useEffect(() => {
     const handleOwnerShortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'm')) return;
       if (!isLoggedIn || !sessionUser || sessionUser.role !== 'admin') return;
