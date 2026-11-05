@@ -58,14 +58,8 @@ export function SmartIdleScreen({ ownerPreviewEnabled = false }: { ownerPreviewE
 
   if (!isIdle) return null;
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-[#342d3b]" role="status" aria-live="polite">
-      <img src="/smart-idle-scene.svg" alt="ภาพวาดโต๊ะทำงานริมหน้าต่างยามพระอาทิตย์ตก" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
-      <div className="absolute inset-0 bg-[#241d2a]/10" aria-hidden="true" />
-      <div className="relative z-10 mx-4 max-w-lg rounded-3xl border border-white/25 bg-[#342b39]/45 px-8 py-7 text-center text-white shadow-2xl backdrop-blur-[3px]">
-        <div className="mb-3 text-4xl" aria-hidden="true">☾</div>
-        <h2 className="text-3xl font-semibold tracking-wide drop-shadow-md">พักสักครู่</h2>
-        <p className="mt-3 text-sm leading-6 text-white/90 drop-shadow-sm sm:text-base">ขยับเมาส์หรือแตะหน้าจอเพื่อกลับมา</p>
-      </div>
+    <div className="fixed inset-0 z-[200] overflow-hidden bg-[#080d10]" role="status" aria-live="polite">
+      <img src="/smart-idle-scene.svg" alt="M101 developer terminal showing User AFK / Away From Keyboard" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
     </div>
   );
 }
