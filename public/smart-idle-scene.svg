@@ -1,78 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-<title id="title">Cozy sunset workspace</title><desc id="desc">Hand-drawn cozy desk beside a window at sunset, with a sleeping cat, books, plants and a warm desk lamp.</desc>
+<title id="title">Monochrome hand-drawn sunset</title>
+<desc id="desc">A quiet pencil-and-ink drawing of the sun setting behind distant hills, with soft clouds, birds and ripples on the water. Black and white only.</desc>
 <defs>
- <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#51466f"/><stop offset=".48" stop-color="#e77b72"/><stop offset="1" stop-color="#f7b36d"/></linearGradient>
- <linearGradient id="room" x2="0" y2="1"><stop stop-color="#59443f"/><stop offset="1" stop-color="#a56d4e"/></linearGradient>
- <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#d99a62"/><stop offset="1" stop-color="#8c533b"/></linearGradient>
- <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#ffcf8a" stop-opacity=".05"/><stop offset="1" stop-color="#553c62" stop-opacity=".3"/></linearGradient>
- <radialGradient id="lampGlow"><stop stop-color="#ffe7a7" stop-opacity=".8"/><stop offset="1" stop-color="#ffce83" stop-opacity="0"/></radialGradient>
- <filter id="soft"><feGaussianBlur stdDeviation="20"/></filter>
+  <pattern id="paper" width="34" height="34" patternUnits="userSpaceOnUse">
+    <path d="M2 8l7-2M20 25l8-3M11 32l4-1" stroke="#777" stroke-width="1" opacity=".12"/>
+  </pattern>
+  <clipPath id="sunClip"><circle cx="805" cy="425" r="170"/></clipPath>
 </defs>
-<!-- evening sky beyond the window -->
-<rect width="1600" height="900" fill="#433b4b"/>
-<rect x="470" y="40" width="1080" height="650" rx="8" fill="url(#sky)" stroke="#392e36" stroke-width="28"/>
-<circle cx="1115" cy="405" r="72" fill="#ffe5a0"/>
-<path d="M470 465 Q620 390 760 470 T1060 455 T1360 455 T1550 430 V690 H470Z" fill="#6e5361" opacity=".55"/>
-<path d="M470 520 L600 420 720 505 835 390 960 505 1090 415 1240 520 1370 400 1550 505 V690 H470Z" fill="#66506a" opacity=".8"/>
-<path d="M470 560 L610 485 720 550 860 455 980 560 1110 480 1250 565 1400 475 1550 560 V690 H470Z" fill="#493e55"/>
-<!-- distant neighborhood -->
-<g fill="#514052" stroke="#423644" stroke-width="5">
- <path d="M500 555h120v135H500z M490 555l70-58 75 58z"/>
- <path d="M650 535h150v155H650z M640 535l82-72 88 72z"/>
- <path d="M845 565h130v125H845z M830 565l80-62 80 62z"/>
- <path d="M1000 545h170v145h-170z M985 545l100-78 100 78z"/>
- <path d="M1210 540h140v150h-140z M1195 540l85-68 85 68z"/>
- <path d="M1380 560h150v130h-150z M1365 560l90-65 90 65z"/>
+<rect width="1600" height="900" fill="#f7f7f4"/>
+<rect width="1600" height="900" fill="url(#paper)"/>
+<!-- fine pencil clouds -->
+<g fill="none" stroke="#292929" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".82">
+  <path d="M190 255q30-48 79-22 25-54 82-27 28 14 31 43 48-4 58 35H190q-24-10 0-29z"/>
+  <path d="M1120 205q27-42 69-20 22-47 71-24 24 12 29 39 39-4 50 29h-220q-20-8 1-24z"/>
+  <path d="M480 160q23-28 54-10 21-35 58-15 18 10 21 30 32-2 40 23H475q-13-8 5-28z" opacity=".55"/>
+  <path d="M125 300q28-9 55 2M1300 280q40-13 76 1M1020 300q30-9 60 1" opacity=".5"/>
 </g>
-<g fill="#ffd08a" opacity=".8"><path d="M530 590h18v28h-18z M575 590h18v28h-18z M690 570h20v26h-20z M748 570h20v26h-20z M880 590h18v25h-18z M1040 580h22v28h-22z M1100 580h22v28h-22z M1250 575h20v27h-20z M1300 575h20v27h-20z M1420 590h22v28h-22z M1480 590h22v28h-22z"/></g>
-<!-- window frame -->
-<path d="M470 40V690 M1015 40V690 M1550 40V690 M470 690H1550" fill="none" stroke="#382d32" stroke-width="24"/>
-<path d="M480 55H1540V678H480Z" fill="none" stroke="#e4a875" stroke-width="4" opacity=".7"/>
-<path d="M475 55H1545V690H475Z" fill="url(#glass)"/>
-<!-- cozy interior wall -->
-<rect x="0" y="0" width="455" height="900" fill="url(#room)"/>
-<path d="M0 0H455V900H0Z" fill="#382f36" opacity=".18"/>
-<!-- book shelf -->
-<path d="M0 130H390 M0 330H390" stroke="#d18c58" stroke-width="20"/>
-<g stroke="#3d3034" stroke-width="5">
- <path d="M28 75v54h35V75z" fill="#59616a"/><path d="M70 48v81h34V48z" fill="#9c634c"/><path d="M110 65v64h32V65z" fill="#68705d"/><path d="M148 38v91h40V38z" fill="#5a4a61"/><path d="M194 70v59h33V70z" fill="#b17a50"/><path d="M232 54v75h34V54z" fill="#526b68"/><path d="M273 42v87h40V42z" fill="#7e5a5c"/><path d="M320 72v57h32V72z" fill="#b68a59"/>
- <path d="M28 260v68h35v-68z" fill="#a66c55"/><path d="M70 235v93h34v-93z" fill="#5d6d68"/><path d="M110 255v73h32v-73z" fill="#b98b5d"/><path d="M148 225v103h40V225z" fill="#69566b"/><path d="M194 265v63h33v-63z" fill="#53616c"/><path d="M232 240v88h34v-88z" fill="#a15f4c"/><path d="M273 230v98h40v-98z" fill="#64715e"/><path d="M320 266v62h32v-62z" fill="#c28d58"/>
+<!-- sun, drawn with pencil hatching -->
+<circle cx="805" cy="425" r="170" fill="#eeeeea" stroke="#171717" stroke-width="7"/>
+<g clip-path="url(#sunClip)" stroke="#777" stroke-width="2" opacity=".42">
+  <path d="M620 320l250 250M650 290l260 260M700 260l260 260M750 250l260 260M600 390l220 220M790 240l230 230M570 450l190 190" />
+  <path d="M600 340l230-100M610 390l280-120M630 450l300-130M650 500l300-130M690 550l280-120" />
 </g>
-<!-- hanging plant -->
-<path d="M360 0Q355 85 390 125T370 245T410 315" fill="none" stroke="#4e674c" stroke-width="10"/>
-<g fill="#71865a" stroke="#3e5a43" stroke-width="4"><ellipse cx="330" cy="55" rx="42" ry="18" transform="rotate(25 330 55)"/><ellipse cx="405" cy="105" rx="45" ry="19" transform="rotate(-25 405 105)"/><ellipse cx="345" cy="160" rx="40" ry="18" transform="rotate(20 345 160)"/><ellipse cx="420" cy="215" rx="46" ry="18" transform="rotate(-28 420 215)"/><ellipse cx="365" cy="270" rx="42" ry="18" transform="rotate(18 365 270)"/></g>
-<!-- warm lamp pool -->
-<ellipse cx="570" cy="570" rx="350" ry="250" fill="url(#lampGlow)" filter="url(#soft)"/>
-<!-- desk surface -->
-<path d="M0 700Q500 660 1050 690T1600 675V900H0Z" fill="url(#wood)" stroke="#704536" stroke-width="12"/>
-<path d="M0 735Q650 695 1600 720" fill="none" stroke="#f2bd7c" stroke-width="8" opacity=".5"/>
-<!-- desk lamp -->
-<path d="M185 690L235 455 350 390" fill="none" stroke="#343239" stroke-width="24" stroke-linecap="round"/>
-<path d="M235 455L180 410" fill="none" stroke="#343239" stroke-width="22" stroke-linecap="round"/>
-<path d="M135 690H255" stroke="#343239" stroke-width="24" stroke-linecap="round"/>
-<path d="M270 390Q290 300 390 305L450 405Q365 445 270 390Z" fill="#3d3b43" stroke="#282a30" stroke-width="9"/>
-<path d="M302 385Q350 415 430 395L440 410Q365 450 280 408Z" fill="#f8d28d"/>
-<!-- books and mug -->
-<g stroke="#684333" stroke-width="6"><path d="M70 680h190v35H70z" fill="#e3b47e"/><path d="M55 650h205v30H55z" fill="#5b5964"/><path d="M85 620h165v28H85z" fill="#c57e5d"/></g>
-<path d="M390 615h95v105h-95z" rx="12" fill="#e7c9a4" stroke="#855f4d" stroke-width="7"/><path d="M485 640q55-5 45 40q-8 30-45 20" fill="none" stroke="#855f4d" stroke-width="12"/>
-<g stroke="#4c413d" stroke-width="7"><path d="M410 615l-8-85 M435 615l12-95 M458 615l8-76" /></g>
-<!-- laptop -->
-<path d="M640 650h360l55 55H590Z" fill="#4a4549" stroke="#2d3036" stroke-width="8"/>
-<path d="M685 635h280l25 15H660Z" fill="#82716a"/>
-<!-- sleeping cat on cushion -->
-<ellipse cx="260" cy="730" rx="175" ry="95" fill="#d9a77e" stroke="#8c5e49" stroke-width="8"/>
-<ellipse cx="245" cy="700" rx="125" ry="78" fill="#f0c28e" stroke="#9b674c" stroke-width="7"/>
-<path d="M150 680l18-70 58 48 M290 658l44-60 17 83" fill="#d99462" stroke="#9b674c" stroke-width="8" stroke-linejoin="round"/>
-<path d="M190 700q-15 18-32 0 M260 700q-15 18-32 0" fill="none" stroke="#5a4541" stroke-width="7" stroke-linecap="round"/>
-<path d="M222 718q18 18 35 0" fill="none" stroke="#9a5c54" stroke-width="5"/>
-<ellipse cx="235" cy="724" rx="16" ry="10" fill="#d78d7b"/>
-<!-- plant pot right -->
-<path d="M1450 620h115l-15 95h-85z" fill="#c88d68" stroke="#805845" stroke-width="7"/>
-<path d="M1505 620q-30-95-5-155 M1505 600q55-90 78-90 M1498 590q-65-70-95-60" fill="none" stroke="#526d4d" stroke-width="9"/>
-<g fill="#71875b" stroke="#405e45" stroke-width="4"><ellipse cx="1487" cy="475" rx="42" ry="18" transform="rotate(40 1487 475)"/><ellipse cx="1580" cy="500" rx="45" ry="18" transform="rotate(-30 1580 500)"/><ellipse cx="1415" cy="530" rx="40" ry="18" transform="rotate(20 1415 530)"/></g>
-<!-- foreground chair -->
-<path d="M360 900Q350 790 450 780H650Q760 800 745 900" fill="#51444a" stroke="#342e36" stroke-width="18"/>
-<path d="M420 900Q420 830 470 825H620Q680 835 680 900" fill="#6e5960"/>
-<!-- tiny stars and hand-drawn accents -->
-<g fill="none" stroke="#ffe6bd" stroke-width="4" opacity=".7"><path d="M800 150l8 18 18 8-18 8-8 18-8-18-18-8 18-8z"/><path d="M1370 220l6 14 14 6-14 6-6 14-6-14-14-6 14-6z"/></g>
+<!-- distant ridge -->
+<path d="M0 555q130-90 250-54 100-108 225-44 95-54 205-10 110-78 215-12 120-82 230-22 115-68 220-4 120-75 255 13V900H0Z" fill="#e7e7e2" stroke="#222" stroke-width="6" stroke-linejoin="round"/>
+<path d="M0 575q140-70 255-32 115-90 220-40 110-45 205-3 110-62 218-5 115-65 226-14 120-53 235 4 125-54 241 20" fill="none" stroke="#555" stroke-width="3" opacity=".8"/>
+<!-- sun dipping below the ridge -->
+<path d="M635 545q170-24 340 0" fill="none" stroke="#1d1d1d" stroke-width="7"/>
+<path d="M665 565q140-18 280 0M690 580q120-12 230 0" fill="none" stroke="#555" stroke-width="3" opacity=".7"/>
+<!-- foreground water and reflections -->
+<path d="M0 625q180-25 360 0t360 0 360 0 360 0 360 0V900H0Z" fill="#f1f1ed" stroke="#242424" stroke-width="5"/>
+<g fill="none" stroke="#252525" stroke-linecap="round">
+  <path d="M90 680q95-12 190 0m60 22q80-10 160 0m-370 42q65-8 130 0m150 30q110-12 220 0m-275 65q75-8 150 0" stroke-width="4"/>
+  <path d="M800 635q-110 20-210 0m220 38q-145 22-290 0m300 40q-120 16-240 0m270 43q-95 14-190 0m240 38q-70 12-140 0m-15 40q-55 8-110 0" stroke-width="5"/>
+  <path d="M1100 680q120-12 240 0m-190 48q80-8 160 0m-90 58q100-10 200 0M80 820q105-10 210 0m1020 28q90-8 180 0" stroke-width="3" opacity=".75"/>
+  <path d="M520 650l80-5m-130 22l55-4m270 90l75-5m-60 38l45-3m-390 60l90-5m590-140l70-4" stroke-width="2" opacity=".65"/>
+</g>
+<!-- small birds -->
+<g fill="none" stroke="#171717" stroke-width="5" stroke-linecap="round">
+  <path d="M390 360q25-28 50 0 24-28 49 0M1080 340q20-22 41 0 20-22 41 0M1190 390q16-18 32 0 16-18 32 0"/>
+</g>
+<!-- grasses on the banks -->
+<g fill="none" stroke="#292929" stroke-width="4" stroke-linecap="round">
+  <path d="M70 900q25-95 8-160m-8 95l-35-42m40 15l32-45m-4 137q45-100 65-135m-45 75l-35-8m126 68q5-70 35-115m-25 70l-28-28"/>
+  <path d="M1450 900q-12-100 22-165m-10 100l-42-42m48 14l38-47m-8 140q32-85 74-115m-48 72l-33-5m100 48q-3-62 30-104m-23 63l-27-23"/>
+</g>
+<!-- loose hand-drawn frame accents -->
+<g fill="none" stroke="#333" stroke-width="3" opacity=".55">
+  <path d="M48 55q210-12 390 0M1160 55q190-10 390 2M48 55v90M1550 55v90"/>
+  <path d="M55 840q190 12 350 0M1190 840q180 10 350 0"/>
+</g>
 </svg>
