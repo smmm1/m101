@@ -418,3 +418,79 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ==========================================================================
+   M101 Subtle UX polish — touch feedback, list affordances, and form states.
+   CSS-only by design: no runtime listeners, timers, or extra dependencies.
+   ========================================================================== */
+@layer base {
+  button,
+  a,
+  [role="button"],
+  [role="menuitem"],
+  summary,
+  input,
+  select,
+  textarea,
+  tr {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: #0f766e;
+    transition: accent-color 140ms ease, transform 140ms ease;
+  }
+
+  input[type="checkbox"]:active,
+  input[type="radio"]:active {
+    transform: scale(0.94);
+  }
+
+  [role="menuitem"],
+  summary {
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+
+  ::selection {
+    background: rgba(15, 118, 110, 0.16);
+  }
+}
+
+/* Touch devices do not have hover; provide the same tactile confirmation on press. */
+@media (hover: none) {
+  button:not(:disabled):active,
+  [role="button"]:active,
+  a[href]:active,
+  [role="menuitem"]:active {
+    transform: scale(0.985);
+    opacity: 0.88;
+  }
+}
+
+/* Quiet row feedback helps users track the item under the pointer without layout shift. */
+@media (hover: hover) and (pointer: fine) {
+  tr {
+    transition: background-color 140ms ease;
+  }
+
+  tr:hover {
+    background-color: rgba(15, 118, 110, 0.035);
+  }
+
+  [role="menuitem"]:hover,
+  summary:hover {
+    background-color: rgba(15, 118, 110, 0.045);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type="checkbox"],
+  input[type="radio"],
+  [role="menuitem"],
+  summary,
+  tr {
+    transition: none !important;
+  }
+}
