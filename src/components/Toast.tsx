@@ -46,6 +46,7 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
           >
             <span className="material-symbols-outlined text-[14px]">close</span>
           </button>
+          <span className="m101-toast-progress" aria-hidden="true" />
         </div>
       ))}
     </div>
