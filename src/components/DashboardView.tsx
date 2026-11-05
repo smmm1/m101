@@ -12,6 +12,30 @@ import { useTheme } from '../context/ThemeContext';
 import '../m101-redesign.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 
+function AnimatedCount({ value }: { value: number }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  useEffect(() => {
+    const target = Number.isFinite(value) ? value : 0;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(target);
+      return;
+    }
+    let frame = 0;
+    let start = 0;
+    const duration = 420;
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(target * eased));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [value]);
+  return <>{displayValue.toLocaleString('th-TH')}</>;
+}
+
 interface ActivityLogItem {
   id: string;
   type: 'add' | 'edit' | 'delete' | 'import';
@@ -909,22 +933,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="m101-overview-metrics" aria-label="สรุปจำนวนกิจการ">
               <article className="m101-metric-card m101-metric-total">
                 <span className="m101-metric-label">กิจการทั้งหมด</span>
-                <strong>{totalCount.toLocaleString('th-TH')}</strong>
+                <strong><AnimatedCount value={totalCount} /></strong>
                 <span className="m101-metric-foot">รายการในปีบัญชี {selectedYear}</span>
               </article>
               <article className="m101-metric-card">
                 <span className="m101-metric-label">เสร็จสิ้น</span>
-                <strong>{completedCount.toLocaleString('th-TH')}</strong>
+                <strong><AnimatedCount value={completedCount} /></strong>
                 <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-done" /> ดำเนินการเรียบร้อย</span>
               </article>
               <article className="m101-metric-card">
                 <span className="m101-metric-label">กำลังดำเนินการ</span>
-                <strong>{inProgressCount.toLocaleString('th-TH')}</strong>
+                <strong><AnimatedCount value={inProgressCount} /></strong>
                 <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-progress" /> อยู่ระหว่างจัดการ</span>
               </article>
               <article className="m101-metric-card">
                 <span className="m101-metric-label">รอดำเนินการ</span>
-                <strong>{pendingCount.toLocaleString('th-TH')}</strong>
+                <strong><AnimatedCount value={pendingCount} /></strong>
                 <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-pending" /> ยังไม่เริ่มดำเนินการ</span>
               </article>
             </div>
