@@ -75,6 +75,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('directory');
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+  const commandInputRef = useRef<HTMLInputElement>(null);
+  const commandItems = [
+    { id: 'directory', label: 'ทะเบียนกิจการ', hint: 'เปิดรายการกิจการ', icon: 'folder_open', action: () => navigateToTab('directory') },
+    { id: 'dashboard', label: 'ภาพรวม', hint: 'ดูสถิติและสถานะงาน', icon: 'space_dashboard', action: () => navigateToTab('dashboard') },
+    ...(isLoggedIn ? [{ id: 'tasks', label: 'งานประจำปี', hint: 'จัดการงานประจำปี', icon: 'task_alt', action: () => navigateToTab('tasks') }] : []),
+    ...(isLoggedIn ? [{ id: 'import', label: 'นำเข้าข้อมูล', hint: 'นำเข้า Excel หรือ CSV', icon: 'file_upload', action: () => navigateToTab('import') }] : []),
+    ...(isLoggedIn ? [{ id: 'settings', label: 'ตั้งค่าระบบ', hint: 'การตั้งค่าและสำรองข้อมูล', icon: 'settings', action: () => navigateToTab('settings') }] : []),
+    { id: 'search', label: 'ค้นหากิจการ', hint: 'ค้นหาจากชื่อ เลขทะเบียน หรือรหัส', icon: 'search', action: () => { navigateToTab('directory'); window.setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder*="ค้นหา"], input[placeholder*="Search"]')?.focus(), 80); } },
+  ];
+  const filteredCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
+  useEffect(() => {
+    const handleCommandShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+        setCommandQuery('');
+      } else if (event.key === 'Escape') {
+        setCommandOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleCommandShortcut);
+    return () => window.removeEventListener('keydown', handleCommandShortcut);
+  }, []);
+  useEffect(() => {
+    if (!commandOpen) return;
+    const frame = window.requestAnimationFrame(() => commandInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [commandOpen]);
 
   // Filter tab: 'all' | 'has_efiling' | 'no_efiling'
   const [filterTab, setFilterTab] = useState<'all' | 'has_efiling' | 'no_efiling'>('all');
@@ -273,6 +303,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
+      {commandOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/35 px-4 pt-[12vh] backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCommandOpen(false); }}>
+          <section className="m101-command-palette w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900" role="dialog" aria-modal="true" aria-labelledby="m101-command-title">
+            <h2 id="m101-command-title" className="sr-only">ค้นหาเมนูและคำสั่ง</h2>
+            <div className="flex items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800">
+              <span className="material-symbols-outlined text-slate-400">search</span>
+              <input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && filteredCommandItems[0]) { filteredCommandItems[0].action(); setCommandOpen(false); } }} placeholder="พิมพ์เพื่อค้นหาเมนู..." className="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0 dark:text-white" />
+              <kbd className="rounded-md border border-slate-200 px-2 py-1 text-[10px] text-slate-400 dark:border-slate-700">ESC</kbd>
+            </div>
+            <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2">
+              {filteredCommandItems.length ? filteredCommandItems.map((item) => (
+                <button key={item.id} type="button" onClick={() => { item.action(); setCommandOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-teal-50 focus-visible:bg-teal-50 focus-visible:outline-none dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><span className="material-symbols-outlined text-[19px]">{item.icon}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{item.label}</span><span className="mt-0.5 block text-xs text-slate-400">{item.hint}</span></span>
+                  <span className="text-xs text-slate-300">↵</span>
+                </button>
+              )) : <p className="px-4 py-8 text-center text-sm text-slate-400">ไม่พบเมนูที่ตรงกัน</p>}
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-[10px] text-slate-400 dark:border-slate-800"><span>ค้นหาเมนูใน M101</span><span><kbd className="rounded border px-1.5 py-0.5">Ctrl</kbd> + <kbd className="rounded border px-1.5 py-0.5">K</kbd> เพื่อเปิด</span></div>
+          </section>
+        </div>
+      )}
       
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
         <div className="m101-brand"><div className="m101-brand-mark">◈</div><div className="m101-brand-copy"><strong>พื้นที่จัดการข้อมูล</strong><span>DOCUMENT WORKSPACE</span></div></div>
