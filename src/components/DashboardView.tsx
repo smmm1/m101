@@ -110,6 +110,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ...(isLoggedIn ? [{ id: 'settings', label: 'ตั้งค่าระบบ', hint: 'การตั้งค่าและสำรองข้อมูล', icon: 'settings', action: () => navigateToTab('settings') }] : []),
     { id: 'search', label: 'ค้นหากิจการ', hint: 'ค้นหาจากชื่อ เลขทะเบียน หรือรหัส', icon: 'search', action: () => { navigateToTab('directory'); window.setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder*="ค้นหา"], input[placeholder*="Search"]')?.focus(), 80); } },
   ];
+  const handleMagneticMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== 'mouse') return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left - rect.width / 2) / rect.width;
+    const y = (event.clientY - rect.top - rect.height / 2) / rect.height;
+    event.currentTarget.style.transform = `translate3d(${(x * 3).toFixed(1)}px, ${(y * 3).toFixed(1)}px, 0)`;
+  };
+  const resetMagnetic = (event: React.PointerEvent<HTMLButtonElement>) => { event.currentTarget.style.transform = ''; };
+  const updateSpotlight = (event: React.PointerEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
+    event.currentTarget.style.setProperty('--spot-y', `${event.clientY - rect.top}px`);
+  };
   const filteredCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
   useEffect(() => {
     const handleCommandShortcut = (event: KeyboardEvent) => {
@@ -925,18 +938,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p>สรุปสถานะงานและเข้าถึงข้อมูลที่ต้องจัดการในรอบปีบัญชี {selectedYear}</p>
               </div>
               <div className="m101-overview-actions">
-                <button type="button" onClick={() => navigateToTab('directory')} className="m101-button-secondary">เปิดทะเบียนทั้งหมด <span aria-hidden="true">→</span></button>
-                {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className="m101-button-primary">นำเข้าข้อมูล</button>}
+                <button type="button" onClick={() => navigateToTab('directory')} className="m101-button-secondary" onPointerMove={handleMagneticMove} onPointerLeave={resetMagnetic}>เปิดทะเบียนทั้งหมด <span aria-hidden="true">→</span></button>
+                {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className="m101-button-primary" onPointerMove={handleMagneticMove} onPointerLeave={resetMagnetic}>นำเข้าข้อมูล</button>}
               </div>
             </header>
 
             <div className="m101-overview-metrics" aria-label="สรุปจำนวนกิจการ">
-              <article className="m101-metric-card m101-metric-total">
+              <article className="m101-metric-card m101-metric-total" onPointerMove={updateSpotlight}>
                 <span className="m101-metric-label">กิจการทั้งหมด</span>
                 <strong><AnimatedCount value={totalCount} /></strong>
                 <span className="m101-metric-foot">รายการในปีบัญชี {selectedYear}</span>
               </article>
-              <article className="m101-metric-card">
+              <article className="m101-metric-card" onPointerMove={updateSpotlight}>
                 <span className="m101-metric-label">เสร็จสิ้น</span>
                 <strong><AnimatedCount value={completedCount} /></strong>
                 <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-done" /> ดำเนินการเรียบร้อย</span>
