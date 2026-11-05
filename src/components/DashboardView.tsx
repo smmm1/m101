@@ -187,6 +187,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     if (navigationProgressTimerRef.current) clearTimeout(navigationProgressTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    const handleOwnerNavigate = (event: Event) => {
+      if (!isAdmin) return;
+      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
+      if (tab === 'directory' || tab === 'dashboard' || tab === 'tasks' || tab === 'import' || tab === 'settings') navigateToTab(tab);
+    };
+    window.addEventListener('m101:owner-navigate', handleOwnerNavigate);
+    return () => window.removeEventListener('m101:owner-navigate', handleOwnerNavigate);
+  }, [isAdmin]);
+
   // Restore the destination tab's position after React has rendered it.
   useEffect(() => {
     const container = mainContentRef.current;
