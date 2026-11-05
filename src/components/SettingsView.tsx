@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
+import { getSoundSettings, saveSoundSettings, playUISound } from '../utils/cuteAudio';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -28,6 +29,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
   const { config, updateConfig } = useSystemConfig();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [soundSettings, setSoundSettings] = useState(getSoundSettings);
+
+  const updateSoundSettings = (patch: Partial<typeof soundSettings>) => {
+    setSoundSettings((current) => {
+      const next = { ...current, ...patch };
+      saveSoundSettings(next);
+      return next;
+    });
+  };
 
   // System form state
   const [appName, setAppName] = useState(config.appName || 'SchoolHub');
@@ -214,6 +224,64 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
           </div>
         </div>
+
+        {/* Sound preferences */}
+        <section className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card" aria-labelledby="sound-settings-title">
+          <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[22px]">volume_down</span>
+            </div>
+            <div>
+              <h3 id="sound-settings-title" className="text-sm font-bold text-slate-900 dark:text-white font-headline">เสียงประกอบ (Sound)</h3>
+              <p className="text-[11px] text-slate-400">เสียงสั้น ๆ นุ่มและเบา สำหรับการใช้งานในระบบ</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">เปิดเสียง UI</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">ค่าเริ่มต้นปิดไว้ และจำค่าบนอุปกรณ์นี้</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={soundSettings.enabled}
+              onClick={() => updateSoundSettings({ enabled: !soundSettings.enabled })}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${soundSettings.enabled ? 'bg-slate-700 dark:bg-slate-300' : 'bg-slate-300 dark:bg-slate-700'}`}
+            >
+              <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white dark:bg-slate-950 transition-transform ${soundSettings.enabled ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+
+          <div className={soundSettings.enabled ? 'opacity-100' : 'opacity-45'}>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="m101-sound-volume" className="text-xs font-semibold text-slate-700 dark:text-slate-300">ระดับเสียง</label>
+              <span className="text-[11px] tabular-nums text-slate-500">{Math.round(soundSettings.volume * 100)}%</span>
+            </div>
+            <input
+              id="m101-sound-volume"
+              type="range"
+              min="0"
+              max="0.5"
+              step="0.01"
+              value={soundSettings.volume}
+              disabled={!soundSettings.enabled}
+              onChange={(event) => updateSoundSettings({ volume: Number(event.target.value) })}
+              className="w-full accent-slate-600 cursor-pointer disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-slate-500">โทนเสียงเบา ไม่แหลม และไม่เล่นซ้ำถี่เกินไป</p>
+            <button
+              type="button"
+              onClick={() => playUISound('success', true)}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              ทดลองเสียง
+            </button>
+          </div>
+        </section>
 
         {/* 2. Backup & Export Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card m101-settings-backup">
