@@ -94,6 +94,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [draggedRecordId, setDraggedRecordId] = useState<string | null>(null);
+  const [dragOverRecordId, setDragOverRecordId] = useState<string | null>(null);
+  const canReorderRecords = isLoggedIn && Boolean(onRestoreRecords) && !searchQuery?.trim() && filterTab === 'all' && sortOrder === 'asc';
+  const reorderRecords = (targetId: string) => {
+    if (!draggedRecordId || draggedRecordId === targetId || !canReorderRecords || !onRestoreRecords) return;
+    const reordered = [...filteredRecords];
+    const from = reordered.findIndex((record) => record.id === draggedRecordId);
+    const to = reordered.findIndex((record) => record.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    const withSequence = reordered.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
+    onRestoreRecords(withSequence);
+    onShowToast('จัดลำดับกิจการและบันทึกแล้ว', 'เปลี่ยนลำดับสำเร็จ', 'success');
+    setDraggedRecordId(null);
+    setDragOverRecordId(null);
+  };
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : localSearchQuery;
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
@@ -753,7 +770,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
                         const statusTone = r.status === 'completed' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-950/50 dark:text-emerald-300' : r.status === 'in_progress' ? 'bg-amber-50 text-amber-700 ring-amber-600/15 dark:bg-amber-950/50 dark:text-amber-300' : 'bg-slate-100 text-slate-600 ring-slate-500/15 dark:bg-slate-800 dark:text-slate-300';
                         return (
-                          <tr key={r.id} onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-teal-50 dark:focus:bg-teal-950/30 ${isSelected ? 'bg-teal-50/80 dark:bg-teal-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'}`}>
+                          <tr key={r.id} draggable={canReorderRecords}
+                            onDragStart={(event) => { if (!canReorderRecords) { event.preventDefault(); return; } setDraggedRecordId(r.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', r.id); }}
+                            onDragOver={(event) => { if (draggedRecordId && canReorderRecords) { event.preventDefault(); setDragOverRecordId(r.id); } }}
+                            onDrop={(event) => { event.preventDefault(); reorderRecords(r.id); }}
+                            onDragEnd={() => { setDraggedRecordId(null); setDragOverRecordId(null); }}
+                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-teal-50 dark:focus:bg-teal-950/30 ${isSelected ? 'bg-teal-50/80 dark:bg-teal-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-teal-500' : ''}`}>
                             <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-teal-700 dark:text-teal-300' : 'text-slate-400'}`}>{seqNum}</span></td>
                             <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' : r.type === 'individual' ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-teal-900 dark:text-teal-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
@@ -767,6 +789,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </table>
                 )}
               </div>
+              {canReorderRecords && <p className="px-5 py-2 text-[10px] text-slate-400">ลากแถวเพื่อจัดลำดับกิจการใหม่ · ระบบจะบันทึกลำดับให้อัตโนมัติ</p>}
               <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filteredRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
             </div>
             {/* RIGHT COLUMN: DETAIL CARD VIEW */}
