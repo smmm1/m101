@@ -110,13 +110,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const handleOwnerLogoTap = () => {
     if (!isAdmin) return;
     const now = Date.now();
-    if (now - ownerTapRef.current.lastTap > 1800) ownerTapRef.current.count = 0;
+    // Mobile taps are slower than desktop double-clicks; allow a forgiving 6-second window.
+    if (now - ownerTapRef.current.lastTap > 6000) ownerTapRef.current.count = 0;
     ownerTapRef.current.lastTap = now;
     ownerTapRef.current.count += 1;
-    if (ownerTapRef.current.count >= 5) {
-      ownerTapRef.current.count = 0;
-      window.dispatchEvent(new Event('m101:mobile-owner-access'));
+    const remaining = 5 - ownerTapRef.current.count;
+    if (remaining > 0) {
+      onShowToast(`แตะไอคอน M อีก ${remaining} ครั้งเพื่อเปิดเมนูลับ`, 'เมนูผู้ดูแล', 'info');
+      return;
     }
+    ownerTapRef.current.count = 0;
+    window.dispatchEvent(new Event('m101:mobile-owner-access'));
+    onShowToast('กำลังเปิดเมนูผู้ดูแล', 'ยืนยันตัวตนผู้ดูแลแล้ว', 'success');
   };
   const commandItems = [
     { id: 'directory', label: 'ทะเบียนกิจการ', hint: 'เปิดรายการกิจการ', icon: 'folder_open', action: () => navigateToTab('directory') },
