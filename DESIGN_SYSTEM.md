@@ -121,22 +121,24 @@ All modules use the same page-header hierarchy, spacing, action placement, searc
 
 ## 10. Current migration status
 
-The first foundation pass is in place:
+The design-system foundation and first component migrations are in place:
 
-- `src/design-system/tokens.css` is the central token source.
-- `src/design-system/components.css` defines token-driven shared style contracts.
-- `src/design-system/index.css` is loaded from the application entry point.
-- The existing business theme consumes the global tokens through compatibility aliases.
-- Existing routes, data flow, authentication, D1 bindings, and import/export logic have not been intentionally changed.
+- `src/design-system/tokens.css` is the central color, typography, spacing, shape, and layout token source.
+- `src/design-system/components.css` defines shared button, field, select, textarea, badge, and page-header styles.
+- `src/design-system/components.tsx` exports reusable React primitives: `DSButton`, `DSBadge`, `DSInput`, `DSSelect`, `DSTextarea`, and `DSPageHeader`.
+- `src/design-system/index.css` is loaded once from the application entry point.
+- The business theme and legacy M101 theme aliases now consume the global tokens.
+- The application is standardized on the requested clean light theme; the conflicting dark-mode toggle is removed and stale dark preference is cleared.
+- Annual Tasks, Add Business, and Edit Business forms have started using the shared React primitives.
 
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
-- Existing React views and modals still contain page/component-specific markup and styles. They must be migrated to shared component APIs in controlled batches.
-- The existing theme/settings behavior and responsive shell require a full route-by-route audit.
-- The initial successful build validates the CSS entrypoint and bundle, not full visual QA or functional regression testing.
+- Registry tables, import/mapping flows, detail/delete dialogs, settings, and admin surfaces still need component-by-component migration.
+- The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
+- Deployment build success is not equivalent to full visual QA or functional regression testing.
 
-Next migration sequence: audit legacy selectors and component consumers, establish shared React primitives, migrate the global shell, then migrate tables/forms/dialogs and each module template.
+Next migration sequence: finish the shared dialog and form contracts, migrate registry and import tables, then settings/admin views; finally remove dead legacy selectors after consumer verification.
 
 ## 11. Definition of done
 
