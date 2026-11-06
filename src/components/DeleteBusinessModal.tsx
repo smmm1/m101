@@ -31,18 +31,18 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
   };
 
   return (
-    <div className="m101-dialog-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="m101-dialog-panel m101-delete-dialog bg-white dark:bg-[#111827] rounded-3xl p-6 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/80 dark:border-slate-800 animate-in zoom-in-95 duration-150 font-body">
-        <div className="m101-dialog-header flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+    <div className="m101-dialog-overlay ds-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="m101-dialog-panel ds-delete-modal w-full max-w-2xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-150">
+        <div className="m101-dialog-header ds-modal-header flex items-center justify-between pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <div className="ds-modal-icon ds-modal-icon--danger">
               <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white font-headline">
+              <h3 className="ds-modal-title">
                 ลบรายการทะเบียนกิจการ (Bulk Delete)
               </h3>
-              <p className="text-[11px] text-slate-400">เลือกรายการที่ต้องการลบออกจากระบบ</p>
+              <p className="ds-modal-description">เลือกรายการที่ต้องการลบออกจากระบบ</p>
             </div>
           </div>
           <DSButton
@@ -55,14 +55,14 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
         </div>
 
         {confirming ? (
-          <div className="py-8 px-4 flex flex-col items-center justify-center text-center gap-3 animate-in fade-in">
-            <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-inner">
+          <div className="ds-delete-confirm py-8 px-4 flex flex-col items-center justify-center text-center gap-3 animate-in fade-in">
+            <div className="ds-modal-icon ds-modal-icon--danger ds-modal-icon--large">
               <span className="material-symbols-outlined text-[28px]">warning</span>
             </div>
-            <h4 className="text-base font-extrabold text-slate-900 dark:text-white font-headline">
+            <h4 className="ds-modal-title ds-modal-title--large">
               ยืนยันการลบ {selectedIds.length} รายการ?
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">
+            <p className="ds-modal-description ds-modal-description--center max-w-md">
               ข้อมูลที่เลือกจะถูกลบออกจากรอบปีบัญชีปัจจุบันอย่างถาวร กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ
             </p>
             <div className="flex items-center gap-3 mt-4">
@@ -85,8 +85,8 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto py-3">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 px-2">
+            <div className="ds-delete-list flex-1 overflow-y-auto py-3">
+              <div className="ds-delete-toolbar flex items-center justify-between pb-2 mb-2 px-2">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -94,11 +94,11 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                     checked={selectedIds.length === records.length && records.length > 0}
                     className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span className="ds-delete-select-label">
                     เลือกทั้งหมด ({selectedIds.length}/{records.length})
                   </span>
                 </label>
-                <span className="text-[11px] text-slate-400 font-mono">
+                <span className="ds-delete-count">
                   เลือกแล้ว {selectedIds.length} รายการ
                 </span>
               </div>
@@ -113,10 +113,10 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                       <div
                         key={r.id}
                         onClick={() => toggleSelect(r.id)}
-                        className={`m101-delete-row flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer border ${
+                        className={`m101-delete-row ds-delete-row flex items-center gap-3 p-2.5 transition-all cursor-pointer border ${
                           isChecked
-                            ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/40'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 border-transparent'
+                            ? 'is-selected'
+                            : 'is-unselected'
                         }`}
                       >
                         <input
@@ -129,10 +129,10 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                           #{r.sequenceNo || '-'}
                         </span>
                         <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          <span className="ds-delete-business truncate">
                             {r.companyName}
                           </span>
-                          <span className="text-[10px] font-mono text-slate-400">{r.taxId}</span>
+                          <span className="ds-delete-taxid">{r.taxId}</span>
                         </div>
                       </div>
                     );
@@ -141,7 +141,7 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+            <div className="ds-modal-footer pt-4 flex justify-end gap-2.5">
               <DSButton
                 type="button"
                 onClick={onClose}
