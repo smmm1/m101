@@ -46,14 +46,14 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
     switch (status) {
       case 'completed':
         return {
-          bg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800',
-          dot: 'bg-emerald-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusCompleted || 'เสร็จสิ้น',
         };
       case 'in_progress':
         return {
-          bg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800',
-          dot: 'bg-amber-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusInProgress || 'กำลังทำ',
         };
       case 'pending':
@@ -90,7 +90,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
         {/* Header */}
         <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-start justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-slate-900 dark:bg-zinc-500 text-white dark:text-slate-900 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
               <span className="material-symbols-outlined text-[22px]">corporate_fare</span>
             </div>
             <div className="flex flex-col min-w-0">
@@ -98,7 +98,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
                   {record.type === 'partnership' ? 'ห้างหุ้นส่วนจำกัด' : 'บริษัทจำกัด'}
                 </span>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 font-mono">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-950/70 text-zinc-800 dark:text-zinc-300 font-mono">
                   ลำดับ #{record.sequenceNo || '-'}
                 </span>
               </div>
@@ -161,7 +161,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
           {/* 2. Primary Tax & Registration Information */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">badge</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-500">badge</span>
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
                 ข้อมูลนิติบุคคลและผู้เสียภาษี
               </h3>
@@ -212,7 +212,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">key</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-500">key</span>
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
                 รหัสผ่านและข้อมูลการยื่นแบบ
               </h3>
@@ -256,7 +256,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.eFilingCode, 'รหัส e-Filing', 'efiling')}
-                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
+                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-zinc-600 dark:hover:text-zinc-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
                       title="คัดลอกรหัส e-Filing"
                     >
                       <span className="material-symbols-outlined text-[15px]">
@@ -280,7 +280,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.ssoCode, 'รหัสประกันสังคม', 'sso')}
-                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
+                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-zinc-600 dark:hover:text-zinc-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
                       title="คัดลอกรหัสประกันสังคม"
                     >
                       <span className="material-symbols-outlined text-[15px]">
@@ -296,7 +296,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
           {/* 4. Auditor & Remarks */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">description</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-500">description</span>
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
                 ข้อมูลผู้สอบบัญชีและหมายเหตุ
               </h3>
@@ -326,7 +326,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
           {/* 5. Source File and Meta Timestamps */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-amber-500">history</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-500">history</span>
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
                 ข้อมูลการนำเข้าและประวัติบันทึก
               </h3>
