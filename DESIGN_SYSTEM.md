@@ -13,7 +13,7 @@ When a request describes a global visual change, update the design-system source
 ## 2. Product direction
 
 - Clean, minimalist, human-centric business and account management SaaS.
-- Light theme: white surfaces, soft neutral canvas, charcoal text, restrained professional blue.
+- Light theme: strict monochrome palette — white surfaces, neutral gray canvas and borders, charcoal text, black primary actions. No blue, green, amber, or decorative accent hues.
 - Optimize readability, low cognitive load, and rapid data scanning.
 - No terminal/retro styling, ASCII decoration, excessive gradients, glass effects, or decorative dashboard clutter.
 - Direct data structures and clear forms; decoration must never compete with business information.
@@ -22,19 +22,19 @@ When a request describes a global visual change, update the design-system source
 
 | Token | Value | Meaning |
 |---|---|---|
-| `--ds-color-canvas` | `#F8FAFC` | Application canvas |
+| `--ds-color-canvas` | `#FAFAFA` | Application canvas |
 | `--ds-color-surface` | `#FFFFFF` | Surface |
-| `--ds-color-surface-subtle` | `#F1F5F9` | Subtle section/header fill |
-| `--ds-color-border` | `#E2E8F0` | Dividers and borders |
-| `--ds-color-border-strong` | `#CBD5E1` | Input/strong border |
-| `--ds-color-text` | `#0F172A` | Primary text |
-| `--ds-color-text-secondary` | `#64748B` | Secondary text |
-| `--ds-color-text-muted` | `#94A3B8` | Placeholder/metadata |
-| `--ds-color-primary` | `#2563EB` | Main action |
-| `--ds-color-success` | `#10B981` | Success |
-| `--ds-color-warning` | `#F59E0B` | Warning |
-| `--ds-color-danger` | `#EF4444` | Destructive/error |
-| `--ds-color-info` | `#0EA5E9` | Informational |
+| `--ds-color-surface-subtle` | `#F4F4F5` | Subtle section/header fill |
+| `--ds-color-border` | `#E4E4E7` | Dividers and borders |
+| `--ds-color-border-strong` | `#A1A1AA` | Input/strong border |
+| `--ds-color-text` | `#18181B` | Primary text |
+| `--ds-color-text-secondary` | `#52525B` | Secondary text |
+| `--ds-color-text-muted` | `#A1A1AA` | Placeholder/metadata |
+| `--ds-color-primary` | `#18181B` | Main action |
+| `--ds-color-success` | `#3F3F46` | Success (monochrome) |
+| `--ds-color-warning` | `#52525B` | Warning (monochrome) |
+| `--ds-color-danger` | `#27272A` | Destructive/error (monochrome) |
+| `--ds-color-info` | `#52525B` | Informational (monochrome) |
 
 All colors must be consumed through tokens. Semantic colors retain the same meaning across modules.
 
@@ -77,7 +77,7 @@ Text, number, search, select, multi-select, date, textarea, checkbox, radio, swi
 Use row-based data structures with subtle horizontal dividers rather than heavy card wrappers. Default row height 48–56px. Headers 12px medium on subtle neutral fill. Left-align names and identifiers, right-align numeric values, keep date alignment consistent, and use semantic status badges. Support search, filters, sorting, pagination, loading, empty, error, selection, and responsive overflow states.
 
 ### Status badges
-Use soft semantic backgrounds and matching text. Active/success = green, pending = amber, archived/inactive = neutral, error = red, processing = blue. Never communicate status by color alone.
+Use soft semantic backgrounds and matching text. All status badges use grayscale surfaces and text; distinguish status with labels and icons, never color alone.
 
 ### Dialogs and modals
 One shared overlay/dialog contract for standard, confirmation, form, detail, import, and export flows. Centered desktop dialog, viewport-safe mobile sizing, consistent title/body/footer, focus management, keyboard behavior, and clear destructive confirmation.
@@ -137,13 +137,14 @@ The design-system foundation and first component migrations are in place:
 - Bulk Delete now uses tokenized modal surfaces, shared danger semantics, neutral row selection, and responsive dialog sizing; its selection and deletion behavior is unchanged.
 - Add Business and Edit Business forms now use the shared modal surface, labels, fields/selects, section panels, error states, and responsive sizing; validation and save behavior are unchanged.
 - Dialog overlays and panels across add/edit/detail/delete, import mapping, conflict resolution, and annual tasks now share tokenized surfaces, borders, shadows, radii, and subtle backdrop treatment.
-- The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
+- The legacy global palette and former green/blue accent treatments have been converted to monochrome grayscale; primary actions are black, surfaces are white/gray, and the novelty colored cursor has been removed.
+- Excel/CSV sheet selection, table selection, mapping progress, empty-table guidance, and duplicate-resolution summaries now use neutral monochrome states without changing import logic.
 
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
 - Remaining admin subviews, import progress/result states, and any unconverted utility actions still need component-by-component migration.
-- The legacy stylesheet still contains module-specific semantic colors and dark-theme selectors; these need a careful audit rather than a blind global replacement.
+- The legacy redesign stylesheet's previous chromatic values have been converted to grayscale; remaining selectors still need a route-by-route visual audit.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
