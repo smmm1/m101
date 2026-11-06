@@ -428,3 +428,299 @@ html.dark .m101-dialog-panel input, html.dark .m101-dialog-panel select, html.da
 html.dark .mobile-main-content { color: #e2e8f0; }
 html.dark .m101-side-link { border-color: #273449 !important; }
 html.dark .m101-side-link.is-active { background: #1e293b !important; color: #f8fafc !important; }
+
+
+/* M101 terminal interface — retro directory navigation */
+:root {
+  --m101-canvas: #121512;
+  --m101-surface: #171c18;
+  --m101-ink: #c8d2c3;
+  --m101-muted: #84927f;
+  --m101-line: #303a30;
+  --m101-accent: #9abf79;
+  --m101-accent-soft: #202a20;
+  --m101-radius: 2px;
+  --m101-shadow: none;
+}
+html, body, #root, .mobile-app-shell {
+  background: #121512 !important;
+  color: #c8d2c3 !important;
+  font-family: "JetBrains Mono", "Cascadia Code", "Courier New", monospace !important;
+}
+.mobile-app-shell {
+  display: grid !important;
+  grid-template-columns: 248px minmax(0, 1fr) !important;
+  grid-template-rows: 66px minmax(0, 1fr) !important;
+  grid-template-areas: "header header" "tree content" !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+}
+.mobile-app-nav {
+  grid-area: header !important;
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+  min-height: 66px !important;
+  height: 66px !important;
+  padding: 0 22px !important;
+  background: #171c18 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #394438 !important;
+  box-shadow: none !important;
+}
+.m101-header-brand .m101-brand-mark {
+  width: 34px !important; height: 34px !important;
+  border: 1px solid #78985f !important;
+  border-radius: 0 !important;
+  background: #1d281d !important;
+  color: #a8ce85 !important;
+  font-family: inherit !important;
+}
+.m101-header-brand .m101-brand-copy strong {
+  color: #b9d99b !important;
+  font: 700 14px/1.35 "JetBrains Mono", "Courier New", monospace !important;
+  letter-spacing: .04em !important;
+}
+.m101-header-brand .m101-brand-copy span {
+  color: #788b70 !important;
+  font: 10px/1.4 "JetBrains Mono", "Courier New", monospace !important;
+  letter-spacing: .08em !important;
+}
+.m101-global-search {
+  background: #101410 !important;
+  border: 1px solid #394438 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.m101-global-search input {
+  color: #c8d2c3 !important;
+  font: 12px "JetBrains Mono", "Courier New", monospace !important;
+}
+.mobile-utility-nav { gap: 8px !important; }
+.mobile-utility-nav button, .m101-header-add {
+  color: #a9c98c !important;
+  background: transparent !important;
+  border: 1px solid #45533f !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font: 11px "JetBrains Mono", "Courier New", monospace !important;
+}
+.m101-sidebar {
+  grid-area: tree !important;
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 18px 14px 24px 20px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: #141914 !important;
+  border: 0 !important;
+  border-right: 1px solid #303a30 !important;
+}
+.m101-sidebar > .m101-header-brand,
+.m101-sidebar > .m101-brand { display: none !important; }
+.m101-sidebar > .m101-nav-caption {
+  display: block !important;
+  margin: 0 0 12px !important;
+  padding: 0 0 9px !important;
+  color: #788b70 !important;
+  border-bottom: 1px solid #303a30 !important;
+  font: 10px "JetBrains Mono", "Courier New", monospace !important;
+  letter-spacing: .12em !important;
+}
+.m101-side-link {
+  position: relative !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  min-height: 39px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 7px 8px 7px 28px !important;
+  gap: 8px !important;
+  color: #9aa795 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  font: 12px/1.45 "JetBrains Mono", "Courier New", monospace !important;
+  box-shadow: none !important;
+}
+.m101-side-link::before {
+  content: "|--" !important;
+  position: absolute !important;
+  left: 4px !important;
+  top: 8px !important;
+  color: #60745a !important;
+  font: 12px "JetBrains Mono", "Courier New", monospace !important;
+}
+.m101-side-link:last-of-type::before { content: "L--" !important; }
+.m101-side-link .material-symbols-outlined { display: none !important; }
+.m101-side-link:hover {
+  color: #c9e5ad !important;
+  background: #1b241b !important;
+}
+.m101-side-link.is-active {
+  color: #c9e5ad !important;
+  background: #202a20 !important;
+  border: 0 !important;
+  box-shadow: inset 2px 0 #9abf79 !important;
+  font-weight: 700 !important;
+}
+.m101-side-link.is-active::after {
+  content: "<" !important;
+  margin-left: auto !important;
+  color: #9abf79 !important;
+}
+.m101-side-count {
+  color: #a8c68d !important;
+  background: #263326 !important;
+  border-radius: 0 !important;
+}
+.mobile-main-content {
+  grid-area: content !important;
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  padding: 26px 30px 36px !important;
+  color: #c8d2c3 !important;
+  background: #121512 !important;
+  font: 13px/1.6 "JetBrains Mono", "Cascadia Code", "Courier New", monospace !important;
+}
+.mobile-main-content h1, .mobile-main-content h2,
+.mobile-main-content h3, .mobile-main-content h4,
+.mobile-main-content h5, .mobile-main-content h6 {
+  color: #b9d99b !important;
+  font-family: "JetBrains Mono", "Courier New", monospace !important;
+  letter-spacing: 0 !important;
+}
+.mobile-main-content h1 { font-size: 21px !important; }
+.mobile-main-content h2 { font-size: 16px !important; }
+.mobile-main-content h3 { font-size: 14px !important; }
+.mobile-main-content p, .mobile-main-content li,
+.mobile-main-content td, .mobile-main-content th,
+.mobile-main-content label, .mobile-main-content span {
+  font-family: "JetBrains Mono", "Courier New", monospace !important;
+}
+.mobile-main-content p, .mobile-main-content li,
+.mobile-main-content td, .mobile-main-content th { color: #b4c0ae; }
+.mobile-main-content [class*="bg-white"],
+.mobile-main-content [class*="bg-slate-50"],
+.mobile-main-content [class*="bg-gray-50"],
+.mobile-main-content [class*="bg-slate-100"] {
+  background: #171c18 !important;
+}
+.mobile-main-content [class*="border-slate-200"],
+.mobile-main-content [class*="border-gray-200"],
+.mobile-main-content [class*="border-white"] {
+  border-color: #303a30 !important;
+}
+.mobile-main-content [class*="text-slate-900"],
+.mobile-main-content [class*="text-gray-900"],
+.mobile-main-content [class*="text-slate-800"] { color: #c8d2c3 !important; }
+.mobile-main-content [class*="text-slate-500"],
+.mobile-main-content [class*="text-gray-500"],
+.mobile-main-content [class*="text-slate-400"] { color: #84927f !important; }
+.mobile-main-content [class*="rounded-"] { border-radius: 2px !important; }
+.mobile-main-content [class*="shadow-"] { box-shadow: none !important; }
+.mobile-main-content button, .mobile-main-content input,
+.mobile-main-content select, .mobile-main-content textarea {
+  color: #c8d2c3 !important;
+  background: #101410 !important;
+  border: 1px solid #3a4637 !important;
+  border-radius: 0 !important;
+  font: 12px "JetBrains Mono", "Courier New", monospace !important;
+}
+.mobile-main-content button:hover {
+  color: #d1eab5 !important;
+  background: #202a20 !important;
+}
+.mobile-main-content :focus-visible {
+  outline: 1px solid #9abf79 !important;
+  outline-offset: 2px !important;
+}
+.m101-dialog-overlay { background: rgba(0,0,0,.78) !important; backdrop-filter: none !important; }
+.m101-dialog-panel {
+  color: #c8d2c3 !important;
+  background: #171c18 !important;
+  border: 1px solid #465440 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 12px 40px #000 !important;
+  font-family: "JetBrains Mono", "Courier New", monospace !important;
+}
+.m101-dialog-panel > div:first-child { background: #1b241b !important; border-color: #394438 !important; }
+html.dark .mobile-app-shell, html.dark .mobile-main-content { background: #121512 !important; }
+html.dark .m101-sidebar { background: #141914 !important; }
+@media (max-width: 900px) {
+  .mobile-app-shell {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) !important;
+    grid-template-rows: auto auto minmax(0,1fr) !important;
+    grid-template-areas: "header" "tree" "content" !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+  .mobile-app-nav {
+    position: relative !important;
+    grid-area: header !important;
+    grid-row: 1 !important;
+    flex-wrap: wrap !important;
+    min-height: 62px !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+  .m101-sidebar {
+    position: relative !important;
+    grid-area: tree !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #303a30 !important;
+    overflow: visible !important;
+  }
+  .m101-sidebar > .m101-nav-caption { display: none !important; }
+  .m101-side-link {
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 5px 8px 5px 25px !important;
+    font-size: 11px !important;
+  }
+  .mobile-main-content {
+    grid-area: content !important;
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    padding: 18px 12px 28px !important;
+    overflow: visible !important;
+  }
+}
+@media (max-width: 560px) {
+  .mobile-app-nav { align-items: flex-start !important; }
+  .m101-header-brand { flex: 1 1 100% !important; }
+  .m101-global-search { flex: 1 1 100% !important; max-width: none !important; }
+  .mobile-utility-nav { flex: 1 1 100% !important; justify-content: flex-start !important; }
+  .m101-sidebar { gap: 2px 8px !important; }
+  .m101-side-link { font-size: 10px !important; }
+  .mobile-main-content { padding-inline: 10px !important; }
+}
