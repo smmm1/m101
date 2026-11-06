@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DSBadge, DSButton, DSInput, DSSelect } from '../design-system/components';
 
 interface YearManageModalProps {
   isOpen: boolean;
@@ -62,13 +63,13 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
+        className="m101-dialog-overlay fixed inset-0"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-md bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="m101-dialog-panel relative w-full max-w-md overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-6 py-4.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 flex items-center justify-between">
+        <div className="ds-modal-header px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">calendar_month</span>
@@ -83,13 +84,13 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
             </div>
           </div>
 
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            variant="ghost" className="ds-icon-button"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         {/* Content */}
@@ -105,20 +106,20 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                 ข้อมูลกิจการทั้งหมด {(recordsByYear[yearToDelete] || []).length} รายการในรอบปี {yearToDelete} จะถูกลบออกจากระบบ
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setYearToDelete(null)}
-                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+                  variant="secondary"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </DSButton>
+                <DSButton
                   type="button"
                   onClick={() => handleConfirmDelete(yearToDelete)}
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold cursor-pointer shadow-xs"
+                  variant="danger"
                 >
                   ใช่, ลบรอบปีนี้
-                </button>
+                </DSButton>
               </div>
             </div>
           )}
@@ -146,17 +147,17 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                       onSelectYear(yr);
                       onClose();
                     }}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all cursor-pointer ${
+                    className={`ds-year-option p-3.5 rounded-lg border flex items-center justify-between transition-all cursor-pointer ${
                       isCurrent
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20'
-                        : 'bg-white dark:bg-[#161824] border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-800 dark:text-slate-200'
+                        ? 'is-current'
+                         : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold font-mono text-xs ${
+                      <div className={`ds-year-number w-8 h-8 rounded-lg flex items-center justify-center font-bold font-mono text-xs ${
                         isCurrent
-                          ? 'bg-white/20 text-white'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300'
+                          ? 'is-current'
+                           : ''
                       }`}>
                         {yr}
                       </div>
@@ -178,14 +179,14 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                       )}
 
                       {isLoggedIn && availableYears.length > 1 && !isCurrent && onDeleteYear && (
-                        <button
+                        <DSButton
                           type="button"
                           onClick={() => setYearToDelete(yr)}
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer"
+                          variant="ghost" className="ds-icon-button ds-delete-action"
                           title={`ลบรอบปี ${yr}`}
                         >
                           <span className="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
+                        </DSButton>
                       )}
                     </div>
                   </div>
@@ -201,13 +202,13 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                 <span className="text-xs font-bold text-slate-800 dark:text-white">
                   เพิ่มรอบปีบัญชีใหม่
                 </span>
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setIsCreating(false)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+                  variant="ghost" className="ds-inline-cancel"
                 >
                   ยกเลิก
-                </button>
+                </DSButton>
               </div>
 
               {error && (
@@ -220,12 +221,12 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                 <label className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400 block mb-1">
                   รหัสรอบปี (เช่น 70)
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={newYearInput}
                   onChange={(e) => setNewYearInput(e.target.value)}
                   placeholder="กรอกปี เช่น 70"
-                  className="w-full h-10 px-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs font-mono outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
+                  className="ds-field--mono"
                   autoFocus
                 />
               </div>
@@ -234,10 +235,10 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                 <label className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400 block mb-1">
                   คัดลอกข้อมูลจากรอบปีเดิม (ถ้าต้องการ)
                 </label>
-                <select
+                <DSSelect
                   value={copyFromYear}
                   onChange={(e) => setCopyFromYear(e.target.value)}
-                  className="w-full h-10 px-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 cursor-pointer"
+                  
                 >
                   <option value="">-- เริ่มต้นด้วยฐานข้อมูลว่าง --</option>
                   {availableYears.map((yr) => (
@@ -245,34 +246,34 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                       คัดลอกกิจการจากรอบปี {yr} ({(recordsByYear[yr] || []).length} กิจการ)
                     </option>
                   ))}
-                </select>
+                </DSSelect>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setIsCreating(false)}
-                  className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                  variant="secondary"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </DSButton>
+                <DSButton
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
+                  variant="primary"
                 >
                   สร้างรอบปี
-                </button>
+                </DSButton>
               </div>
             </form>
           ) : (
-            <button
+            <DSButton
               type="button"
               onClick={() => setIsCreating(true)}
-              className="mt-1 w-full py-2.5 rounded-2xl border-2 border-dashed border-slate-200 dark:border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-50/20 text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2 cursor-pointer transition-all"
+              variant="secondary" className="ds-year-add"
             >
               <span className="material-symbols-outlined text-[18px] text-emerald-600">add_circle</span>
               <span>เพิ่มรอบปีใหม่ (+ New Fiscal Year)</span>
-            </button>
+            </DSButton>
           ))}
         </div>
       </div>
