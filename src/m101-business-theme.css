@@ -2,18 +2,18 @@
    This stylesheet changes presentation only; auth, D1, import mapping and CRUD logic remain in React. */
 :root {
   color-scheme: light;
-  --m101-bg: #f6f7f8;
-  --m101-surface: #ffffff;
-  --m101-text: #202a35;
-  --m101-muted: #687482;
-  --m101-border: #e2e6eb;
-  --m101-border-strong: #d4dbe2;
-  --m101-primary: #315f8c;
-  --m101-primary-soft: #edf3f9;
-  --m101-success: #25805a;
-  --m101-danger: #b54747;
-  --m101-radius: 8px;
-  --m101-shadow: 0 1px 2px rgba(16,24,40,.035);
+  --m101-bg: var(--ds-color-canvas);
+  --m101-surface: var(--ds-color-surface);
+  --m101-text: var(--ds-color-text);
+  --m101-muted: var(--ds-color-text-secondary);
+  --m101-border: var(--ds-color-border);
+  --m101-border-strong: var(--ds-color-border-strong);
+  --m101-primary: var(--ds-color-primary);
+  --m101-primary-soft: var(--ds-color-primary-soft);
+  --m101-success: var(--ds-color-success);
+  --m101-danger: var(--ds-color-danger);
+  --m101-radius: var(--ds-radius-lg);
+  --m101-shadow: var(--ds-shadow-sm);
 }
 html, body, #root { min-height:100%; background:var(--m101-bg); color:var(--m101-text); }
 html, body, button, input, select, textarea { font-family:'Sarabun','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif; }
