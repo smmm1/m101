@@ -132,3 +132,77 @@ html.dark .m101-dialog-panel input, html.dark .m101-dialog-panel select, html.da
 @media (prefers-reduced-motion: reduce) {
   .mobile-main-content *, .m101-sidebar * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Reference layout pass: top header + a separate five-section tab row. */
+@media (min-width: 901px) {
+  .mobile-app-shell {
+    display: grid !important;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(520px, 1.8fr) !important;
+    grid-template-rows: 76px 58px minmax(0, 1fr) !important;
+    grid-template-areas: "brand tools" "tabs tabs" "content content" !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .m101-sidebar { display: contents !important; }
+  .m101-brand {
+    grid-area: brand !important;
+    display: flex !important;
+    align-self: stretch !important;
+    padding: 0 24px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--m101-line) !important;
+    background: #fff !important;
+  }
+  .m101-side-link {
+    grid-row: 2 !important;
+    align-self: stretch !important;
+    justify-self: start !important;
+    min-height: 58px !important;
+    border-radius: 0 !important;
+    border-bottom: 2px solid transparent !important;
+    background: transparent !important;
+    padding-inline: 20px !important;
+  }
+  .m101-side-link.is-active {
+    border: 0 !important;
+    border-bottom: 2px solid #0f172a !important;
+    border-radius: 0 !important;
+    background: #f8fafc !important;
+  }
+  .m101-side-link:nth-of-type(1) { grid-column: 1 !important; }
+  .m101-side-link:nth-of-type(2) { grid-column: 2 !important; }
+  .m101-side-link:nth-of-type(3) { grid-column: 3 !important; }
+  .m101-side-link:nth-of-type(4) { grid-column: 4 !important; }
+  .m101-side-link:nth-of-type(5) { grid-column: 5 !important; }
+  .mobile-app-nav {
+    grid-area: tools !important;
+    min-width: 0 !important;
+    min-height: 76px !important;
+    height: 76px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--m101-line) !important;
+    padding: 0 22px !important;
+    background: #fff !important;
+  }
+  .mobile-main-content {
+    grid-area: content !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    min-height: 0 !important;
+    padding: 26px 28px 34px !important;
+  }
+  .m101-header-add { white-space: nowrap; }
+}
+@media (max-width: 900px) {
+  .mobile-app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+  .m101-sidebar { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; }
+  .m101-header-add { min-height: 36px; }
+}
