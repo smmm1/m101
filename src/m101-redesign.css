@@ -1137,17 +1137,17 @@ html.dark body{background:#f7f8fa!important;color:#182230!important}
 
 /* M101 UI consistency pass — directory, tasks, import, settings and every dialog */
 :root{
-  --m101-canvas:#f7f8fa;
-  --m101-surface:#ffffff;
-  --m101-ink:#182230;
-  --m101-muted:#667085;
-  --m101-line:#e5e9ef;
-  --m101-accent:#256b5d;
-  --m101-accent-hover:#1d594d;
-  --m101-accent-soft:#edf5f2;
-  --m101-danger:#b42318;
+  --m101-canvas:var(--ds-color-canvas);
+  --m101-surface:var(--ds-color-surface);
+  --m101-ink:var(--ds-color-text);
+  --m101-muted:var(--ds-color-text-secondary);
+  --m101-line:var(--ds-color-border);
+  --m101-accent:var(--ds-color-primary);
+  --m101-accent-hover:var(--ds-color-primary-hover);
+  --m101-accent-soft:var(--ds-color-primary-soft);
+  --m101-danger:var(--ds-color-danger);
 }
-body,button,input,select,textarea{font-family:'Sarabun','Plus Jakarta Sans',sans-serif}
+body,button,input,select,textarea{font-family:var(--ds-font-sans)}
 button{cursor:pointer}
 button:disabled{cursor:not-allowed}
 input,select,textarea{accent-color:var(--m101-accent)}
@@ -1277,13 +1277,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .m101-task-modal-backdrop{background:rgba(16,24,40,.38)!important;backdrop-filter:none!important}
 .m101-task-form{background:#fff!important;border:1px solid #e5e9ef!important;border-radius:10px!important;box-shadow:0 20px 56px rgba(16,24,40,.16)!important}
 .m101-task-form>label,.m101-task-form-grid>label{color:#475467!important;font-size:12px!important;font-weight:600!important}
-.m101-task-form input,.m101-task-form select,.m101-task-form textarea{color:#182230!important;background:#fff!important}
-.m101-task-form-actions button{min-height:36px!important}
-.m101-task-form-actions button:first-child{border:1px solid #e5e9ef!important;background:#fff!important;color:#475467!important}
-.m101-task-form-actions button:last-child{background:#256b5d!important;color:#fff!important}
-.m101-task-context-menu{border:1px solid #e5e9ef!important;border-radius:9px!important;background:#fff!important;box-shadow:0 8px 24px rgba(16,24,40,.1)!important}
-.m101-task-context-menu button{color:#344054!important}
-.m101-task-context-menu button:hover{background:#f8fafc!important}
+.m101-task-form .ds-field,.m101-task-form .ds-select,.m101-task-form .ds-textarea{color:var(--ds-color-text)!important;background:var(--ds-color-surface)!important;border-color:var(--ds-color-border-strong)!important}
+.m101-task-form .ds-field:focus,.m101-task-form .ds-select:focus,.m101-task-form .ds-textarea:focus{border-color:var(--ds-color-primary)!important;box-shadow:var(--ds-focus-ring)!important}
+.m101-task-form-actions .ds-button{min-height:36px!important}
+.m101-task-form-actions .ds-button--secondary{border:1px solid var(--ds-color-border-strong)!important;background:var(--ds-color-surface)!important;color:var(--ds-color-text-secondary)!important}
+.m101-task-form-actions button.ds-button.ds-button--primary{background:var(--ds-color-primary)!important;color:#fff!important}
+.m101-task-context-menu{border:1px solid var(--ds-color-border)!important;border-radius:var(--ds-radius-lg)!important;background:var(--ds-color-surface)!important;box-shadow:var(--ds-shadow-dialog)!important}
+.m101-task-context-menu .ds-button{justify-content:flex-start;width:100%;border-radius:var(--ds-radius-md)!important;color:var(--ds-color-text-secondary)!important}
+.m101-task-context-menu .ds-button:hover{background:var(--ds-color-surface-subtle)!important;color:var(--ds-color-text)!important}
 .m101-task-metric-grid article>strong,.m101-task-row-title>strong{color:#182230!important}
 .m101-task-status{padding:3px 7px!important;border:1px solid #e5e9ef!important;background:#f8fafc!important;color:#475467!important}
 .m101-task-overdue-segment{background:#b54708!important}
