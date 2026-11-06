@@ -130,3 +130,22 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-delete-row.is-unselected:hover { border-color:var(--ds-color-border); background:var(--ds-color-surface-subtle); }
 .ds-delete-business { color:var(--ds-color-text); font-size:13px; font-weight:600; }
 @media(max-width:640px) { .ds-delete-modal { padding:16px; max-height:90vh; } }
+
+
+/* Business create/edit forms use the same modal, field and section primitives. */
+.ds-modal-backdrop { background:rgba(15,23,42,.48); backdrop-filter:blur(2px); }
+.ds-form-modal { border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-xl); background:var(--ds-color-surface); color:var(--ds-color-text); box-shadow:var(--ds-shadow-dialog); }
+.ds-form-modal--compact { max-height:min(88vh,760px); }
+.ds-form-modal__header { background:var(--ds-color-surface); }
+.ds-form-modal__body { background:var(--ds-color-surface); }
+.ds-form-section { border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-lg); background:var(--ds-color-surface-subtle); }
+.ds-form-section__title { margin:0; color:var(--ds-color-text); font-size:14px; line-height:1.4; font-weight:650; }
+.ds-form-status-row { border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-lg); background:var(--ds-color-surface-subtle); }
+.ds-form-error { border:1px solid #FECACA; border-radius:var(--ds-radius-md); background:var(--ds-color-danger-soft); color:#B91C1C; font-size:13px; line-height:1.5; }
+.ds-label--mono { font-family:var(--ds-font-mono); }
+.ds-icon-button.ds-button { min-height:32px; width:32px; height:32px; padding:0; }
+.ds-form-modal .ds-field--mono { font-family:var(--ds-font-mono); font-variant-numeric:tabular-nums; }
+@media(max-width:640px) {
+  .ds-form-modal { max-height:92vh; border-radius:var(--ds-radius-lg); }
+  .ds-form-modal__body { padding:16px!important; }
+}
