@@ -32,9 +32,9 @@ button, a, [role="button"] { cursor: pointer !important; }
   overflow-x: auto; z-index: 40;
 }
 .m101-brand { flex: 0 0 auto; gap: 10px; padding: 0 24px 0 0; margin-right: 8px; border-right: 1px solid var(--m101-line); }
-.m101-brand-mark { width: 36px; height: 36px; border-radius: 9px; background: #0f172a; }
+.m101-brand-mark { width: 40px; height: 40px; border-radius: 9px; background: #0f172a; font-size: 11px; letter-spacing: -.04em; }
 .m101-brand-copy strong { color: #0f172a; font-size: 15px; letter-spacing: -.02em; }
-.m101-brand-copy span, .m101-nav-caption, .m101-sidebar-spacer, .m101-sidebar-foot { display: none !important; }
+.m101-brand-copy span { display: block !important; color: #94a3b8; font-size: 8px; font-weight: 700; letter-spacing: .12em; }\n.m101-nav-caption, .m101-sidebar-spacer, .m101-sidebar-foot { display: none !important; }
 .m101-side-link {
   flex: 0 0 auto; width: auto; min-height: 38px; margin: 0; padding: 0 12px;
   gap: 8px; border: 1px solid transparent; border-radius: 8px;
