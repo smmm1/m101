@@ -309,53 +309,93 @@ button { -webkit-tap-highlight-color:transparent; }
 }
 
 
-/* Center the complete utility bar as a balanced three-part layout.
-   The search stays on the visual centerline; context and actions balance either side. */
+/* Header layout: page identity on the left, search as the visual anchor,
+   and account utilities grouped at the right edge. */
 .mobile-app-nav {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 460px) minmax(0, 1fr) !important;
+  grid-template-columns: minmax(180px, 230px) minmax(240px, 1fr) max-content !important;
   align-items: center !important;
-  justify-content: stretch !important;
-  column-gap: clamp(12px, 2vw, 28px) !important;
+  justify-content: space-between !important;
+  column-gap: clamp(18px, 2.2vw, 34px) !important;
+  row-gap: 10px !important;
+  min-width: 0;
+  padding-inline: clamp(18px, 2.4vw, 36px) !important;
 }
 
 .m101-page-context {
-  justify-self: end;
+  justify-self: start;
+  align-items: flex-start;
   min-width: 0;
-  max-width: 100%;
-  text-align: right;
+  max-width: 230px;
+  text-align: left;
+  gap: 3px;
+}
+
+.m101-page-context strong {
+  font-size: 15px;
+  line-height: 1.3;
+  letter-spacing: -.015em;
+}
+
+.m101-page-context span {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ds-color-text-muted);
 }
 
 .m101-global-search {
   justify-self: center;
   width: 100% !important;
-  max-width: 460px;
+  max-width: 520px;
   min-width: 0;
+  height: 38px;
+  border-radius: 7px !important;
+  background: #f8f9fa !important;
 }
 
 .mobile-utility-nav {
-  justify-self: start;
+  justify-self: end;
   min-width: 0;
   flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 7px !important;
 }
 
-@media (max-width: 1000px) and (min-width: 761px) {
+.mobile-utility-nav button {
+  white-space: nowrap;
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
   .mobile-app-nav {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 38vw) minmax(0, 1fr) !important;
-    column-gap: 12px !important;
+    grid-template-columns: minmax(130px, 165px) minmax(180px, 1fr) max-content !important;
+    column-gap: 14px !important;
     padding-inline: 14px !important;
   }
 
   .m101-page-context {
-    min-width: 0;
+    max-width: 165px;
   }
 
   .m101-page-context strong {
     font-size: 13px;
   }
 
+  .m101-page-context span {
+    display: none;
+  }
+
+  .m101-global-search {
+    max-width: 420px;
+    height: 36px;
+  }
+
   .mobile-utility-nav {
     gap: 5px !important;
+  }
+
+  .mobile-utility-nav button {
+    padding-inline: 8px !important;
+    font-size: 10px !important;
   }
 }
 
@@ -374,8 +414,8 @@ button { -webkit-tap-highlight-color:transparent; }
     grid-column: 1;
     grid-row: 1;
     justify-self: start;
+    max-width: 100%;
     text-align: left;
-    min-width: 0;
   }
 
   .mobile-utility-nav {
@@ -383,16 +423,16 @@ button { -webkit-tap-highlight-color:transparent; }
     grid-row: 1;
     justify-self: end;
     justify-content: flex-end;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     max-width: 100%;
   }
 
   .m101-global-search {
     grid-column: 1 / -1;
     grid-row: 2;
-    justify-self: center;
-    width: min(100%, 680px) !important;
-    max-width: 680px;
+    justify-self: stretch;
+    width: 100% !important;
+    max-width: none;
   }
 }
 
@@ -412,69 +452,5 @@ button { -webkit-tap-highlight-color:transparent; }
 
   .m101-global-search kbd {
     display: none;
-  }
-}
-
-
-/* Final header composition: keep the title, search and utilities together
-   as one centered group instead of pushing the side groups toward the search. */
-@media (min-width: 761px) {
-  .mobile-app-nav {
-    display: flex !important;
-    flex-flow: row nowrap !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: clamp(16px, 2vw, 30px) !important;
-    padding-inline: clamp(16px, 2.4vw, 36px) !important;
-  }
-
-  .m101-page-context {
-    flex: 0 1 220px;
-    min-width: 0;
-    max-width: 220px;
-    justify-self: auto;
-    text-align: center;
-    align-items: center;
-  }
-
-  .m101-global-search {
-    flex: 0 1 460px;
-    width: min(100%, 460px) !important;
-    min-width: 240px;
-    justify-self: auto;
-    margin-inline: 0;
-  }
-
-  .mobile-utility-nav {
-    flex: 0 1 auto;
-    justify-self: auto;
-    justify-content: center;
-    flex-wrap: nowrap;
-    margin: 0;
-  }
-}
-
-@media (min-width: 761px) and (max-width: 1100px) {
-  .mobile-app-nav {
-    gap: 12px !important;
-    padding-inline: 12px !important;
-  }
-
-  .m101-page-context {
-    flex-basis: 150px;
-    max-width: 150px;
-  }
-
-  .m101-page-context span {
-    display: none;
-  }
-
-  .m101-global-search {
-    flex-basis: 300px;
-    min-width: 190px;
-  }
-
-  .mobile-utility-nav {
-    gap: 5px !important;
   }
 }
