@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { DSBadge, DSButton, DSInput, DSSelect, DSTextarea } from '../design-system/components';
 import { BusinessRecord } from '../types';
 
 type TaskStatus = 'pending' | 'in_progress' | 'completed';
@@ -201,7 +202,7 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
             <div className="m101-category-bar"><span className="m101-category-done" style={{ width: `${group.total ? group.done / group.total * 100 : 0}%` }} /><span className="m101-category-notdone" style={{ width: `${group.total ? (group.total - group.done) / group.total * 100 : 0}%` }} /></div>
           </div>)}
         </div> : <p className="m101-empty-hint">ยังไม่มีงานประจำปี เพิ่มประเภทงานเพื่อเริ่มติดตามความคืบหน้า</p>}
-        <button type="button" className="m101-button-secondary m101-task-open-button" onClick={onOpenTasks}>จัดการงานประจำปี <span aria-hidden="true">→</span></button>
+        <DSButton type="button" variant="secondary" className="m101-task-open-button" onClick={onOpenTasks}>จัดการงานประจำปี <span aria-hidden="true">→</span></DSButton>
         {loadError && <p className="m101-empty-hint">{loadError}</p>}
       </section>
     );
@@ -211,7 +212,7 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
     <section className={`m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-5 ${celebrate ? 'm101-success-burst' : ''}`}>
       <header className="m101-overview-header">
         <div><p className="m101-eyebrow">ANNUAL TASK MANAGEMENT</p><h1>งานประจำปี</h1><p>ติดตามงานภาษี บัญชี และงานตามรอบปี แยกตามกิจการ · ปี {selectedYear}</p></div>
-        <div className="m101-overview-actions"><button type="button" onClick={openCreate} disabled={!records.length} className="m101-button-primary">＋ เพิ่มงาน</button></div>
+        <div className="m101-overview-actions"><DSButton type="button" variant="primary" onClick={openCreate} disabled={!records.length}>＋ เพิ่มงาน</DSButton></div>
       </header>
       <div className="m101-task-metric-grid">
         <article><span>งานทั้งหมด</span><strong>{counts.total}</strong></article>
@@ -222,19 +223,19 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
       <section className="m101-overview-panel m101-task-list-panel">
         <div className="m101-panel-heading"><div><p className="m101-eyebrow">TASK REGISTER</p><h2>รายการงานทั้งหมด</h2><p className="m101-panel-subtitle">สถานะเกินกำหนดคำนวณจากวันที่ปัจจุบันและกำหนดส่งที่บันทึกไว้</p></div><span className="m101-panel-total">{visibleTasks.length} รายการ</span></div>
         <div className="m101-task-toolbar">
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาชื่อกิจการหรือประเภทงาน…" aria-label="ค้นหางาน" />
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="กรองสถานะ">
+          <DSInput type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาชื่อกิจการหรือประเภทงาน…" aria-label="ค้นหางาน" />
+          <DSSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="กรองสถานะ">
             <option value="all">ทุกสถานะ</option><option value="completed">เสร็จแล้ว</option><option value="in_progress">กำลังดำเนินการ</option><option value="pending">รอดำเนินการ</option><option value="overdue">เกินกำหนด</option>
-          </select>
+          </DSSelect>
         </div>
-        {loading ? <div className="m101-task-empty">กำลังโหลดรายการงาน…</div> : loadError ? <div className="m101-task-empty is-error">{loadError}<button type="button" onClick={() => void loadTasks()}>ลองอีกครั้ง</button></div> : visibleTasks.length ? (
+        {loading ? <div className="m101-task-empty">กำลังโหลดรายการงาน…</div> : loadError ? <div className="m101-task-empty is-error">{loadError}<DSButton type="button" variant="secondary" onClick={() => void loadTasks()}>ลองอีกครั้ง</DSButton></div> : visibleTasks.length ? (
           <div className="m101-task-table">
             {visibleTasks.map((task) => <article className="m101-task-row" key={task.id}
               onContextMenu={(event) => { event.preventDefault(); setContextTask({ task, x: Math.min(event.clientX, window.innerWidth - 180), y: Math.min(event.clientY, window.innerHeight - 110) }); }}
               onPointerMove={(event) => { const rect = event.currentTarget.getBoundingClientRect(); event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`); event.currentTarget.style.setProperty('--spot-y', `${event.clientY - rect.top}px`); }}>
-              <div className="m101-task-row-main"><div className="m101-task-row-title"><strong>{task.taskName}</strong><span className="m101-task-status" style={{ color: statusColor(task), backgroundColor: `${statusColor(task)}18` }}>{statusLabel(task)}</span></div><span>{task.businessName}</span>{task.note && <small>{task.note}</small>}</div>
+              <div className="m101-task-row-main"><div className="m101-task-row-title"><strong>{task.taskName}</strong><DSBadge variant={isOverdue(task) ? 'danger' : task.status === 'completed' ? 'success' : task.status === 'in_progress' ? 'info' : 'neutral'}>{statusLabel(task)}</DSBadge></div><span>{task.businessName}</span>{task.note && <small>{task.note}</small>}</div>
               <div className="m101-task-row-due"><span>กำหนดส่ง</span><strong className={isOverdue(task) ? 'is-overdue' : ''}>{task.dueDate ? new Date(`${task.dueDate}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ยังไม่กำหนด'}</strong></div>
-              <div className="m101-task-row-actions"><button type="button" onClick={() => openEdit(task)}>แก้ไข</button><button type="button" className="is-delete" onClick={() => void deleteTask(task)}>ลบ</button></div>
+              <div className="m101-task-row-actions"><DSButton type="button" variant="ghost" onClick={() => openEdit(task)}>แก้ไข</DSButton><DSButton type="button" variant="danger" className="is-delete" onClick={() => void deleteTask(task)}>ลบ</DSButton></div>
             </article>)}
           </div>
         ) : <div className="m101-task-empty">{tasks.length ? 'ไม่พบงานที่ตรงกับตัวกรอง' : 'ยังไม่มีงานในรอบปีนี้ เพิ่มงานแรกเพื่อเริ่มติดตามสถานะ'}</div>}
@@ -248,14 +249,14 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
       </>}
       {showForm && <div className="m101-task-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resetForm(); }}>
         <form className="m101-task-form" onSubmit={saveTask}>
-          <div className="m101-task-form-header"><div><p className="m101-eyebrow">{editing ? 'EDIT ANNUAL TASK' : 'NEW ANNUAL TASK'}</p><h2>{editing ? 'แก้ไขงานประจำปี' : 'เพิ่มงานประจำปี'}</h2></div><button type="button" onClick={resetForm} aria-label="ปิด">×</button></div>
-          <label>กิจการ<select value={businessId} onChange={(event) => setBusinessId(event.target.value)} required disabled={Boolean(editing)}><option value="">เลือกกิจการ</option>{records.map((record) => <option key={record.id} value={record.id}>{record.companyName}</option>)}</select></label>
-          <label>ประเภทงาน<select value={typeCode} onChange={(event) => setTypeCode(event.target.value)}>{TASK_TYPES.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}<option value="CUSTOM">ประเภทงานอื่น ๆ (กำหนดเอง)</option></select></label>
-          {typeCode === 'CUSTOM' && <label>ชื่อประเภทงาน<input value={customName} onChange={(event) => setCustomName(event.target.value)} maxLength={120} placeholder="ระบุชื่องาน" required /></label>}
-          <div className="m101-task-form-grid"><label>สถานะ<select value={status} onChange={(event) => setStatus(event.target.value as TaskStatus)}><option value="pending">รอดำเนินการ</option><option value="in_progress">กำลังดำเนินการ</option><option value="completed">เสร็จแล้ว</option></select></label><label>กำหนดส่ง<input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label></div>
-          <label>หมายเหตุ<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} maxLength={2000} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" /></label>
+          <div className="m101-task-form-header"><div><p className="m101-eyebrow">{editing ? 'EDIT ANNUAL TASK' : 'NEW ANNUAL TASK'}</p><h2>{editing ? 'แก้ไขงานประจำปี' : 'เพิ่มงานประจำปี'}</h2></div><DSButton type="button" variant="ghost" onClick={resetForm} aria-label="ปิด">×</DSButton></div>
+          <label>กิจการ<DSSelect value={businessId} onChange={(event) => setBusinessId(event.target.value)} required disabled={Boolean(editing)}><option value="">เลือกกิจการ</option>{records.map((record) => <option key={record.id} value={record.id}>{record.companyName}</option>)}</DSSelect></label>
+          <label>ประเภทงาน<DSSelect value={typeCode} onChange={(event) => setTypeCode(event.target.value)}>{TASK_TYPES.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}<option value="CUSTOM">ประเภทงานอื่น ๆ (กำหนดเอง)</option></DSSelect></label>
+          {typeCode === 'CUSTOM' && <label>ชื่อประเภทงาน<DSInput value={customName} onChange={(event) => setCustomName(event.target.value)} maxLength={120} placeholder="ระบุชื่องาน" required /></label>}
+          <div className="m101-task-form-grid"><label>สถานะ<DSSelect value={status} onChange={(event) => setStatus(event.target.value as TaskStatus)}><option value="pending">รอดำเนินการ</option><option value="in_progress">กำลังดำเนินการ</option><option value="completed">เสร็จแล้ว</option></DSSelect></label><label>กำหนดส่ง<DSInput type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label></div>
+          <label>หมายเหตุ<DSTextarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} maxLength={2000} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" /></label>
           <p className="m101-task-form-note">กำหนดส่งเป็นวันที่ที่ผู้ใช้ระบุเอง ระบบจะไม่ตั้งวันครบกำหนดทางกฎหมายให้อัตโนมัติ</p>
-          <div className="m101-task-form-actions"><button type="button" onClick={resetForm}>ยกเลิก</button><button type="submit" disabled={saving}>{saving ? 'กำลังบันทึก…' : 'บันทึกงาน'}</button></div>
+          <div className="m101-task-form-actions"><DSButton type="button" variant="secondary" onClick={resetForm}>ยกเลิก</DSButton><DSButton type="submit" variant="primary" loading={saving}>{saving ? 'กำลังบันทึก…' : 'บันทึกงาน'}</DSButton></div>
         </form>
       </div>}
     </section>
