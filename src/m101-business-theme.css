@@ -322,3 +322,109 @@ html.dark .m101-dialog-panel input, html.dark .m101-dialog-panel select, html.da
   .m101-sidebar { order: 2 !important; }
   .mobile-main-content { order: 3 !important; }
 }
+
+
+/* Compact, continuous navigation strip and shared typography scale. */
+@media (min-width: 901px) {
+  .mobile-app-shell {
+    grid-template-rows: 68px 46px minmax(0, 1fr) !important;
+  }
+  .mobile-app-nav {
+    min-height: 68px !important;
+    height: 68px !important;
+    gap: 18px !important;
+    padding-inline: 22px !important;
+  }
+  .m101-side-link {
+    min-height: 46px !important;
+    height: 46px !important;
+    align-self: stretch !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 0 12px !important;
+    border-bottom-width: 2px !important;
+    border-right: 1px solid #edf0f3 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+  }
+  .m101-side-link:first-of-type { border-left: 1px solid #edf0f3 !important; }
+  .m101-side-link .material-symbols-outlined { font-size: 17px !important; }
+  .m101-side-link.is-active {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom-color: #334155 !important;
+  }
+  .m101-side-link:hover:not(.is-active) { background: #f8fafc !important; }
+  .mobile-main-content { grid-row: 3 !important; }
+}
+@media (max-width: 900px) {
+  .mobile-app-nav { min-height: 62px !important; padding-block: 8px !important; }
+  .m101-sidebar { min-height: 44px !important; }
+  .m101-side-link {
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 11px !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+  .m101-side-link .material-symbols-outlined { font-size: 16px !important; }
+}
+
+/* Normalize content typography so every section follows the same hierarchy. */
+.mobile-main-content {
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  color: #1e293b;
+}
+.mobile-main-content h1 {
+  font-size: 24px !important;
+  line-height: 1.3 !important;
+  font-weight: 750 !important;
+  letter-spacing: -.025em !important;
+}
+.mobile-main-content h2 {
+  font-size: 18px !important;
+  line-height: 1.4 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.015em !important;
+}
+.mobile-main-content h3 {
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+  font-weight: 650 !important;
+}
+.mobile-main-content h4,
+.mobile-main-content h5,
+.mobile-main-content h6 {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  font-weight: 650 !important;
+}
+.mobile-main-content p,
+.mobile-main-content li,
+.mobile-main-content td,
+.mobile-main-content th {
+  font-size: 13px;
+  line-height: 1.55;
+}
+.mobile-main-content label,
+.mobile-main-content .text-xs,
+.mobile-main-content [class*="text-[10px]"],
+.mobile-main-content [class*="text-[11px]"] {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+.mobile-main-content input,
+.mobile-main-content select,
+.mobile-main-content textarea,
+.mobile-main-content button {
+  font-size: 13px;
+}
+.mobile-main-content .text-2xl { font-size: 24px !important; line-height: 1.3 !important; }
+.mobile-main-content .text-xl { font-size: 20px !important; line-height: 1.35 !important; }
+.mobile-main-content .text-lg { font-size: 16px !important; line-height: 1.4 !important; }
+.mobile-main-content .text-sm { font-size: 13px !important; line-height: 1.5 !important; }
+html.dark .mobile-main-content { color: #e2e8f0; }
+html.dark .m101-side-link { border-color: #273449 !important; }
+html.dark .m101-side-link.is-active { background: #1e293b !important; color: #f8fafc !important; }
