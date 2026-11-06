@@ -71,24 +71,24 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
   };
 
   return (
-    <div className="m101-dialog-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+    <div className="m101-dialog-overlay ds-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
+        className="ds-modal-backdrop fixed inset-0"
         onClick={onClose}
       />
-      <div className="relative m101-dialog-panel m101-form-dialog w-full max-w-lg bg-white dark:bg-[#12141c] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative m101-dialog-panel ds-form-modal ds-form-modal--compact w-full max-w-lg overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/40 flex items-start justify-between gap-3">
+        <div className="m101-dialog-header ds-modal-header ds-form-modal__header px-6 py-5 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-md">
+            <div className="ds-modal-icon">
               <span className="material-symbols-outlined text-[20px]">add_business</span>
             </div>
             <div>
-              <h3 className="text-base font-bold font-headline text-slate-900 dark:text-white">
+              <h3 className="ds-modal-title">
                 เพิ่มกิจการใหม่ (ลำดับ: #{sequenceNo})
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="ds-modal-description">
                 กรอกข้อมูลนิติบุคคลเพื่อบันทึกลงในทะเบียน
               </p>
             </div>
@@ -96,15 +96,15 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           <DSButton
             type="button"
             onClick={onClose}
-            variant="ghost" className="w-8 h-8 rounded-xl flex items-center justify-center"
+            variant="ghost" className="ds-icon-button flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </DSButton>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[72vh] overflow-y-auto no-scrollbar">
+        <form onSubmit={handleSubmit} className="ds-form-modal__body p-6 space-y-4 max-h-[72vh] overflow-y-auto no-scrollbar">
           {formError && (
-            <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="ds-form-error p-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
               <span>{formError}</span>
             </div>
@@ -112,7 +112,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
 
           {/* Status Options */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label className="ds-label">
               สถานะการดำเนินงาน
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -137,16 +137,16 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           {/* Tax ID & Seq */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">ลำดับ</label>
+              <label className="ds-label">ลำดับ</label>
               <DSInput
                 type="text"
                 value={sequenceNo}
                 onChange={(e) => setSequenceNo(e.target.value)}
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white font-bold transition-all"
+                className="mt-1 ds-field ds-field--mono"
               />
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label className="ds-label">
                 เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-rose-500">*</span>
               </label>
               <DSInput
@@ -154,14 +154,14 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
                 value={taxId}
                 onChange={(e) => setTaxId(e.target.value)}
                 placeholder="0-1055-00000-00-0"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white font-bold transition-all"
+                className="mt-1 ds-field ds-field--mono"
               />
             </div>
           </div>
 
           {/* Company Name */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label className="ds-label">
               ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
             </label>
             <DSInput
@@ -169,7 +169,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="เช่น บริษัท สยาม พร็อพเพอร์ตี้ จำกัด"
-              className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+              className="mt-1 ds-field"
             />
           </div>
 
@@ -177,7 +177,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="ds-label">
                   รหัสผ่าน / e-Filing <span className="text-rose-500">*</span>
                 </label>
                 <DSButton
@@ -192,18 +192,18 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
                 type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field ds-field--mono"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันที่ผู้สอบ</label>
+              <label className="ds-label">วันที่ผู้สอบ</label>
               <DSInput
                 type="text"
                 value={auditorDate}
                 onChange={(e) => setAuditorDate(e.target.value)}
                 placeholder="เช่น 15 มี.ค. 69"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field"
               />
             </div>
           </div>
@@ -211,23 +211,23 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           {/* eFiling & SSO */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">รหัสยื่น e-Filing</label>
+              <label className="ds-label">รหัสยื่น e-Filing</label>
               <DSInput
                 type="text"
                 value={eFilingCode}
                 onChange={(e) => setEFilingCode(e.target.value)}
                 placeholder="DBD-EF-xxxx"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field ds-field--mono"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">รหัสประกันสังคม</label>
+              <label className="ds-label">รหัสประกันสังคม</label>
               <DSInput
                 type="text"
                 value={ssoCode}
                 onChange={(e) => setSsoCode(e.target.value)}
                 placeholder="1055xxxx"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-mono focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field ds-field--mono"
               />
             </div>
           </div>
@@ -235,29 +235,29 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           {/* Remark & Topic */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">หมายเหตุ</label>
+              <label className="ds-label">หมายเหตุ</label>
               <DSInput
                 type="text"
                 value={remark}
                 onChange={(e) => setRemark(e.target.value)}
                 placeholder="รายละเอียดเพิ่มเติม"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">หัวข้อ / กลุ่ม</label>
+              <label className="ds-label">หัวข้อ / กลุ่ม</label>
               <DSInput
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="เช่น บันทึกข้อมูลเอง"
-                className="w-full h-11 px-3.5 mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs focus:bg-white dark:focus:bg-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none text-slate-900 dark:text-white transition-all"
+                className="mt-1 ds-field"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
+          <div className="ds-modal-footer flex items-center justify-end gap-3 pt-4">
             <DSButton
               type="button"
               onClick={onClose}
