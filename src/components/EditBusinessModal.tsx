@@ -52,8 +52,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
   const handleCompanyNameChange = (val: string) => {
     setCompanyName(val);
-    const inferzinc = inferBusinessType(val);
-    setType(inferzinc);
+    const inferred = inferBusinessType(val);
+    setType(inferred);
   };
 
   const getStatusBadge = (s: BusinessStatus) => {
@@ -259,7 +259,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             </div>
           </div>
 
-          {/* 3. Czincentials & Filing Codes (e-Filing, Password, SSO) */}
+          {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">key</span>
