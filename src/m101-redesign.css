@@ -1474,3 +1474,190 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .m101-import-pagination>div{display:flex;gap:7px}
 .m101-import-pagination button{min-height:34px!important;padding:6px 11px!important;font-size:11px!important}
 @media(max-width:700px){.m101-import-pagination{align-items:stretch;flex-direction:column}.m101-import-pagination>div button{flex:1}}
+
+
+/* M101 unified page rhythm — align directory and secondary screens with Overview */
+.m101-directory-shell {
+  --page-ink: var(--ds-color-text);
+  --page-muted: var(--ds-color-text-secondary);
+  --page-line: var(--ds-color-border);
+  --page-radius: 16px;
+  gap: 16px !important;
+  max-width: 1500px !important;
+}
+.m101-directory-shell .m101-directory-list-panel,
+.m101-directory-shell > div > .bg-white,
+.m101-directory-shell .m101-directory-detail-panel {
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 16px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: 0 5px 20px rgba(24,24,27,.035) !important;
+}
+.m101-directory-shell .m101-directory-toolbar {
+  padding: 20px 22px !important;
+  border-color: var(--ds-color-border) !important;
+  background: var(--ds-color-surface) !important;
+  gap: 14px !important;
+}
+.m101-directory-shell .m101-directory-toolbar h2 {
+  margin: 0 0 4px !important;
+  color: var(--ds-color-text) !important;
+  font-size: clamp(23px,2.4vw,28px) !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+}
+.m101-directory-shell .m101-directory-toolbar p {
+  margin: 0 !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+.m101-directory-shell .m101-directory-toolbar > div:last-child > div {
+  min-height: 38px;
+  border-color: var(--ds-color-border) !important;
+  border-radius: 10px !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-directory-shell .m101-directory-toolbar > div:last-child > div > span:first-child {
+  font-size: 20px !important;
+}
+.m101-directory-shell .ds-button {
+  min-height: 38px !important;
+  height: 38px;
+  padding: 0 13px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+}
+.m101-directory-shell .ds-button .material-symbols-outlined {
+  font-size: 17px !important;
+}
+.m101-directory-shell > .m101-directory-list-panel > .px-5.py-4,
+.m101-directory-shell .m101-directory-list-panel > div:nth-child(2) {
+  padding: 16px 20px !important;
+  gap: 12px !important;
+  border-color: var(--ds-color-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-directory-shell .ds-directory-search {
+  height: 40px !important;
+  min-height: 40px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+}
+.m101-directory-shell .ds-table {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+.m101-directory-shell .ds-table thead th {
+  height: 42px;
+  padding: 11px 14px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .015em !important;
+  border-color: var(--ds-color-border) !important;
+}
+.m101-directory-shell .ds-table tbody td {
+  padding: 13px 14px !important;
+  font-size: 13px !important;
+  border-color: var(--ds-color-border) !important;
+}
+.m101-directory-shell .ds-table tbody tr {
+  min-height: 60px;
+}
+.m101-directory-shell .ds-table tbody td .text-sm {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+.m101-directory-shell .ds-table tbody td .text-xs {
+  font-size: 11px !important;
+}
+.m101-directory-shell .ds-table-action {
+  min-height: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+.m101-directory-shell .ds-badge {
+  min-height: 23px;
+  padding: 3px 9px;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+.m101-directory-shell .m101-record-list {
+  background: var(--ds-color-surface) !important;
+}
+.m101-directory-shell .m101-directory-toolbar,
+.m101-directory-shell .m101-directory-list-panel > div {
+  color: var(--ds-color-text);
+}
+.m101-directory-shell .m101-directory-detail-panel {
+  padding: 20px !important;
+}
+
+/* Shared sizing for full-page task, import and settings views */
+.m101-tab-transition .ds-page-header {
+  align-items: flex-end;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.m101-tab-transition .ds-page-header__copy h1,
+.m101-tab-transition .m101-import-header h1 {
+  color: var(--ds-color-text);
+  font-size: clamp(25px,3vw,34px);
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  font-weight: 800;
+}
+.m101-tab-transition .ds-page-header__copy > p:not(.ds-page-header__eyebrow),
+.m101-tab-transition .m101-import-header > div > p:not(.m101-eyebrow) {
+  margin-top: 7px;
+  color: var(--ds-color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.m101-tab-transition .ds-page-header__actions {
+  gap: 9px;
+}
+.m101-tab-transition .ds-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.m101-tab-transition .ds-field,
+.m101-tab-transition .ds-select,
+.m101-tab-transition .ds-textarea {
+  border-radius: 9px;
+  font-size: 13px;
+}
+.m101-tab-transition .ds-table {
+  font-size: 13px;
+}
+.m101-tab-transition .ds-table thead th {
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.m101-tab-transition .ds-table tbody td {
+  padding: 13px 14px;
+}
+.m101-tab-transition .m101-import-home-card,
+.m101-tab-transition .m101-import-home-steps {
+  border-radius: 16px;
+}
+@media (max-width: 900px) {
+  .m101-directory-shell { gap: 12px !important; }
+  .m101-directory-shell .m101-directory-toolbar { padding: 17px !important; }
+  .m101-directory-shell .m101-directory-list-panel > div:nth-child(2) { padding: 14px !important; }
+}
+@media (max-width: 640px) {
+  .m101-directory-shell .m101-directory-toolbar h2 { font-size: 22px !important; }
+  .m101-directory-shell .m101-directory-toolbar { padding: 15px !important; }
+  .m101-directory-shell .ds-button { min-height: 36px !important; height: 36px; padding: 0 10px !important; }
+  .m101-tab-transition .ds-page-header { align-items: flex-start; flex-direction: column; }
+}
