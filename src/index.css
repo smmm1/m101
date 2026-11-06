@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --font-sans: 'Sarabun', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-sarabun: 'Sarabun', 'Plus Jakarta Sans', sans-serif;
+    --font-sans: var(--ds-font-sans);
+    --font-sarabun: var(--ds-font-sans);
     --font-mono: 'JetBrains Mono', monospace;
     color-scheme: light;
   }
@@ -17,13 +17,13 @@
   html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Sarabun', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--ds-font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     letter-spacing: -0.01em;
-    background-color: #fafaf9;
-    color: #18181b;
+    background-color: var(--ds-color-canvas);
+    color: var(--ds-color-text);
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
