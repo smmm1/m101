@@ -42,3 +42,11 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-status-option.ds-button--primary { background:var(--ds-color-primary)!important; border-color:var(--ds-color-primary)!important; color:#fff!important; }
 .ds-status-option.ds-button--secondary { background:var(--ds-color-surface)!important; border-color:var(--ds-color-border)!important; color:var(--ds-color-text-secondary)!important; }
 .ds-status-option.ds-button--secondary:hover { background:var(--ds-color-surface-subtle)!important; }
+
+.ds-table { width:100%; border-collapse:collapse; font:400 var(--ds-text-md)/1.5 var(--ds-font-sans); }
+.ds-table thead th { padding:10px 12px; border-bottom:1px solid var(--ds-color-border); background:var(--ds-color-surface-subtle); color:var(--ds-color-text-secondary); font-size:var(--ds-text-xs); font-weight:500; text-align:left; white-space:nowrap; }
+.ds-table tbody td { padding:12px; border-bottom:1px solid var(--ds-color-border); color:var(--ds-color-text); vertical-align:middle; }
+.ds-table tbody tr:hover td { background:var(--ds-color-canvas); }
+.ds-table tbody tr[aria-selected="true"] td { background:var(--ds-color-primary-soft); }
+.ds-table-action { width:32px; height:32px; min-height:32px!important; padding:0!important; border-radius:var(--ds-radius-md)!important; }
+.ds-directory-search { padding-left:44px!important; }
