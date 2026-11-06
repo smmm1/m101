@@ -428,13 +428,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
       
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        
+        <div className="m101-brand"><div className="m101-brand-mark">M101</div><div className="m101-brand-copy"><strong>ระบบจัดการข้อมูลบัญชีและธุรกิจ</strong><span>BUSINESS DIRECTORY</span></div></div>
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
         <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
         <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ไดเรกทอรีบัญชีธุรกิจ</span></button>
         {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานภาษีและปฏิบัติตามกฎหมาย</span></button>}
         {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้า / ส่งออก Excel</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">shield_lock</span><span>ความปลอดภัยระบบ</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
         <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
       </aside>
 
@@ -462,7 +462,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
-        <div className="m101-brand m101-header-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M101</button><div className="m101-brand-copy"><strong>ระบบจัดการข้อมูลบัญชีและธุรกิจ</strong><span>BUSINESS DIRECTORY</span></div></div>
+        {isAdmin ? <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M</button> : <span /> }
         {/* Primary navigation is in the workspace sidebar. */}
         <div className="m101-global-search" role="search">
           <span className="material-symbols-outlined" aria-hidden="true">search</span>
@@ -476,7 +476,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <kbd>⌘ K</kbd>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-          {isLoggedIn && <button type="button" onClick={() => setIsAddModalOpen(true)} className="m101-header-add inline-flex h-9 items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"><span className="material-symbols-outlined text-[16px]">add</span><span>เพิ่มข้อมูลธุรกิจ</span></button>}
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
