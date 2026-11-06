@@ -753,36 +753,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <DSButton type="button" variant="ghost" onClick={() => { setSearchQuery(''); setFilterTab('all'); }} className="mt-4">ล้างตัวกรอง</DSButton>
                   </div>
                 ) : (
-                  <table className="ds-table w-full min-w-[820px] border-collapse text-left">
-                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
-                      <tr className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                        <th className="px-4 py-3 font-bold w-16">ลำดับ</th><th className="px-4 py-3 font-bold">กิจการ / เลขประจำตัวผู้เสียภาษี</th><th className="px-4 py-3 font-bold">E-Filing</th><th className="px-4 py-3 font-bold">ประกันสังคม</th><th className="px-4 py-3 font-bold">สถานะงาน</th><th className="px-4 py-3 font-bold w-16 text-right">จัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filterRecords.map((r, idx) => {
-                        const isSelected = activeRecord?.id === r.id;
-                        const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
-                        const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
-                        
-                        return (
-                          <tr key={r.id} draggable={canReorderRecords}
-                            onDragStart={(event) => { if (!canReorderRecords) { event.preventDefault(); return; } setDraggedRecordId(r.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', r.id); }}
-                            onDragOver={(event) => { if (draggedRecordId && canReorderRecords) { event.preventDefault(); setDragOverRecordId(r.id); } }}
-                            onDrop={(event) => { event.preventDefault(); reorderRecords(r.id); }}
-                            onDragEnd={() => { setDraggedRecordId(null); setDragOverRecordId(null); }}
-                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-zinc-50 dark:focus:bg-zinc-950/30 ${isSelected ? 'bg-zinc-50/80 dark:bg-zinc-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-zinc-500' : ''}`}>
-                            <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-zinc-700 dark:text-zinc-300' : 'text-slate-400'}`}>{seqNum}</span></td>
-                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : r.type === 'individual' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
-                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
-                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
-                            <td className="px-4 py-4 align-middle"><DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge></td>
-                            <td className="px-4 py-4 align-middle text-right">{isLoggedIn ? <DSButton type="button" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="ds-table-action" title="แก้ไขกิจการ" aria-label={`แก้ไขกิจการ ${r.companyName}`}><span className="material-symbols-outlined text-[18px]">edit</span></DSButton> : <span className="text-slate-300">›</span>}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="m101-business-list" role="list" aria-label="รายการทะเบียนกิจการ">
+                    {filterRecords.map((r, idx) => {
+                      const isSelected = activeRecord?.id === r.id;
+                      const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
+                      const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
+
+                      return (
+                        <article key={r.id} role="listitem" draggable={canReorderRecords}
+                          onDragStart={(event) => { if (!canReorderRecords) { event.preventDefault(); return; } setDraggedRecordId(r.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', r.id); }}
+                          onDragOver={(event) => { if (draggedRecordId && canReorderRecords) { event.preventDefault(); setDragOverRecordId(r.id); } }}
+                          onDrop={(event) => { event.preventDefault(); reorderRecords(r.id); }}
+                          onDragEnd={() => { setDraggedRecordId(null); setDragOverRecordId(null); }}
+                          onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }}
+                          tabIndex={0} aria-selected={isSelected}
+                          className={`m101-business-row ${isSelected ? 'is-selected' : ''} ${draggedRecordId === r.id ? 'is-dragging' : ''} ${dragOverRecordId === r.id ? 'is-drag-over' : ''}`}>
+                          <div className="m101-business-row__number">{seqNum}</div>
+                          <div className="m101-business-row__main">
+                            <div className="m101-business-row__title-line">
+                              <span className="m101-business-row__type">{r.type === 'partnership' ? 'ห.' : r.type === 'individual' ? 'บค.' : 'บ.'}</span>
+                              <h3 className="m101-business-row__name" title={r.companyName}>{r.companyName}</h3>
+                            </div>
+                            <div className="m101-business-row__tax">
+                              <span>เลขผู้เสียภาษี</span>
+                              <span className="m101-business-row__value">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</span>
+                            </div>
+                            <div className="m101-business-row__meta">
+                              <span><span className="meta-label">E-Filing</span><span className={r.eFilingCode ? 'has-value' : 'is-empty'}>{r.eFilingCode || '—'}</span></span>
+                              <span><span className="meta-label">ประกันสังคม</span><span className={r.ssoCode ? 'has-value' : 'is-empty'}>{r.ssoCode || '—'}</span></span>
+                            </div>
+                          </div>
+                          <div className="m101-business-row__end">
+                            <DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge>
+                            {isLoggedIn && <DSButton type="button" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="ds-table-action m101-business-row__edit" title="แก้ไขกิจการ" aria-label={`แก้ไขกิจการ ${r.companyName}`}><span className="material-symbols-outlined text-[18px]">edit</span></DSButton>}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
               {canReorderRecords && <p className="px-5 py-2 text-[10px] text-slate-400">ลากแถวเพื่อจัดลำดับกิจการใหม่ · ระบบจะบันทึกลำดับให้อัตโนมัติ</p>}
