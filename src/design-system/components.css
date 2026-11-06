@@ -50,3 +50,11 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-table tbody tr[aria-selected="true"] td { background:var(--ds-color-primary-soft); }
 .ds-table-action { width:32px; height:32px; min-height:32px!important; padding:0!important; border-radius:var(--ds-radius-md)!important; }
 .ds-directory-search { padding-left:44px!important; }
+
+.ds-button--sheet { min-height:36px; }
+.ds-button--card { width:100%; min-height:112px!important; height:auto!important; padding:16px!important; flex-direction:column; align-items:stretch!important; justify-content:flex-start!important; text-align:left; white-space:normal; }
+.ds-button--card.ds-button--primary .text-slate-900,
+.ds-button--card.ds-button--primary .text-slate-800,
+.ds-button--card.ds-button--primary .text-slate-600 { color:#fff!important; }
+.ds-button--card.ds-button--primary .text-slate-500 { color:rgba(255,255,255,.82)!important; }
+.ds-import-field { width:100%; }
