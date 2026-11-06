@@ -458,6 +458,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
         </div>
+        <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
+          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
+            <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
+          </button>
+          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-horizontal-tab ${activeTab === "directory" ? "is-active" : ""}`}>
+            <Building2 aria-hidden="true" /><span>ทะเบียน</span>
+          </button>
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-horizontal-tab ${activeTab === "tasks" ? "is-active" : ""}`}>
+            <ClipboardList aria-hidden="true" /><span>งาน</span>
+          </button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-horizontal-tab ${activeTab === "import" ? "is-active" : ""}`}>
+            <FileSpreadsheet aria-hidden="true" /><span>นำเข้า</span>
+          </button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-horizontal-tab ${activeTab === "settings" ? "is-active" : ""}`}>
+            <Settings aria-hidden="true" /><span>ตั้งค่า</span>
+          </button>}
+        </nav>
         {/* Primary navigation is in the workspace sidebar. */}
         <div className="m101-global-search" role="search">
           <Search size={17} aria-hidden="true" />
@@ -658,42 +675,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div role="menu" aria-label="เมนูบัญชีผู้ใช้" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-3 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">บัญชีที่กำลังใช้งาน</p>
-                  <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white break-words">{userName}</p>
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{isVisitor ? 'โหมดผู้เยี่ยมชม · ดูข้อมูลอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</p>
-                </div>
-                {isVisitor && onReturnToLogin ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => { setShowProfileDropdown(false); onReturnToLogin(); }}
-                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">login</span>
-                    เข้าสู่ระบบ
-                  </button>
-                ) : isLoggedIn ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => { setShowProfileDropdown(false); onToggleLogin(); }}
-                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-950/30 text-left"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    ออกจากระบบ
-                  </button>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <div className="m101-horizontal-tabs-wrap">
-        <div className="m101-workspace-signature" aria-hidden="true">
-          <span className="m101-workspace-mark">M</span>
-          <span className="m101-workspace-wordmark"><strong>M101</strong><small>BUSINESS WORKSPACE</small></span>
-        </div>
-        <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
+                  <lassName="m101-horizontal-tabs" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
             <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
           </button>
