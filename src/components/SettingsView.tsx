@@ -392,12 +392,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {isLoggedIn && (
-              <div className="p-4 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 flex flex-col justify-between gap-3 m101-dataset-option m101-dataset-danger">
+              <div className="p-4 rounded-2xl border border-zinc-200/70 dark:border-zinc-900/50 bg-zinc-50/30 dark:bg-zinc-950/20 flex flex-col justify-between gap-3 m101-dataset-option m101-dataset-danger">
                 <div>
-                  <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                  <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-300">
                     ล้างข้อมูลรอบปีนี้
                   </h4>
-                  <p className="text-[11px] text-rose-600/80 dark:text-rose-400 mt-1">
+                  <p className="text-[11px] text-zinc-600/80 dark:text-zinc-400 mt-1">
                     ลบรายการข้อมูลทั้งหมดเฉพาะรอบปี {selectedYear}
                   </p>
                 </div>
@@ -450,8 +450,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 m101-settings-confirm">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center">
+            <div className="flex items-center gap-3 text-zinc-600">
+              <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[24px]">warning</span>
               </div>
               <div>
