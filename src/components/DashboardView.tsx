@@ -463,6 +463,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
         {isAdmin ? <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M</button> : <span /> }
         {/* Primary navigation is in the workspace sidebar. */}
+        <div className="m101-global-search" role="search">
+          <span className="material-symbols-outlined" aria-hidden="true">search</span>
+          <input
+            type="search"
+            aria-label="ค้นหาทะเบียนกิจการ"
+            placeholder="ค้นหาชื่อกิจการ เลขทะเบียน…"
+            value={searchQuery}
+            onChange={(event) => onSearchChange?.(event.target.value)}
+          />
+          <kbd>⌘ K</kbd>
+        </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
           {/* Fiscal Year Switcher with Add/Delete */}
