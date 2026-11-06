@@ -24,7 +24,7 @@ interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
 
 function WorkspaceLoadingSkeleton({ label = 'กำลังโหลดข้อมูล…' }: { label?: string }) {
   return (
-    <main className="min-h-screen bg-[#f4f5f7] p-4 sm:p-6" aria-label={label} aria-busy="true">
+    <main className="min-h-screen bg-[#f5f5f5] p-4 sm:p-6" aria-label={label} aria-busy="true">
       <div className="mx-auto max-w-[1500px] space-y-5">
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"><div className="space-y-2"><div className="h-4 w-36 m101-skeleton-shimmer rounded bg-slate-200" /><div className="h-3 w-24 m101-skeleton-shimmer rounded bg-slate-100" /></div><div className="h-9 w-28 m101-skeleton-shimmer rounded-xl bg-slate-100" /></div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0,1,2,3].map((item) => <div key={item} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5"><div className="h-3 w-20 m101-skeleton-shimmer rounded bg-slate-100" /><div className="h-8 w-16 m101-skeleton-shimmer rounded bg-slate-200" /><div className="h-2 w-28 m101-skeleton-shimmer rounded bg-slate-100" /></div>)}</div>
@@ -680,23 +680,23 @@ function AppContent() {
   }, [authMode, authBusy, isVisitor, isLoggedIn]);
 
   if (!authReady) {
-    return <div className="min-h-screen grid place-items-center bg-[#f4f5f7] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
+    return <div className="min-h-screen grid place-items-center bg-[#f5f5f5] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
   }
 
   if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f4f5f7]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
   }
 
   if (isVisitor && !dataReady) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f4f5f7] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
   }
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
-      <main className="min-h-screen bg-[#f6f8f7] text-slate-900">
+      <main className="min-h-screen bg-[#f8f8f8] text-slate-900">
         <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
-          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#123f39] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
+          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
             <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
             <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
             <div className="flex items-center gap-3">
@@ -748,33 +748,33 @@ function AppContent() {
           <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
             <div className="w-full max-w-[420px]">
               <div className="mb-8">
-                <p className="text-xs font-semibold tracking-[0.16em] text-[#39766b]">ยินดีต้อนรับกลับ</p>
+                <p className="text-xs font-semibold tracking-[0.16em] text-[#686868]">ยินดีต้อนรับกลับ</p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
               </div>
 
               <form onSubmit={handleLoginSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
-                  <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#eaf3f0] text-[#20584f] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
-                  <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#eaf3f0] text-[#20584f] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
+                  <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
+                  <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
                 </div>
 
                 {authMode === 'password' ? (
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#39766b] focus:ring-4 focus:ring-[#39766b]/10" />
+                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                     <div>
                       <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#39766b] focus:ring-4 focus:ring-[#39766b]/10" />
+                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5">
                     <label className="mb-4 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
                     <div className="mb-5 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
-                      {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3.5 w-3.5 rounded-full border transition-colors ${index < authPin.length ? 'border-[#28685d] bg-[#28685d]' : 'border-slate-300 bg-white'}`} />)}
+                      {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3.5 w-3.5 rounded-full border transition-colors ${index < authPin.length ? 'border-[#5a5a5a] bg-[#5a5a5a]' : 'border-slate-300 bg-white'}`} />)}
                     </div>
                     <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
                       {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
@@ -783,7 +783,7 @@ function AppContent() {
                           if (key === 'clear') setAuthPin('');
                           else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
                           else setAuthPin((value) => value.length < 6 ? value + key : value);
-                        }} className="h-12 rounded-xl border border-slate-200 bg-[#fbfcfb] text-lg font-semibold text-slate-800 transition hover:border-[#9bbdb4] hover:bg-[#edf5f2] active:scale-[0.98] disabled:opacity-50">
+                        }} className="h-12 rounded-xl border border-slate-200 bg-[#fcfcfc] text-lg font-semibold text-slate-800 transition hover:border-[#b5b5b5] hover:bg-[#f3f3f3] active:scale-[0.98] disabled:opacity-50">
                           {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
                         </button>
                       ))}
@@ -794,7 +794,7 @@ function AppContent() {
 
                 {authError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm leading-6 text-rose-700">{authError}</p>}
 
-                <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#20584f] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#17483f] focus:outline-none focus:ring-4 focus:ring-[#39766b]/20 disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4b4b4b] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3d3d3d] focus:outline-none focus:ring-4 focus:ring-[#686868]/20 disabled:cursor-not-allowed disabled:opacity-60">
                   {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
                 </button>
 
@@ -803,7 +803,7 @@ function AppContent() {
                 <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
               </form>
 
-              <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#edf4f1] px-3.5 py-3 text-xs leading-5 text-[#38645c]">
+              <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#f2f2f2] px-3.5 py-3 text-xs leading-5 text-[#5a5a5a]">
                 <span aria-hidden="true" className="mt-0.5">●</span>
                 <p>การเข้าสู่ระบบใช้การยืนยันตัวตนที่ตั้งค่าไว้ และเชื่อมต่อข้อมูลอย่างปลอดภัย</p>
               </div>
@@ -816,7 +816,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#f4f5f7] text-slate-900 font-body antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f5f5f5] text-slate-900 font-body antialiased">
       <SmartIdleScreen ownerPreviewEnabled={isLoggedIn && userRole === 'admin'} />
       {adminPanelOpen && isLoggedIn && userRole === 'admin' && (
         <AdminControlCenter
