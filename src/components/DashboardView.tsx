@@ -458,6 +458,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
         </div>
+        <div className="m101-nav-search-group">
         <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
             <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
@@ -475,7 +476,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Settings aria-hidden="true" /><span>ตั้งค่า</span>
           </button>}
         </nav>
-        {/* Primary navigation is in the workspace sidebar. */}
         <div className="m101-global-search" role="search">
           <Search size={17} aria-hidden="true" />
           <input
@@ -486,6 +486,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onChange={(event) => onSearchChange?.(event.target.value)}
           />
           <kbd>⌘ K</kbd>
+        </div>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
