@@ -52,8 +52,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
   const handleCompanyNameChange = (val: string) => {
     setCompanyName(val);
-    const inferred = inferBusinessType(val);
-    setType(inferred);
+    const inferzinc = inferBusinessType(val);
+    setType(inferzinc);
   };
 
   const getStatusBadge = (s: BusinessStatus) => {
@@ -73,8 +73,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
       case 'pending':
       default:
         return {
-          bg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800',
-          dot: 'bg-rose-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusPending || 'รอดำเนินการ',
         };
     }
@@ -154,7 +154,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
         <form onSubmit={handleSubmit} className="ds-form-modal__body p-6 space-y-5 overflow-y-auto no-scrollbar flex-1">
           {formError && (
             <div className="ds-form-error p-3.5 flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-600">error</span>
               <span className="font-semibold">{formError}</span>
             </div>
           )}
@@ -201,7 +201,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             {/* Company Name */}
             <div>
               <label className="ds-label">
-                ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
+                ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-zinc-500">*</span>
               </label>
               <DSInput
                 type="text"
@@ -259,7 +259,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             </div>
           </div>
 
-          {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
+          {/* 3. Czincentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">key</span>
