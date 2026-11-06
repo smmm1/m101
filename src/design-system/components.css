@@ -35,3 +35,8 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-page-header__copy p { margin:var(--ds-space-2) 0 0; color:var(--ds-color-text-secondary); font-size:var(--ds-text-md); }
 .ds-page-header__actions { display:flex; align-items:center; gap:var(--ds-space-2); }
 @media(max-width:640px) { .ds-page-header { flex-direction:column; } .ds-page-header__actions { width:100%; } }
+
+.ds-status-option { min-height:36px; padding:0 12px; border-radius:var(--ds-radius-md)!important; font-size:var(--ds-text-sm)!important; font-weight:500!important; }
+.ds-status-option.ds-button--primary { background:var(--ds-color-primary)!important; border-color:var(--ds-color-primary)!important; color:#fff!important; }
+.ds-status-option.ds-button--secondary { background:var(--ds-color-surface)!important; border-color:var(--ds-color-border)!important; color:var(--ds-color-text-secondary)!important; }
+.ds-status-option.ds-button--secondary:hover { background:var(--ds-color-surface-subtle)!important; }
