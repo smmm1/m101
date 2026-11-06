@@ -689,6 +689,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </nav>
 
       <div className="m101-horizontal-tabs-wrap">
+        <div className="m101-workspace-signature" aria-hidden="true">
+          <span className="m101-workspace-mark">M</span>
+          <span className="m101-workspace-wordmark"><strong>M101</strong><small>BUSINESS WORKSPACE</small></span>
+        </div>
         <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
             <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
