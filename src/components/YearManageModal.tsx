@@ -71,7 +71,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
         {/* Header */}
         <div className="ds-modal-header px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">calendar_month</span>
             </div>
             <div>
@@ -130,7 +130,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
               <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
                 รอบปีในระบบ ({availableYears.length} ปี)
               </span>
-              <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-mono font-medium">
+              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-mono font-medium">
                 ปัจจุบัน: ปี {selectedYear}
               </span>
             </div>
@@ -165,7 +165,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
                         <span className="text-xs font-bold font-headline">
                           รอบปีบัญชี {yr}
                         </span>
-                        <span className={`text-[11px] font-mono ${isCurrent ? 'text-indigo-100' : 'text-slate-400'}`}>
+                        <span className={`text-[11px] font-mono ${isCurrent ? 'text-zinc-100' : 'text-slate-400'}`}>
                           {count} กิจการ
                         </span>
                       </div>
@@ -271,7 +271,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
               onClick={() => setIsCreating(true)}
               variant="secondary" className="ds-year-add"
             >
-              <span className="material-symbols-outlined text-[18px] text-emerald-600">add_circle</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-600">add_circle</span>
               <span>เพิ่มรอบปีใหม่ (+ New Fiscal Year)</span>
             </DSButton>
           ))}
