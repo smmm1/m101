@@ -161,3 +161,10 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-delete-row.is-selected { border-color:var(--ds-color-border-strong)!important; background:var(--ds-color-danger-soft)!important; }
 .ds-delete-action { color:var(--ds-color-text-secondary)!important; }
 .ds-delete-action:hover { color:var(--ds-color-text)!important; }
+
+
+/* Native cursor treatment replaces the old colorful novelty pointer. */
+html,body,html.cursor-mac,html.cursor-mac body { cursor:auto!important; }
+a,button,[role="button"],input[type="submit"],input[type="button"],input[type="checkbox"],input[type="radio"],select,label[for],.cursor-pointer,
+html.cursor-mac a,html.cursor-mac button,html.cursor-mac [role="button"],html.cursor-mac .cursor-pointer { cursor:pointer!important; }
+input[type="text"],input[type="password"],input[type="search"],textarea { cursor:text!important; }
