@@ -101,7 +101,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
-  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('dashboard');
   const [showNavigationProgress, setShowNavigationProgress] = useState(false);
   const navigationProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -428,12 +428,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
       
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        <div className="m101-brand"><div className="m101-brand-mark">◈</div><div className="m101-brand-copy"><strong>พื้นที่จัดการข้อมูล</strong><span>DOCUMENT WORKSPACE</span></div></div>
+        <div className="m101-brand"><div className="m101-brand-mark">M101</div><div className="m101-brand-copy"><strong>ระบบจัดการข้อมูลบัญชีและธุรกิจ</strong><span>BUSINESS DIRECTORY</span></div></div>
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
-        <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวม</span><span className="m101-side-count">{records.length}</span></button>
-        <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานประจำปี</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้าข้อมูล</span></button>}
+        <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
+        <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ไดเรกทอรีบัญชีธุรกิจ</span></button>
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานภาษีและปฏิบัติตามกฎหมาย</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้า / ส่งออก Excel</span></button>}
         {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
         <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
       </aside>
