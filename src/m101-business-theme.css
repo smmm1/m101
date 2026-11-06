@@ -402,3 +402,64 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-horizontal-tabs-wrap { padding-inline: 5px !important; }
   .m101-horizontal-tab { min-height: 42px; padding-inline: 8px; font-size: 10px; }
 }
+
+
+/* Balance the navigation row: quiet product identity on the left, tabs on the right. */
+.m101-horizontal-tabs-wrap {
+  justify-content: space-between !important;
+  gap: 24px;
+}
+.m101-workspace-signature {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--ds-color-text);
+}
+.m101-workspace-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ds-color-border-strong);
+  border-radius: 7px;
+  background: var(--ds-color-surface);
+  color: var(--ds-color-text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+.m101-workspace-wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+.m101-workspace-wordmark strong {
+  color: var(--ds-color-text);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  line-height: 1.1;
+}
+.m101-workspace-wordmark small {
+  color: var(--ds-color-text-muted);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: .09em;
+  line-height: 1.2;
+}
+.m101-horizontal-tabs {
+  flex: 0 1 auto;
+  justify-content: flex-end !important;
+}
+@media (max-width: 760px) {
+  .m101-horizontal-tabs-wrap { gap: 8px; }
+  .m101-workspace-signature { gap: 6px; }
+  .m101-workspace-mark { width: 27px; height: 27px; font-size: 14px; }
+  .m101-workspace-wordmark small { display: none; }
+}
+@media (max-width: 420px) {
+  .m101-workspace-signature { display: none; }
+}
