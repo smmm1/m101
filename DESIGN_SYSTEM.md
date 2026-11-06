@@ -144,6 +144,7 @@ Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
 - Remaining admin subviews, import progress/result states, and any unconverted utility actions still need component-by-component migration.
+- Login, business-detail, settings, and dashboard screens have had their remaining emerald, rose, amber, and sky utility accents converted to grayscale; this was a visual-only change.
 - The legacy redesign stylesheet's previous chromatic values have been converted to grayscale; remaining selectors still need a route-by-route visual audit.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
