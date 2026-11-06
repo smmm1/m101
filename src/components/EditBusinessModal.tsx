@@ -60,14 +60,14 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
     switch (s) {
       case 'completed':
         return {
-          bg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800',
-          dot: 'bg-emerald-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusCompleted || 'เสร็จสิ้น',
         };
       case 'in_progress':
         return {
-          bg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800',
-          dot: 'bg-amber-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusInProgress || 'กำลังทำ',
         };
       case 'pending':
@@ -192,7 +192,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 2. Primary Tax & Legal Information */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">badge</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">badge</span>
               <h3 className="ds-form-section__title">
                 ข้อมูลนิติบุคคลและผู้เสียภาษี
               </h3>
@@ -262,7 +262,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">key</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">key</span>
               <h3 className="ds-form-section__title">
                 รหัสผ่านและข้อมูลการยื่นแบบ
               </h3>
@@ -316,7 +316,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 4. Auditor & Remarks */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">description</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">description</span>
               <h3 className="ds-form-section__title">
                 ข้อมูลผู้สอบบัญชีและหมายเหตุ
               </h3>
@@ -354,7 +354,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           {/* 5. Source File and Topic */}
           <div className="ds-form-section p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">history</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">history</span>
               <h3 className="ds-form-section__title">
                 ข้อมูลการนำเข้าและหัวข้อ
               </h3>
