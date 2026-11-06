@@ -454,3 +454,58 @@ button { -webkit-tap-highlight-color:transparent; }
     display: none;
   }
 }
+
+
+/* Align primary navigation to the same left content rail as the page title. */
+.m101-horizontal-tabs-wrap {
+  justify-content: flex-start !important;
+  padding-inline: clamp(18px, 2.4vw, 36px) !important;
+  background: #fff;
+}
+
+.m101-horizontal-tabs {
+  flex: 0 1 auto !important;
+  justify-content: flex-start !important;
+  width: 100%;
+  max-width: none !important;
+  margin-inline: 0 !important;
+  padding: 0 !important;
+  gap: 4px !important;
+}
+
+.m101-horizontal-tab {
+  min-height: 48px;
+  padding-inline: 14px;
+}
+
+@media (max-width: 760px) {
+  .m101-horizontal-tabs-wrap {
+    justify-content: flex-start !important;
+    padding-inline: 12px !important;
+  }
+
+  .m101-horizontal-tabs {
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: 2px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+  }
+
+  .m101-horizontal-tab {
+    flex: 0 0 auto;
+    min-height: 46px;
+    padding-inline: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .m101-horizontal-tabs-wrap {
+    padding-inline: 9px !important;
+  }
+
+  .m101-horizontal-tab {
+    padding-inline: 9px;
+    font-size: 11px;
+  }
+}
