@@ -1160,16 +1160,19 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .m101-import-drop-card,.m101-import-guidance,.m101-import-flow article{
   border-radius:10px!important
 }
-.mobile-main-content [class*=shadow-],.m101-dialog-panel,.m101-task-form,
-.m101-import-drop-card,.m101-import-guidance{box-shadow:0 1px 2px rgba(16,24,40,.04)!important}
-.m101-dialog-overlay{background:rgba(16,24,40,.38)!important;backdrop-filter:none!important}
+.mobile-main-content [class*=shadow-],.m101-import-drop-card,.m101-import-guidance{box-shadow:var(--ds-shadow-sm)!important}
+.m101-dialog-overlay{background:color-mix(in srgb,var(--ds-color-text) 34%,transparent)!important;backdrop-filter:blur(2px)!important}
 .m101-dialog-panel,.m101-form-dialog,.m101-detail-dialog{
-  background:var(--ds-color-surface)!important;border:1px solid var(--m101-line)!important;color:var(--m101-ink)!important;
-  box-shadow:0 20px 56px rgba(16,24,40,.16)!important
+  background:var(--ds-color-surface)!important;border:1px solid var(--ds-color-border)!important;color:var(--ds-color-text)!important;
+  box-shadow:var(--ds-shadow-dialog)!important;border-radius:var(--ds-radius-lg)!important
 }
-.m101-dialog-header{background:var(--ds-color-surface)!important;border-bottom:1px solid var(--m101-line)!important}
-.m101-dialog-panel h2,.m101-dialog-panel h3{color:var(--m101-ink)!important}
-.m101-dialog-panel label{color:var(--ds-color-text-secondary)}
+.m101-dialog-header{background:var(--ds-color-surface)!important;border-bottom:1px solid var(--ds-color-border)!important}
+.m101-dialog-panel h2,.m101-dialog-panel h3{color:var(--ds-color-text)!important}
+.m101-dialog-panel label{color:var(--ds-color-text-secondary)!important}
+.m101-conflict-overlay{background:color-mix(in srgb,var(--ds-color-text) 34%,transparent)!important;backdrop-filter:blur(2px)!important}
+.m101-conflict-dialog{background:var(--ds-color-surface)!important;border:1px solid var(--ds-color-border)!important;border-radius:var(--ds-radius-lg)!important;box-shadow:var(--ds-shadow-dialog)!important;color:var(--ds-color-text)!important}
+.m101-conflict-header{border-color:var(--ds-color-border)!important}
+.m101-task-modal-backdrop{background:color-mix(in srgb,var(--ds-color-text) 34%,transparent)!important;backdrop-filter:blur(2px)!important}
 .m101-dialog-panel .ds-field,.m101-dialog-panel .ds-select,.m101-dialog-panel .ds-textarea,
 .m101-task-form .ds-field,.m101-task-form .ds-select,.m101-task-form .ds-textarea{
   min-height:40px;border:1px solid var(--ds-color-border-strong)!important;border-radius:var(--ds-radius-md)!important;
