@@ -200,3 +200,110 @@ button { -webkit-tap-highlight-color:transparent; }
 }
 .m101-horizontal-tabs-wrap{grid-area:tabs}
 .mobile-main-content{grid-area:content;min-width:0}
+
+/* M101 navigation balance fix
+   Keep the utility header, primary tabs and page content in a predictable order.
+   Center the tab group when it fits; allow clean wrapping on tablet and mobile. */
+.mobile-app-shell {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(64px, auto) auto minmax(0, 1fr) !important;
+  grid-template-areas: "topbar" "tabs" "content" !important;
+}
+
+.mobile-app-nav {
+  grid-area: topbar !important;
+  min-width: 0;
+}
+
+.m101-horizontal-tabs-wrap {
+  grid-area: tabs !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  padding-inline: clamp(8px, 2vw, 24px);
+  overflow: visible;
+}
+
+.m101-horizontal-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 4px;
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin-inline: auto;
+  padding: 0;
+  overflow: visible;
+}
+
+.m101-horizontal-tab {
+  min-height: 50px;
+  padding-inline: clamp(10px, 1.25vw, 17px);
+}
+
+.mobile-main-content {
+  grid-area: content !important;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .mobile-app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+
+  .mobile-app-nav {
+    order: 1 !important;
+    width: 100%;
+  }
+
+  .m101-horizontal-tabs-wrap {
+    order: 2 !important;
+    width: 100%;
+    padding: 0 8px;
+    border-top: 0;
+  }
+
+  .m101-horizontal-tabs {
+    justify-content: center;
+    gap: 0 2px;
+    padding: 2px 0;
+  }
+
+  .m101-horizontal-tab {
+    min-height: 44px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .mobile-main-content {
+    order: 3 !important;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .m101-horizontal-tabs-wrap {
+    padding-inline: 5px;
+  }
+
+  .m101-horizontal-tab {
+    min-height: 42px;
+    gap: 6px;
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+
+  .m101-horizontal-tab svg {
+    width: 15px;
+    height: 15px;
+    flex-basis: 15px;
+  }
+}
