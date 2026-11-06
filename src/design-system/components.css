@@ -70,3 +70,5 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-copy-icon { min-height:28px!important; width:28px; height:28px; padding:0!important; }
 .ds-delete-action { color:var(--ds-color-danger)!important; }
 .ds-delete-action:hover { background:var(--ds-color-danger-soft)!important; color:#B91C1C!important; }
+
+.ds-page-header__eyebrow { margin:0 0 4px!important; color:var(--ds-color-text-muted)!important; font-size:var(--ds-text-xs)!important; font-weight:600!important; letter-spacing:.06em; }
