@@ -105,7 +105,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
         <form onSubmit={handleSubmit} className="ds-form-modal__body p-6 space-y-4 max-h-[72vh] overflow-y-auto no-scrollbar">
           {formError && (
             <div className="ds-form-error p-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
+              <span className="material-symbols-outlined text-[18px] text-zinc-600">error</span>
               <span>{formError}</span>
             </div>
           )}
@@ -117,7 +117,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { value: 'pending', label: config.statusPending || 'รอดำเนินการ', color: 'bg-rose-500' },
+                { value: 'pending', label: config.statusPending || 'รอดำเนินการ', color: 'bg-zinc-500' },
                 { value: 'in_progress', label: config.statusInProgress || 'กำลังทำ', color: 'bg-zinc-500' },
                 { value: 'completed', label: config.statusCompleted || 'เสร็จสิ้น', color: 'bg-zinc-500' },
               ].map((s) => (
@@ -147,7 +147,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             </div>
             <div className="col-span-2">
               <label className="ds-label">
-                เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-rose-500">*</span>
+                เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-zinc-500">*</span>
               </label>
               <DSInput
                 type="text"
@@ -162,7 +162,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           {/* Company Name */}
           <div>
             <label className="ds-label">
-              ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
+              ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-zinc-500">*</span>
             </label>
             <DSInput
               type="text"
@@ -178,7 +178,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             <div>
               <div className="flex items-center justify-between">
                 <label className="ds-label">
-                  รหัสผ่าน / e-Filing <span className="text-rose-500">*</span>
+                  รหัสผ่าน / e-Filing <span className="text-zinc-500">*</span>
                 </label>
                 <DSButton
                   type="button"
