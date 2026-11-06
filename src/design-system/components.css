@@ -58,3 +58,5 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-button--card.ds-button--primary .text-slate-600 { color:#fff!important; }
 .ds-button--card.ds-button--primary .text-slate-500 { color:rgba(255,255,255,.82)!important; }
 .ds-import-field { width:100%; }
+
+.ds-conflict-preview-toggle { width:100%; justify-content:space-between; padding:10px 12px; text-align:left; }
