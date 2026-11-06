@@ -1169,16 +1169,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 }
 .m101-dialog-header{background:#fff!important;border-bottom:1px solid var(--m101-line)!important}
 .m101-dialog-panel h2,.m101-dialog-panel h3{color:var(--m101-ink)!important}
-.m101-dialog-panel label{color:#475467}
-.m101-dialog-panel input:not([type=checkbox]):not([type=radio]),
-.m101-dialog-panel select,.m101-dialog-panel textarea,
-.m101-task-form input,.m101-task-form select,.m101-task-form textarea{
-  min-height:38px;border:1px solid #dfe4ea!important;border-radius:8px!important;
-  background:#fff!important;color:var(--m101-ink)!important;box-shadow:none!important
+.m101-dialog-panel label{color:var(--ds-color-text-secondary)}
+.m101-dialog-panel .ds-field,.m101-dialog-panel .ds-select,.m101-dialog-panel .ds-textarea,
+.m101-task-form .ds-field,.m101-task-form .ds-select,.m101-task-form .ds-textarea{
+  min-height:40px;border:1px solid var(--ds-color-border-strong)!important;border-radius:var(--ds-radius-md)!important;
+  background:var(--ds-color-surface)!important;color:var(--ds-color-text)!important;box-shadow:none!important
 }
-.m101-dialog-panel input:focus,.m101-dialog-panel select:focus,.m101-dialog-panel textarea:focus,
-.m101-task-form input:focus,.m101-task-form select:focus,.m101-task-form textarea:focus{
-  border-color:#7aa99c!important;box-shadow:0 0 0 3px rgba(37,107,93,.09)!important
+.m101-dialog-panel .ds-field:focus,.m101-dialog-panel .ds-select:focus,.m101-dialog-panel .ds-textarea:focus,
+.m101-task-form .ds-field:focus,.m101-task-form .ds-select:focus,.m101-task-form .ds-textarea:focus{
+  border-color:var(--ds-color-primary)!important;box-shadow:var(--ds-focus-ring)!important
 }
 .m101-dialog-panel button,.m101-task-form button{border-radius:8px!important;box-shadow:none!important}
 .m101-dialog-panel button[class*=bg-slate-900],
