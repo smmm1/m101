@@ -747,7 +747,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <DSButton type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} className="h-10 flex items-center gap-2">
                       <span className="material-symbols-outlined text-[16px]">delete</span>
                       <span>ลบหลายรายการ</span>
-                    </button>
+                    </DSButton>
                   )}
                 </div>
               </div>
