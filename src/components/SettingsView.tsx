@@ -157,7 +157,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl m101-settings-grid">
         {/* 1. System Information Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#1b1b1b] flex flex-col gap-5 shadow-xs m101-settings-card">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">tune</span>
@@ -216,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Sound preferences */}
-        <section className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card" aria-labelledby="sound-settings-title">
+        <section className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#1b1b1b] flex flex-col gap-5 shadow-xs m101-settings-card" aria-labelledby="sound-settings-title">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">volume_down</span>
@@ -275,7 +275,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </section>
 
         {/* 2. Backup & Export Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card m101-settings-backup">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#1b1b1b] flex flex-col gap-5 shadow-xs m101-settings-card m101-settings-backup">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">backup</span>
@@ -348,7 +348,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* 3. Dataset Management Card */}
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs lg:col-span-2 m101-settings-card m101-settings-dataset">
+        <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#1b1b1b] flex flex-col gap-5 shadow-xs lg:col-span-2 m101-settings-card m101-settings-dataset">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">dataset</span>
