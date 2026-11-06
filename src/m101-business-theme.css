@@ -680,3 +680,126 @@ button { -webkit-tap-highlight-color:transparent; }
     max-width: 96px !important;
   }
 }
+
+
+/* Final single-row header: every control stays inside the same navigation strip. */
+.mobile-app-nav {
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: clamp(8px, 1.1vw, 16px) !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  padding: 4px clamp(10px, 1.6vw, 24px) !important;
+  overflow: visible !important;
+  background: var(--ds-color-surface) !important;
+  border-bottom: 1px solid var(--ds-color-border) !important;
+}
+.m101-page-context {
+  flex: 0 1 150px !important;
+  min-width: 76px !important;
+  max-width: 170px !important;
+  white-space: nowrap !important;
+}
+.m101-page-context strong { overflow: hidden; text-overflow: ellipsis; }
+.m101-nav-search-group {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: clamp(5px, .8vw, 12px) !important;
+  min-width: 0 !important;
+}
+.m101-nav-search-group .m101-horizontal-tabs {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+  justify-content: center !important;
+  overflow-x: auto !important;
+}
+.m101-nav-search-group .m101-global-search {
+  flex: 0 1 170px !important;
+  width: 170px !important;
+  min-width: 105px !important;
+  max-width: 170px !important;
+}
+.mobile-utility-nav {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+.mobile-utility-nav > * { flex: 0 0 auto; }
+.mobile-utility-nav button {
+  min-height: 32px !important;
+  white-space: nowrap !important;
+  border-radius: 7px !important;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .mobile-app-nav { gap: 7px !important; padding-inline: 9px !important; }
+  .m101-page-context { flex-basis: 105px !important; max-width: 115px !important; }
+  .m101-page-context span { display: none !important; }
+  .m101-nav-search-group { gap: 4px !important; }
+  .m101-nav-search-group .m101-horizontal-tab { min-width: 43px !important; padding-inline: 4px !important; }
+  .m101-nav-search-group .m101-global-search { flex-basis: 125px !important; width: 125px !important; }
+  .mobile-utility-nav { gap: 3px !important; }
+  .mobile-utility-nav button { padding-inline: 6px !important; font-size: 9px !important; }
+}
+@media (max-width: 760px) {
+  .mobile-app-nav {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    width: 100% !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    padding: 4px 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+  .mobile-app-nav::-webkit-scrollbar { display: none !important; }
+  .m101-page-context {
+    flex: 0 0 88px !important;
+    min-width: 88px !important;
+    max-width: 88px !important;
+  }
+  .m101-page-context strong { font-size: 10px !important; }
+  .m101-page-context span { display: none !important; }
+  .m101-nav-search-group {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    gap: 4px !important;
+  }
+  .m101-nav-search-group .m101-horizontal-tabs {
+    flex: 0 0 auto !important;
+    width: max-content !important;
+    max-width: none !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
+  }
+  .m101-nav-search-group .m101-horizontal-tab {
+    min-width: 44px !important;
+    min-height: 40px !important;
+    padding: 3px 5px !important;
+    font-size: 9px !important;
+  }
+  .m101-nav-search-group .m101-global-search {
+    flex: 0 0 116px !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    height: 31px !important;
+  }
+  .mobile-utility-nav {
+    flex: 0 0 auto !important;
+    gap: 4px !important;
+  }
+  .mobile-utility-nav button { min-height: 30px !important; padding: 4px 6px !important; font-size: 9px !important; }
+}
