@@ -574,3 +574,109 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-horizontal-tabs { justify-content: flex-start !important; }
   .m101-horizontal-tab { min-width: 54px !important; padding-inline: 6px !important; }
 }
+
+
+/* Keep the navigation and search as one right-aligned control group. */
+.mobile-app-nav {
+  grid-template-columns: minmax(130px, 1fr) max-content max-content !important;
+  grid-template-areas: "context navsearch utilities" !important;
+  justify-content: stretch !important;
+  column-gap: clamp(10px, 1.4vw, 20px) !important;
+}
+.m101-nav-search-group {
+  grid-area: navsearch !important;
+  display: flex !important;
+  flex: 0 1 auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.m101-nav-search-group .m101-horizontal-tabs {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  max-width: min(100%, 470px) !important;
+  justify-content: flex-end !important;
+  gap: 2px !important;
+}
+.m101-nav-search-group .m101-horizontal-tab {
+  min-width: 54px !important;
+  min-height: 40px !important;
+  padding: 4px 8px !important;
+}
+.m101-nav-search-group .m101-global-search {
+  flex: 0 1 175px !important;
+  width: 175px !important;
+  min-width: 115px !important;
+  max-width: 175px !important;
+  height: 32px !important;
+}
+.m101-nav-search-group .m101-global-search kbd { display: none; }
+@media (min-width: 761px) and (max-width: 1100px) {
+  .mobile-app-nav {
+    grid-template-columns: minmax(90px, 1fr) max-content max-content !important;
+    column-gap: 7px !important;
+  }
+  .m101-nav-search-group { gap: 5px !important; }
+  .m101-nav-search-group .m101-horizontal-tab {
+    min-width: 47px !important;
+    padding-inline: 5px !important;
+    font-size: 9px !important;
+  }
+  .m101-nav-search-group .m101-horizontal-tab svg {
+    width: 14px !important; height: 14px !important; flex-basis: 14px !important;
+  }
+  .m101-nav-search-group .m101-global-search {
+    flex-basis: 125px !important; width: 125px !important; min-width: 105px !important;
+  }
+}
+@media (max-width: 760px) {
+  .mobile-app-nav {
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    grid-template-areas:
+      "context utilities"
+      "navsearch navsearch" !important;
+    row-gap: 7px !important;
+    column-gap: 8px !important;
+    height: auto !important;
+  }
+  .m101-nav-search-group {
+    width: 100% !important;
+    justify-content: flex-end !important;
+    gap: 5px !important;
+  }
+  .m101-nav-search-group .m101-horizontal-tabs {
+    flex: 1 1 auto !important;
+    width: 0 !important;
+    max-width: none !important;
+    justify-content: flex-end !important;
+    overflow-x: auto !important;
+  }
+  .m101-nav-search-group .m101-horizontal-tab {
+    min-width: 48px !important;
+    min-height: 39px !important;
+    padding: 3px 5px !important;
+    font-size: 9px !important;
+  }
+  .m101-nav-search-group .m101-global-search {
+    flex: 0 0 112px !important;
+    width: 112px !important;
+    min-width: 0 !important;
+    max-width: 112px !important;
+    padding-inline: 7px !important;
+  }
+  .m101-nav-search-group .m101-global-search input { font-size: 10px !important; }
+  .m101-nav-search-group .m101-global-search input::placeholder { font-size: 10px !important; }
+}
+@media (max-width: 370px) {
+  .m101-nav-search-group .m101-horizontal-tab {
+    min-width: 43px !important;
+    padding-inline: 3px !important;
+  }
+  .m101-nav-search-group .m101-global-search {
+    flex-basis: 96px !important;
+    width: 96px !important;
+    max-width: 96px !important;
+  }
+}
