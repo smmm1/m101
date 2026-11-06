@@ -92,7 +92,7 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                     type="checkbox"
                     onChange={toggleSelectAll}
                     checked={selectedIds.length === records.length && records.length > 0}
-                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                    className="w-4 h-4 rounded text-zinc-600 focus:ring-zinc-500 cursor-pointer"
                   />
                   <span className="ds-delete-select-label">
                     เลือกทั้งหมด ({selectedIds.length}/{records.length})
@@ -123,7 +123,7 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}} // handled by parent div
-                          className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                          className="w-4 h-4 rounded text-zinc-600 focus:ring-zinc-500 cursor-pointer"
                         />
                         <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 w-8">
                           #{r.sequenceNo || '-'}
