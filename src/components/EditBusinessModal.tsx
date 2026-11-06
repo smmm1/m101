@@ -112,17 +112,17 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
   };
 
   return (
-    <div className="m101-dialog-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+    <div className="m101-dialog-overlay ds-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
+      <div className="ds-modal-backdrop fixed inset-0" onClick={onClose} />
 
       {/* Modal Dialog matching BusinessDetailModal dimensions & design */}
-      <div className="relative m101-dialog-panel m101-form-dialog w-full max-w-2xl bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-10 animate-in zoom-in-95 duration-150 font-body flex flex-col max-h-[90vh]">
+      <div className="relative m101-dialog-panel ds-form-modal w-full max-w-2xl overflow-hidden z-10 animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="m101-dialog-header px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-start justify-between gap-4 shrink-0">
+        <div className="m101-dialog-header ds-modal-header ds-form-modal__header px-6 py-5 flex items-start justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
+            <div className="ds-modal-icon shrink-0">
               <span className="material-symbols-outlined text-[22px]">edit_note</span>
             </div>
             <div className="flex flex-col min-w-0">
@@ -143,7 +143,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           <DSButton
             type="button"
             onClick={onClose}
-            variant="ghost" className="w-9 h-9 flex items-center justify-center shrink-0"
+            variant="ghost" className="ds-icon-button flex items-center justify-center shrink-0"
             title="ปิดหน้าต่าง"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -151,9 +151,9 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
         </div>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto no-scrollbar flex-1">
+        <form onSubmit={handleSubmit} className="ds-form-modal__body p-6 space-y-5 overflow-y-auto no-scrollbar flex-1">
           {formError && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5">
+            <div className="ds-form-error p-3.5 flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
               <span className="font-semibold">{formError}</span>
             </div>
@@ -190,17 +190,17 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           </div>
 
           {/* 2. Primary Tax & Legal Information */}
-          <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+          <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">badge</span>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
+              <h3 className="ds-form-section__title">
                 ข้อมูลนิติบุคคลและผู้เสียภาษี
               </h3>
             </div>
 
             {/* Company Name */}
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              <label className="ds-label">
                 ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
               </label>
               <DSInput
@@ -208,14 +208,14 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 value={companyName}
                 onChange={(e) => handleCompanyNameChange(e.target.value)}
                 placeholder="ระบุชื่อนิติบุคคล"
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                className="ds-field"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Sequence No */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
+                <label className="ds-label ds-label--mono">
                   ลำดับ
                 </label>
                 <DSInput
@@ -229,7 +229,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
               {/* Tax ID */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
+                <label className="ds-label ds-label--mono">
                   เลขประจำตัวผู้เสียภาษี (13 หลัก)
                 </label>
                 <DSInput
@@ -243,7 +243,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
               {/* Business Type */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
+                <label className="ds-label">
                   ประเภทนิติบุคคล
                 </label>
                 <DSSelect
@@ -260,10 +260,10 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           </div>
 
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
-          <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+          <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">key</span>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
+              <h3 className="ds-form-section__title">
                 รหัสผ่านและข้อมูลการยื่นแบบ
               </h3>
             </div>
@@ -271,7 +271,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Password */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
+                <label className="ds-label ds-label--mono">
                   รหัสผ่าน (Password)
                 </label>
                 <DSInput
@@ -285,7 +285,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
               {/* e-Filing Code */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
+                <label className="ds-label ds-label--mono">
                   รหัสยื่น e-Filing
                 </label>
                 <DSInput
@@ -299,7 +299,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
               {/* SSO Code */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
+                <label className="ds-label ds-label--mono">
                   รหัสประกันสังคม (สปส.)
                 </label>
                 <DSInput
@@ -314,17 +314,17 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           </div>
 
           {/* 4. Auditor & Remarks */}
-          <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
+          <div className="ds-form-section p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">description</span>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
+              <h3 className="ds-form-section__title">
                 ข้อมูลผู้สอบบัญชีและหมายเหตุ
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
+                <label className="ds-label">
                   วันที่แจ้งผู้สอบบัญชี / ผู้สอบบัญชี
                 </label>
                 <DSInput
@@ -337,7 +337,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
+                <label className="ds-label">
                   หมายเหตุ / รหัสใหม่
                 </label>
                 <DSInput
@@ -352,16 +352,16 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           </div>
 
           {/* 5. Source File and Topic */}
-          <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-3">
+          <div className="ds-form-section p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-teal-700 dark:text-teal-300">history</span>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 font-headline">
+              <h3 className="ds-form-section__title">
                 ข้อมูลการนำเข้าและหัวข้อ
               </h3>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
+              <label className="ds-label">
                 ชุดข้อมูล / หัวข้อ / ที่มาไฟล์
               </label>
               <DSInput
@@ -375,7 +375,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           </div>
 
           {/* Action Buttons in Footer */}
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="ds-modal-footer pt-4 flex items-center justify-end gap-3">
             <DSButton
               type="button"
               onClick={onClose}
