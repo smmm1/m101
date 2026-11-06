@@ -62,10 +62,10 @@ const scenario = [
 ] as const;
 
 const levelColor: Record<LogLine['level'], string> = {
-  INFO: 'text-[#a1a1aa]',
-  DEBUG: 'text-[#a1a1aa]',
-  NOTICE: 'text-[#a1a1aa]',
-  WARNING: 'text-[#71717a]',
+  INFO: 'text-[#a2a2a2]',
+  DEBUG: 'text-[#a2a2a2]',
+  NOTICE: 'text-[#a2a2a2]',
+  WARNING: 'text-[#727272]',
 };
 
 function createLine(id: number, index: number, baseTime: number): LogLine {
@@ -189,39 +189,39 @@ export function SmartIdleScreen({ ownerPreviewEnabled = false }: { ownerPreviewE
   if (!isIdle) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] overflow-hidden bg-[#080a09] text-[#c1c9c4]" role="status" aria-label="M101 terminal idle display">
+    <div className="fixed inset-0 z-[200] overflow-hidden bg-[#0a0a0a] text-[#c7c7c7]" role="status" aria-label="M101 terminal idle display">
       <div className="flex h-full min-h-0 flex-col font-mono text-[10px] sm:text-xs">
-        <header className="flex h-9 shrink-0 items-center justify-between border-b border-[#29312d] bg-[#101411] px-3 sm:px-5">
+        <header className="flex h-9 shrink-0 items-center justify-between border-b border-[#2f2f2f] bg-[#131313] px-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="text-[#a5b2aa]">root@m101-node</span>
-            <span className="text-[#58635c]">:</span>
-            <span className="truncate text-[#87958c]">/var/log</span>
+            <span className="text-[#afafaf]">root@m101-node</span>
+            <span className="text-[#606060]">:</span>
+            <span className="truncate text-[#919191]">/var/log</span>
           </div>
-          <span className="ml-3 shrink-0 text-[#78847c]">journalctl -f</span>
+          <span className="ml-3 shrink-0 text-[#818181]">journalctl -f</span>
         </header>
 
         <div ref={logContainer} className="min-h-0 flex-1 overflow-hidden px-3 py-3 sm:px-5 sm:py-4" aria-live="off">
-          <div className="mb-3 space-y-1 text-[#77857c]">
+          <div className="mb-3 space-y-1 text-[#818181]">
             <div>-- Logs begin at {new Date(scenarioStart.current).toISOString().replace('T', ' ').slice(0, 19)} UTC --</div>
             <div>m101-node systemd[1]: System journal stream attached.</div>
-            <div className="text-[#68766d]">Following units: systemd · sshd · nginx · m101-web · postgres</div>
+            <div className="text-[#727272]">Following units: systemd · sshd · nginx · m101-web · postgres</div>
           </div>
 
           <div className="space-y-[3px]">
             {logs.map((line) => (
               <div key={line.id} className="grid grid-cols-[5.2rem_3.2rem_minmax(0,1fr)] gap-x-2 leading-[1.55] sm:grid-cols-[12.2rem_5.4rem_4.2rem_minmax(0,1fr)] sm:gap-x-3">
-                <span className="hidden whitespace-nowrap text-[#65736a] sm:block">{line.time}</span>
-                <span className="whitespace-nowrap text-[#65736a] sm:hidden">{line.time.slice(11, 19)}</span>
-                <span className="truncate text-[#8d9a91]">{line.unit}{line.pid ? `[${line.pid}]` : ''}:</span>
+                <span className="hidden whitespace-nowrap text-[#6f6f6f] sm:block">{line.time}</span>
+                <span className="whitespace-nowrap text-[#6f6f6f] sm:hidden">{line.time.slice(11, 19)}</span>
+                <span className="truncate text-[#979797]">{line.unit}{line.pid ? `[${line.pid}]` : ''}:</span>
                 <span className={`hidden sm:block ${levelColor[line.level]}`}>{line.level}</span>
-                <span className="break-all text-[#b8c2bb]">{line.message}</span>
+                <span className="break-all text-[#bfbfbf]">{line.message}</span>
               </div>
             ))}
-            <div className="pt-1 text-[#9aa69e]">_</div>
+            <div className="pt-1 text-[#a3a3a3]">_</div>
           </div>
         </div>
 
-        <footer className="flex h-7 shrink-0 items-center justify-between border-t border-[#29312d] px-3 text-[9px] text-[#69766e] sm:px-5 sm:text-[10px]">
+        <footer className="flex h-7 shrink-0 items-center justify-between border-t border-[#2f2f2f] px-3 text-[9px] text-[#737373] sm:px-5 sm:text-[10px]">
           <span>M101 / SYSTEM JOURNAL</span>
           <span>SIMULATED OUTPUT · WAITING FOR INPUT</span>
         </footer>
