@@ -160,3 +160,33 @@ button { -webkit-tap-highlight-color:transparent; }
 @media(prefers-reduced-motion:reduce) {
   .mobile-main-content *, .m101-sidebar *, .mobile-app-nav * { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+
+/* M101 horizontal SaaS navigation — monochrome tab bar */
+.m101-sidebar.m101-primary-sidebar{display:none!important}
+.m101-horizontal-tabs-wrap{
+  position:relative;z-index:25;flex:0 0 auto;width:100%;
+  overflow:hidden;background:#fff;border-bottom:1px solid #dedee2;
+}
+.m101-horizontal-tabs{
+  display:flex;align-items:stretch;gap:4px;width:100%;min-width:0;
+  padding:0 20px;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:thin;scrollbar-color:#c4c4c8 transparent;
+}
+.m101-horizontal-tabs::-webkit-scrollbar{height:4px}
+.m101-horizontal-tabs::-webkit-scrollbar-thumb{background:#d4d4d8;border-radius:99px}
+.m101-horizontal-tab{
+  position:relative;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;
+  gap:9px;min-height:52px;padding:0 15px;border:0;border-bottom:2px solid transparent;
+  border-radius:0;background:transparent;color:#71717a;font-size:13px;font-weight:550;
+  line-height:1.2;white-space:nowrap;cursor:pointer;
+  transition:color .16s ease,background-color .16s ease,border-color .16s ease;
+}
+.m101-horizontal-tab svg{width:17px;height:17px;flex:0 0 17px;stroke-width:1.8}
+.m101-horizontal-tab:hover{color:#27272a;background:#fafafa}
+.m101-horizontal-tab.is-active{color:#18181b;border-bottom-color:#18181b;font-weight:750}
+.m101-horizontal-tab:focus-visible{outline:2px solid #52525b;outline-offset:-3px}
+@media(max-width:700px){
+  .m101-horizontal-tabs{padding:0 8px;gap:0}
+  .m101-horizontal-tab{min-height:48px;padding:0 12px;font-size:12px;gap:7px}
+  .m101-horizontal-tab svg{width:16px;height:16px;flex-basis:16px}
+}
