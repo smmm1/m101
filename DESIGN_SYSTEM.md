@@ -131,7 +131,7 @@ The design-system foundation and first component migrations are in place:
 - The application is standardized on the requested clean light theme; the conflicting dark-mode toggle is removed and stale dark preference is cleared.
 - Annual Tasks, Add Business, Edit Business, and Bulk Delete dialogs use the shared React primitives.
 - The business registry uses shared buttons, search input, status badges, and the shared table style contract.
-- Excel/CSV mapping and duplicate-conflict flows use shared buttons, selects, badges, and preview-table styles.
+- Excel/CSV mapping, duplicate-conflict, and import landing flows use shared buttons, selects, badges, and preview-table styles.
 - Business detail and settings screens now use the shared page header, badges, and action buttons; settings text inputs also use shared fields.
 - The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
 
