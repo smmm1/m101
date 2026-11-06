@@ -45,7 +45,7 @@ const todayISO = () => {
 };
 const isOverdue = (task: AnnualTask) => task.status !== 'completed' && Boolean(task.dueDate) && task.dueDate < todayISO();
 const statusLabel = (task: AnnualTask) => isOverdue(task) ? 'เกินกำหนด' : task.status === 'completed' ? 'เสร็จแล้ว' : task.status === 'in_progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ';
-const statusColor = (task: AnnualTask) => isOverdue(task) ? '#dc5555' : task.status === 'completed' ? '#16865b' : task.status === 'in_progress' ? '#e6a23c' : '#aeb7b1';
+const statusColor = (task: AnnualTask) => isOverdue(task) ? '#52525b' : task.status === 'completed' ? '#52525b' : task.status === 'in_progress' ? '#71717a' : '#a1a1aa';
 
 export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
   records, selectedYear, isLoggedIn, onShowToast, onOpenTasks, mode = 'full',
