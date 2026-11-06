@@ -97,12 +97,12 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
         <div className="p-6 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
           {/* Delete Confirmation Box */}
           {yearToDelete && (
-            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-900 dark:text-rose-200 flex flex-col gap-3 animate-in fade-in">
-              <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-300">
+            <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900/50 text-xs text-zinc-900 dark:text-zinc-200 flex flex-col gap-3 animate-in fade-in">
+              <div className="flex items-center gap-2 font-bold text-zinc-700 dark:text-zinc-300">
                 <span className="material-symbols-outlined text-[18px]">warning</span>
                 <span>ยืนยันการลบรอบปี {yearToDelete}?</span>
               </div>
-              <p className="text-rose-700 dark:text-rose-300 text-[11px] leading-relaxed">
+              <p className="text-zinc-700 dark:text-zinc-300 text-[11px] leading-relaxed">
                 ข้อมูลกิจการทั้งหมด {(recordsByYear[yearToDelete] || []).length} รายการในรอบปี {yearToDelete} จะถูกลบออกจากระบบ
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
@@ -212,7 +212,7 @@ export const YearManageModal: React.FC<YearManageModalProps> = ({
               </div>
 
               {error && (
-                <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs">
+                <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950/40 text-zinc-600 dark:text-zinc-400 text-xs">
                   {error}
                 </div>
               )}
