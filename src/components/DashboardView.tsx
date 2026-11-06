@@ -8,7 +8,7 @@ import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
 import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
-import '../m101-redesign.css';
+import '../m101-zincesign.css';
 import '../m101-business-theme.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 import { DSBadge, DSButton, DSInput } from '../design-system/components';
@@ -17,7 +17,7 @@ function AnimatedCount({ value }: { value: number }) {
   const [displayValue, setDisplayValue] = useState(0);
   useEffect(() => {
     const target = Number.isFinite(value) ? value : 0;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia('(prefers-zincuced-motion: zincuce)').matches) {
       setDisplayValue(target);
       return;
     }
@@ -144,7 +144,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
     event.currentTarget.style.setProperty('--spot-y', `${event.clientY - rect.top}px`);
   };
-  const filteredCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
+  const filtezincCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
   useEffect(() => {
     const handleCommandShortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -214,7 +214,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return () => window.removeEventListener('m101:owner-navigate', handleOwnerNavigate);
   }, [isAdmin]);
 
-  // Restore the destination tab's position after React has rendered it.
+  // Restore the destination tab's position after React has rendezinc it.
   useEffect(() => {
     const container = mainContentRef.current;
     if (!container) return;
@@ -289,8 +289,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return records.length > 0 ? records[0] : null;
   }, [records, selectedId]);
 
-  // Filtered records with strictly numeric sequence sorting (1, 2, 3... 189)
-  const filteredRecords = useMemo(() => {
+  // Filtezinc records with strictly numeric sequence sorting (1, 2, 3... 189)
+  const filtezincRecords = useMemo(() => {
     return records
       .filter((r) => {
         if (filterTab === 'has_efiling' && (!r.eFilingCode || !r.eFilingCode.trim())) return false;
@@ -328,13 +328,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const canReorderRecords = isLoggedIn && Boolean(onRestoreRecords) && !searchQuery?.trim() && filterTab === 'all' && sortOrder === 'asc';
   const reorderRecords = (targetId: string) => {
     if (!draggedRecordId || draggedRecordId === targetId || !canReorderRecords || !onRestoreRecords) return;
-    const reordered = [...filteredRecords];
-    const from = reordered.findIndex((record) => record.id === draggedRecordId);
-    const to = reordered.findIndex((record) => record.id === targetId);
+    const reordezinc = [...filtezincRecords];
+    const from = reordezinc.findIndex((record) => record.id === draggedRecordId);
+    const to = reordezinc.findIndex((record) => record.id === targetId);
     if (from < 0 || to < 0) return;
-    const [moved] = reordered.splice(from, 1);
-    reordered.splice(to, 0, moved);
-    const withSequence = reordered.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
+    const [moved] = reordezinc.splice(from, 1);
+    reordezinc.splice(to, 0, moved);
+    const withSequence = reordezinc.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
     onRestoreRecords(withSequence);
     onShowToast('จัดลำดับกิจการและบันทึกแล้ว', 'เปลี่ยนลำดับสำเร็จ', 'success');
     setDraggedRecordId(null);
@@ -409,11 +409,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h2 id="m101-command-title" className="sr-only">ค้นหาเมนูและคำสั่ง</h2>
             <div className="flex items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800">
               <span className="material-symbols-outlined text-slate-400">search</span>
-              <input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && filteredCommandItems[0]) { filteredCommandItems[0].action(); setCommandOpen(false); } }} placeholder="พิมพ์เพื่อค้นหาเมนู..." className="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0 dark:text-white" />
+              <input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && filtezincCommandItems[0]) { filtezincCommandItems[0].action(); setCommandOpen(false); } }} placeholder="พิมพ์เพื่อค้นหาเมนู..." className="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0 dark:text-white" />
               <kbd className="rounded-md border border-slate-200 px-2 py-1 text-[10px] text-slate-400 dark:border-slate-700">ESC</kbd>
             </div>
             <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2">
-              {filteredCommandItems.length ? filteredCommandItems.map((item) => (
+              {filtezincCommandItems.length ? filtezincCommandItems.map((item) => (
                 <button key={item.id} type="button" onClick={() => { item.action(); setCommandOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 focus-visible:outline-none dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><span className="material-symbols-outlined text-[19px]">{item.icon}</span></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{item.label}</span><span className="mt-0.5 block text-xs text-slate-400">{item.hint}</span></span>
@@ -543,7 +543,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               onShowToast(`ลบรอบปี ${yr} สำเร็จ`, 'ลบสำเร็จ', 'success');
                             }
                           }}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:text-zinc-600 transition-colors"
                           title="ลบรอบปีนี้"
                         >
                           <span className="material-symbols-outlined text-[15px]">delete</span>
@@ -592,7 +592,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <span className="material-symbols-outlined text-[20px]">history</span>
               {activityLogs.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center font-mono">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-500 text-white text-[9px] font-bold flex items-center justify-center font-mono">
                   {activityLogs.length}
                 </span>
               )}
@@ -607,7 +607,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setActivityLogs([])}
-                    className="text-[10px] text-rose-500 hover:underline font-bold"
+                    className="text-[10px] text-zinc-500 hover:underline font-bold"
                   >
                     ล้างประวัติ
                   </button>
@@ -623,7 +623,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <span className={`font-bold px-1.5 py-0.5 rounded-md ${
                             log.type === 'add' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300' :
                             log.type === 'edit' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300' :
-                            log.type === 'delete' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' :
+                            log.type === 'delete' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300' :
                             'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300'
                           }`}>
                             {log.type.toUpperCase()}
@@ -682,7 +682,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     type="button"
                     role="menuitem"
                     onClick={() => { setShowProfileDropdown(false); onToggleLogin(); }}
-                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-left"
+                    className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-950/30 text-left"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
                     ออกจากระบบ
@@ -776,11 +776,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </DSButton>
                     ))}
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filteredRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filtezincRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
                 </div>
               </div>
               <div className="m101-record-list flex-1 overflow-auto min-h-0 bg-white dark:bg-slate-950">
-                {filteredRecords.length === 0 ? (
+                {filtezincRecords.length === 0 ? (
                   <div className="min-h-[280px] flex flex-col items-center justify-center text-center px-6">
                     <span className="material-symbols-outlined text-4xl text-slate-300 mb-3">search_off</span>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200">ไม่พบกิจการที่ตรงกับการค้นหา</p>
@@ -795,7 +795,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecords.map((r, idx) => {
+                      {filtezincRecords.map((r, idx) => {
                         const isSelected = activeRecord?.id === r.id;
                         const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
                         const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
@@ -806,9 +806,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             onDragOver={(event) => { if (draggedRecordId && canReorderRecords) { event.preventDefault(); setDragOverRecordId(r.id); } }}
                             onDrop={(event) => { event.preventDefault(); reorderRecords(r.id); }}
                             onDragEnd={() => { setDraggedRecordId(null); setDragOverRecordId(null); }}
-                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-zinc-50 dark:focus:bg-zinc-950/30 ${isSelected ? 'bg-zinc-50/80 dark:bg-zinc-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-teal-500' : ''}`}>
+                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-zinc-50 dark:focus:bg-zinc-950/30 ${isSelected ? 'bg-zinc-50/80 dark:bg-zinc-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-zinc-500' : ''}`}>
                             <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-zinc-700 dark:text-zinc-300' : 'text-slate-400'}`}>{seqNum}</span></td>
-                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : r.type === 'individual' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
+                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : r.type === 'individual' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge></td>
@@ -821,7 +821,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 )}
               </div>
               {canReorderRecords && <p className="px-5 py-2 text-[10px] text-slate-400">ลากแถวเพื่อจัดลำดับกิจการใหม่ · ระบบจะบันทึกลำดับให้อัตโนมัติ</p>}
-              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filteredRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
+              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filtezincRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
             </div>
             {/* RIGHT COLUMN: DETAIL CARD VIEW */}
             {/* RIGHT COLUMN: DETAIL CARD VIEW (~28% - Fully visible with no truncation) */}
@@ -933,8 +933,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </button>
 
                     {isLoggedIn && (inlineConfirmDelete ? (
-                      <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex flex-col gap-2 animate-in fade-in">
-                        <span className="text-xs font-bold text-rose-700 dark:text-rose-300 text-center">
+                      <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-900/50 flex flex-col gap-2 animate-in fade-in">
+                        <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 text-center">
                           ยืนยันต้องการลบกิจการนี้?
                         </span>
                         <div className="flex items-center gap-2">
@@ -953,7 +953,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               logActivity('delete', `ลบกิจการ "${activeRecord.companyName}"`);
                               onShowToast(`ลบ ${activeRecord.companyName} เรียบร้อย`, 'ลบสำเร็จ', 'success');
                             }}
-                            className="flex-1 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                            className="flex-1 py-1.5 rounded-xl bg-zinc-600 hover:bg-zinc-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                           >
                             ยืนยันลบ
                           </button>
@@ -963,7 +963,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setInlineConfirmDelete(true)}
-                        className="w-full h-10 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                        className="w-full h-10 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-950/40 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                         <span>ลบกิจการนี้</span>
