@@ -1,4 +1,5 @@
 import React from 'react';
+import { DSButton, DSBadge } from '../design-system/components';
 
 export interface ToastMessage {
   id: string;
@@ -22,33 +23,33 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss, onUndo
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="m101-toast pointer-events-auto flex items-center gap-2 bg-zinc-900/90 dark:bg-zinc-900/95 backdrop-blur-xs text-zinc-100 px-3 py-2 rounded-lg shadow-lg border border-zinc-700/60 animate-in fade-in slide-in-from-bottom-3 duration-200"
+          className="m101-toast ds-toast pointer-events-auto flex items-center gap-2 px-3 py-2 animate-in fade-in slide-in-from-bottom-3 duration-200"
         >
           {/* Subtle neutral monochrome icon */}
-          <span className="material-symbols-outlined text-[15px] text-zinc-400 shrink-0 select-none">
+          <span className="material-symbols-outlined ds-toast-icon text-[15px] shrink-0 select-none">
             {toast.type === 'error' ? 'info' : 'check'}
           </span>
 
           <div className="flex flex-col min-w-0 pr-1 leading-tight">
             {toast.title && (
-              <span className="text-[11px] font-semibold text-zinc-200 truncate">
+              <span className="ds-toast-title text-[11px] font-semibold truncate">
                 {toast.title}
               </span>
             )}
-            <span className="text-[10.5px] text-zinc-400 font-normal leading-snug break-words">
+            <span className="ds-toast-message text-[10.5px] font-normal leading-snug break-words">
               {toast.message}
             </span>
           </div>
 
-          {canUndo && onUndo && toast.type !== 'error' && <button type="button" onClick={() => { onUndo(); onDismiss(toast.id); }} className="ml-auto shrink-0 rounded-md border border-emerald-700/60 px-2 py-1 text-[10px] font-semibold text-emerald-300 transition-colors hover:bg-emerald-900/40">ย้อนกลับ</button>}
+          {canUndo && onUndo && toast.type !== 'error' && <DSButton type="button" variant="secondary" onClick={() => { onUndo(); onDismiss(toast.id); }} className="ds-toast-undo ml-auto shrink-0">ย้อนกลับ</DSButton>}
           <button
             type="button"
             onClick={() => onDismiss(toast.id)}
-            className="text-zinc-500 hover:text-zinc-200 p-0.5 cursor-pointer transition-colors shrink-0"
+            variant="ghost" className="ds-toast-close shrink-0"
             title="ปิด"
           >
             <span className="material-symbols-outlined text-[14px]">close</span>
-          </button>
+          </DSButton>
           <span className="m101-toast-progress" aria-hidden="true" />
         </div>
       ))}
