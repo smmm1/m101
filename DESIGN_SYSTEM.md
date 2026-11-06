@@ -132,11 +132,13 @@ The design-system foundation and first component migrations are in place:
 - Annual Tasks, Add Business, Edit Business, and Bulk Delete dialogs use the shared React primitives.
 - The business registry uses shared buttons, search input, status badges, and the shared table style contract.
 - Excel/CSV mapping and duplicate-conflict flows use shared buttons, selects, badges, and preview-table styles.
+- The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
 
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
 - Business detail actions, settings, admin surfaces, and remaining import controls still need component-by-component migration.
+- The legacy stylesheet still contains module-specific semantic colors and dark-theme selectors; these need a careful audit rather than a blind global replacement.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
