@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck } from 'lucide-react';
 import { BusinessRecord } from '../types';
 import { AnnualTasksView } from './AnnualTasksView';
 import { AddBusinessModal } from './AddBusinessModal';
@@ -426,14 +427,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
       
-      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
+      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก" aria-hidden="true">
         <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button><div><strong>M101</strong><span>Business Directory</span></div></div>
-        <div className="m101-nav-section-label">เมนูหลัก</div>
-        <button type="button" onClick={() => navigateToTab("dashboard")} className={"m101-side-link " + (activeTab === "dashboard" ? "is-active" : "")}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
-        <button type="button" onClick={() => navigateToTab("directory")} className={"m101-side-link " + (activeTab === "directory" ? "is-active" : "")}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab("tasks")} className={"m101-side-link " + (activeTab === "tasks" ? "is-active" : "")}><span className="material-symbols-outlined">event_note</span><span>งานประจำปี</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab("settings")} className={"m101-side-link " + (activeTab === "settings" ? "is-active" : "")}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
-        <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>สถานะฐานข้อมูล</strong><span>Cloudflare D1</span></div></div>
       </aside>
       {/* Hidden file input */}
       <input
@@ -692,6 +687,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </nav>
+
+      <div className="m101-horizontal-tabs-wrap">
+        <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
+          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
+            <Building2 aria-hidden="true" /><span>ภาพรวมระบบ (Dashboard)</span>
+          </button>
+          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-horizontal-tab ${activeTab === "directory" ? "is-active" : ""}`}>
+            <FileText aria-hidden="true" /><span>ไดเรกทอรีบัญชีธุรกิจ</span>
+          </button>
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-horizontal-tab ${activeTab === "tasks" ? "is-active" : ""}`}>
+            <CalendarCheck2 aria-hidden="true" /><span>งานภาษีและปฏิบัติตามกฎหมาย</span>
+          </button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-horizontal-tab ${activeTab === "import" ? "is-active" : ""}`}>
+            <FileSpreadsheet aria-hidden="true" /><span>นำเข้า / ส่งออก Excel</span>
+          </button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-horizontal-tab ${activeTab === "settings" ? "is-active" : ""}`}>
+            <ShieldCheck aria-hidden="true" /><span>ความปลอดภัยระบบ</span>
+          </button>}
+        </nav>
+      </div>
 
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
