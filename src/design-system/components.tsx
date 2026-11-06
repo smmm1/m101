@@ -45,13 +45,16 @@ export function DSTextarea({ className = '', ...props }: DSTextareaProps) {
 
 export interface DSPageHeaderProps {
   title: string;
+  eyebrow?: string;
   description?: string;
   actions?: React.ReactNode;
+  className?: string;
 }
-export function DSPageHeader({ title, description, actions }: DSPageHeaderProps) {
+export function DSPageHeader({ title, eyebrow, description, actions, className = '' }: DSPageHeaderProps) {
   return (
-    <header className="ds-page-header">
+    <header className={['ds-page-header', className].filter(Boolean).join(' ')}>
       <div className="ds-page-header__copy">
+        {eyebrow && <p className="ds-page-header__eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
