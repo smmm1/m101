@@ -428,7 +428,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
       
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        <div className="m101-brand"><div className="m101-brand-mark">M101</div><div className="m101-brand-copy"><strong>ระบบจัดการข้อมูลบัญชีและธุรกิจ</strong><span>BUSINESS DIRECTORY</span></div></div>
+        
         <div className="m101-nav-caption">พื้นที่ทำงาน</div>
         <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
         <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ไดเรกทอรีบัญชีธุรกิจ</span></button>
@@ -462,7 +462,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
-        {isAdmin ? <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M</button> : <span /> }
+        <div className="m101-brand m101-header-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-lg font-black text-[#20584f] active:scale-95">M101</button><div className="m101-brand-copy"><strong>ระบบจัดการข้อมูลบัญชีและธุรกิจ</strong><span>BUSINESS DIRECTORY</span></div></div>
         {/* Primary navigation is in the workspace sidebar. */}
         <div className="m101-global-search" role="search">
           <span className="material-symbols-outlined" aria-hidden="true">search</span>
