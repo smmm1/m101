@@ -135,6 +135,7 @@ The design-system foundation and first component migrations are in place:
 - Business detail and settings screens now use the shared page header, badges, and action buttons; settings text inputs also use shared fields.
 - Admin Control Center navigation, global toast actions, and fiscal-year management controls now use the shared button, badge, input, select, and dialog styling contracts.
 - Bulk Delete now uses tokenized modal surfaces, shared danger semantics, neutral row selection, and responsive dialog sizing; its selection and deletion behavior is unchanged.
+- Add Business and Edit Business forms now use the shared modal surface, labels, fields/selects, section panels, error states, and responsive sizing; validation and save behavior are unchanged.
 - Dialog overlays and panels across add/edit/detail/delete, import mapping, conflict resolution, and annual tasks now share tokenized surfaces, borders, shadows, radii, and subtle backdrop treatment.
 - The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
 
@@ -146,7 +147,7 @@ Migration is not yet complete:
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
-Next migration sequence: normalize Add/Edit Business form controls and modal styling; finish import progress/result and remaining utility controls; then audit the global shell and every route at mobile/tablet/desktop widths. Remove dead legacy selectors only after verifying their consumers.
+Next migration sequence: finish import progress/result and remaining utility controls; then audit the global shell and every route at mobile/tablet/desktop widths. Remove dead legacy selectors only after verifying their consumers.
 
 ## 11. Definition of done
 
