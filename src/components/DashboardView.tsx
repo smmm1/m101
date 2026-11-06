@@ -8,7 +8,7 @@ import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
 import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
-import '../m101-zincesign.css';
+import '../m101-redesign.css';
 import '../m101-business-theme.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 import { DSBadge, DSButton, DSInput } from '../design-system/components';
@@ -17,7 +17,7 @@ function AnimatedCount({ value }: { value: number }) {
   const [displayValue, setDisplayValue] = useState(0);
   useEffect(() => {
     const target = Number.isFinite(value) ? value : 0;
-    if (window.matchMedia('(prefers-zincuced-motion: zincuce)').matches) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setDisplayValue(target);
       return;
     }
@@ -144,7 +144,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     event.currentTarget.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
     event.currentTarget.style.setProperty('--spot-y', `${event.clientY - rect.top}px`);
   };
-  const filtezincCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
+  const filterCommandItems = commandItems.filter((item) => `${item.label} ${item.hint}`.toLocaleLowerCase('th-TH').includes(commandQuery.trim().toLocaleLowerCase('th-TH')));
   useEffect(() => {
     const handleCommandShortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -214,7 +214,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return () => window.removeEventListener('m101:owner-navigate', handleOwnerNavigate);
   }, [isAdmin]);
 
-  // Restore the destination tab's position after React has rendezinc it.
+  // Restore the destination tab's position after React has rendered it.
   useEffect(() => {
     const container = mainContentRef.current;
     if (!container) return;
@@ -290,7 +290,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [records, selectedId]);
 
   // Filtezinc records with strictly numeric sequence sorting (1, 2, 3... 189)
-  const filtezincRecords = useMemo(() => {
+  const filterRecords = useMemo(() => {
     return records
       .filter((r) => {
         if (filterTab === 'has_efiling' && (!r.eFilingCode || !r.eFilingCode.trim())) return false;
@@ -328,13 +328,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const canReorderRecords = isLoggedIn && Boolean(onRestoreRecords) && !searchQuery?.trim() && filterTab === 'all' && sortOrder === 'asc';
   const reorderRecords = (targetId: string) => {
     if (!draggedRecordId || draggedRecordId === targetId || !canReorderRecords || !onRestoreRecords) return;
-    const reordezinc = [...filtezincRecords];
-    const from = reordezinc.findIndex((record) => record.id === draggedRecordId);
-    const to = reordezinc.findIndex((record) => record.id === targetId);
+    const reordered = [...filterRecords];
+    const from = reordered.findIndex((record) => record.id === draggedRecordId);
+    const to = reordered.findIndex((record) => record.id === targetId);
     if (from < 0 || to < 0) return;
-    const [moved] = reordezinc.splice(from, 1);
-    reordezinc.splice(to, 0, moved);
-    const withSequence = reordezinc.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    const withSequence = reordered.map((record, index) => ({ ...record, sequenceNo: String(index + 1).padStart(2, '0') }));
     onRestoreRecords(withSequence);
     onShowToast('จัดลำดับกิจการและบันทึกแล้ว', 'เปลี่ยนลำดับสำเร็จ', 'success');
     setDraggedRecordId(null);
@@ -409,11 +409,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h2 id="m101-command-title" className="sr-only">ค้นหาเมนูและคำสั่ง</h2>
             <div className="flex items-center gap-3 border-b border-slate-100 px-4 dark:border-slate-800">
               <span className="material-symbols-outlined text-slate-400">search</span>
-              <input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && filtezincCommandItems[0]) { filtezincCommandItems[0].action(); setCommandOpen(false); } }} placeholder="พิมพ์เพื่อค้นหาเมนู..." className="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0 dark:text-white" />
+              <input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && filterCommandItems[0]) { filterCommandItems[0].action(); setCommandOpen(false); } }} placeholder="พิมพ์เพื่อค้นหาเมนู..." className="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none focus:ring-0 dark:text-white" />
               <kbd className="rounded-md border border-slate-200 px-2 py-1 text-[10px] text-slate-400 dark:border-slate-700">ESC</kbd>
             </div>
             <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2">
-              {filtezincCommandItems.length ? filtezincCommandItems.map((item) => (
+              {filterCommandItems.length ? filterCommandItems.map((item) => (
                 <button key={item.id} type="button" onClick={() => { item.action(); setCommandOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 focus-visible:outline-none dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><span className="material-symbols-outlined text-[19px]">{item.icon}</span></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{item.label}</span><span className="mt-0.5 block text-xs text-slate-400">{item.hint}</span></span>
@@ -776,11 +776,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </DSButton>
                     ))}
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filtezincRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filterRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
                 </div>
               </div>
               <div className="m101-record-list flex-1 overflow-auto min-h-0 bg-white dark:bg-slate-950">
-                {filtezincRecords.length === 0 ? (
+                {filterRecords.length === 0 ? (
                   <div className="min-h-[280px] flex flex-col items-center justify-center text-center px-6">
                     <span className="material-symbols-outlined text-4xl text-slate-300 mb-3">search_off</span>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200">ไม่พบกิจการที่ตรงกับการค้นหา</p>
@@ -795,7 +795,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {filtezincRecords.map((r, idx) => {
+                      {filterRecords.map((r, idx) => {
                         const isSelected = activeRecord?.id === r.id;
                         const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
                         const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
@@ -821,7 +821,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 )}
               </div>
               {canReorderRecords && <p className="px-5 py-2 text-[10px] text-slate-400">ลากแถวเพื่อจัดลำดับกิจการใหม่ · ระบบจะบันทึกลำดับให้อัตโนมัติ</p>}
-              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filtezincRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
+              <div className="px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0"><span>กำลังแสดง {filterRecords.length.toLocaleString('th-TH')} รายการ</span><span>เลือกแถวเพื่อดูรายละเอียด</span></div>
             </div>
             {/* RIGHT COLUMN: DETAIL CARD VIEW */}
             {/* RIGHT COLUMN: DETAIL CARD VIEW (~28% - Fully visible with no truncation) */}
