@@ -434,7 +434,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="material-symbols-outlined">folder_open</span><span>ไดเรกทอรีบัญชีธุรกิจ</span></button>
         {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="material-symbols-outlined">task_alt</span><span>งานภาษีและปฏิบัติตามกฎหมาย</span></button>}
         {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="material-symbols-outlined">file_upload</span><span>นำเข้า / ส่งออก Excel</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="material-symbols-outlined">shield_lock</span><span>ความปลอดภัยระบบ</span></button>}
         <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>พื้นที่จัดเก็บ</strong><span>Cloudflare D1</span></div></div>
       </aside>
 
@@ -476,6 +476,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <kbd>⌘ K</kbd>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          {isLoggedIn && <button type="button" onClick={() => setIsAddModalOpen(true)} className="m101-header-add inline-flex h-9 items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"><span className="material-symbols-outlined text-[16px]">add</span><span>เพิ่มข้อมูลธุรกิจ</span></button>}
           
           {/* Fiscal Year Switcher with Add/Delete */}
           <div className="relative">
