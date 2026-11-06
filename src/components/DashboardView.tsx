@@ -689,39 +689,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-                    <span className="text-xl font-extrabold text-slate-900 dark:text-white font-headline">
-                      {records.length}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">รายการ</span>
+                  <div className="m101-directory-count" aria-label={`${records.length} รายการ`}>
+                    <strong>{records.length.toLocaleString('th-TH')}</strong>
+                    <span>รายการ</span>
                   </div>
 
-                  {/* Add Item Button */}
                   {isLoggedIn && (
-                    <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="h-10 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">add</span>
-                      <span>เพิ่มกิจการ</span>
-                    </DSButton>
-                  )}
-
-                  {isLoggedIn && (
-                    <>
-                      <DSButton type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="h-10 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                    <div className="m101-directory-actions" role="group" aria-label="จัดการทะเบียนกิจการ">
+                      <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="m101-directory-action m101-directory-action--add">
+                        <span className="material-symbols-outlined" aria-hidden="true">add</span>
+                        <span>เพิ่มกิจการ</span>
+                      </DSButton>
+                      <DSButton type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="m101-directory-action">
+                        <span className="material-symbols-outlined" aria-hidden="true">upload_file</span>
                         <span>นำเข้าไฟล์</span>
                       </DSButton>
-                      <DSButton type="button" variant="secondary" onClick={() => setIsExcelMappingOpen(true)} className="flex items-center gap-1.5" title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง">
-                        <span className="material-symbols-outlined text-[16px]">table_chart</span>
+                      <DSButton type="button" variant="secondary" onClick={() => setIsExcelMappingOpen(true)} className="m101-directory-action" title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง">
+                        <span className="material-symbols-outlined" aria-hidden="true">table_chart</span>
                         <span>จับคู่คอลัมน์</span>
                       </DSButton>
-                    </>
-                  )}
-                  
-                  {isLoggedIn && (
-                    <DSButton type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} className="h-10 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                      <span>ลบหลายรายการ</span>
-                    </DSButton>
+                      <DSButton type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} className="m101-directory-action m101-directory-action--delete">
+                        <span className="material-symbols-outlined" aria-hidden="true">delete_outline</span>
+                        <span>ลบหลายรายการ</span>
+                      </DSButton>
+                    </div>
                   )}
                 </div>
               </div>
