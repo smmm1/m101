@@ -56,7 +56,7 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-button--card.ds-button--primary .text-slate-900,
 .ds-button--card.ds-button--primary .text-slate-800,
 .ds-button--card.ds-button--primary .text-slate-600 { color:#fff!important; }
-.ds-button--card.ds-button--primary .text-slate-500 { color:rgba(255, 255, 255,.82)!important; }
+.ds-button--card.ds-button--primary .text-slate-500 { color:rgba(255, 255, 255, .82)!important; }
 .ds-import-field { width:100%; }
 
 .ds-conflict-preview-toggle { width:100%; justify-content:space-between; padding:10px 12px; text-align:left; }
@@ -111,7 +111,7 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 
 
 /* Bulk-delete dialog: shared neutral modal surface and semantic danger states. */
-.ds-modal-overlay { background:rgba(23, 23, 23,.48); backdrop-filter:blur(2px); }
+.ds-modal-overlay { background:rgba(23, 23, 23, .48); backdrop-filter:blur(2px); }
 .ds-delete-modal { padding:24px; border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-xl); background:var(--ds-color-surface); color:var(--ds-color-text); box-shadow:var(--ds-shadow-dialog); }
 .ds-modal-header { padding-bottom:16px; margin-bottom:4px; }
 .ds-modal-icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:var(--ds-radius-md); background:var(--ds-color-surface-subtle); color:var(--ds-color-text-secondary); }
@@ -133,7 +133,7 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 
 
 /* Business create/edit forms use the same modal, field and section primitives. */
-.ds-modal-backdrop { background:rgba(23, 23, 23,.48); backdrop-filter:blur(2px); }
+.ds-modal-backdrop { background:rgba(23, 23, 23, .48); backdrop-filter:blur(2px); }
 .ds-form-modal { border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-xl); background:var(--ds-color-surface); color:var(--ds-color-text); box-shadow:var(--ds-shadow-dialog); }
 .ds-form-modal--compact { max-height:min(88vh,760px); }
 .ds-form-modal__header { background:var(--ds-color-surface); }
