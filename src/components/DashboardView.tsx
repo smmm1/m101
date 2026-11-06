@@ -11,6 +11,7 @@ import { DeleteBusinessModal } from './DeleteBusinessModal';
 import '../m101-redesign.css';
 import '../m101-business-theme.css';
 import { parseDocumentFile } from '../utils/excelHelper';
+import { DSBadge, DSButton, DSInput } from '../design-system/components';
 
 function AnimatedCount({ value }: { value: number }) {
   const [displayValue, setDisplayValue] = useState(0);
@@ -505,7 +506,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="text-[11px] text-amber-600 dark:text-amber-400 font-bold hover:underline"
                     >
                       จัดการทั้งหมด
-                    </button>
+                    </DSButton>
                   )}
                 </div>
 
@@ -723,44 +724,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   {/* Add Item Button */}
                   {isLoggedIn && (
-                    <button
-                      type="button"
-                      onClick={() => setIsAddModalOpen(true)}
-                      className="h-10 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-sm font-bold flex items-center gap-2 shadow-sm shadow-teal-900/10 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/20"
-                    >
+                    <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="h-10 flex items-center gap-2">
                       <span className="material-symbols-outlined text-[16px]">add</span>
                       <span>เพิ่มกิจการ</span>
-                    </button>
+                    </DSButton>
                   )}
 
                   {isLoggedIn && (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-10 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/15"
-                      >
+                      <DSButton type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="h-10 flex items-center gap-2">
                         <span className="material-symbols-outlined text-[16px]">upload_file</span>
                         <span>นำเข้าไฟล์</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsExcelMappingOpen(true)}
-                        className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                        title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง"
-                      >
+                      </DSButton>
+                      <DSButton type="button" variant="secondary" onClick={() => setIsExcelMappingOpen(true)} className="flex items-center gap-1.5" title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง">
                         <span className="material-symbols-outlined text-[16px]">table_chart</span>
                         <span>จับคู่คอลัมน์</span>
-                      </button>
+                      </DSButton>
                     </>
                   )}
                   
                   {isLoggedIn && (
-                    <button
-                      type="button"
-                      onClick={() => setIsDeleteModalOpen(true)}
-                      className="h-10 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/70 text-rose-700 dark:text-rose-300 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/15"
-                    >
+                    <DSButton type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} className="h-10 flex items-center gap-2">
                       <span className="material-symbols-outlined text-[16px]">delete</span>
                       <span>ลบหลายรายการ</span>
                     </button>
@@ -774,11 +758,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="flex flex-col xl:flex-row xl:items-center gap-3">
                   <div className="relative flex-1 min-w-0">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><span className="material-symbols-outlined text-[19px]">search</span></span>
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน เลขภาษี E-Filing หรือ SSO" className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition-all" />
+                    <DSInput type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน เลขภาษี E-Filing หรือ SSO" aria-label="ค้นหาทะเบียนกิจการ" className="ds-directory-search" />
                   </div>
-                  <button type="button" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:border-teal-500 transition-colors">
+                  <DSButton type="button" variant="secondary" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="inline-flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">swap_vert</span> ลำดับ {sortOrder === 'asc' ? 'น้อย → มาก' : 'มาก → น้อย'}
-                  </button>
+                  </DSButton>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2" role="group" aria-label="กรองรายการ">
@@ -787,9 +771,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       { id: 'has_efiling', label: 'มี E-Filing', count: records.filter((r) => Boolean(r.eFilingCode?.trim())).length },
                       { id: 'no_efiling', label: 'ไม่มี E-Filing', count: records.filter((r) => !r.eFilingCode?.trim()).length },
                     ].map((tab) => (
-                      <button key={tab.id} type="button" onClick={() => setFilterTab(tab.id as any)} className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold border transition-colors ${filterTab === tab.id ? 'bg-teal-700 border-teal-700 text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-teal-400'}`}>
+                      <DSButton key={tab.id} type="button" variant={filterTab === tab.id ? 'primary' : 'secondary'} onClick={() => setFilterTab(tab.id as any)} className="inline-flex items-center gap-2">
                         {tab.label}<span className={`text-[10px] ${filterTab === tab.id ? 'text-teal-100' : 'text-slate-400'}`}>{tab.count}</span>
-                      </button>
+                      </DSButton>
                     ))}
                   </div>
                   <span className="text-xs text-slate-500 dark:text-slate-400">พบ {filteredRecords.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} กิจการ</span>
@@ -801,10 +785,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <span className="material-symbols-outlined text-4xl text-slate-300 mb-3">search_off</span>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200">ไม่พบกิจการที่ตรงกับการค้นหา</p>
                     <p className="text-xs text-slate-400 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
-                    <button type="button" onClick={() => { setSearchQuery(''); setFilterTab('all'); }} className="mt-4 text-xs font-bold text-teal-700 hover:underline">ล้างตัวกรอง</button>
+                    <DSButton type="button" variant="ghost" onClick={() => { setSearchQuery(''); setFilterTab('all'); }} className="mt-4">ล้างตัวกรอง</DSButton>
                   </div>
                 ) : (
-                  <table className="w-full min-w-[820px] border-collapse text-left">
+                  <table className="ds-table w-full min-w-[820px] border-collapse text-left">
                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900">
                       <tr className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                         <th className="px-4 py-3 font-bold w-16">ลำดับ</th><th className="px-4 py-3 font-bold">กิจการ / เลขประจำตัวผู้เสียภาษี</th><th className="px-4 py-3 font-bold">E-Filing</th><th className="px-4 py-3 font-bold">ประกันสังคม</th><th className="px-4 py-3 font-bold">สถานะงาน</th><th className="px-4 py-3 font-bold w-16 text-right">จัดการ</th>
@@ -815,7 +799,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         const isSelected = activeRecord?.id === r.id;
                         const seqNum = r.sequenceNo || String(idx + 1).padStart(2, '0');
                         const statusLabel = r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ';
-                        const statusTone = r.status === 'completed' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-950/50 dark:text-emerald-300' : r.status === 'in_progress' ? 'bg-amber-50 text-amber-700 ring-amber-600/15 dark:bg-amber-950/50 dark:text-amber-300' : 'bg-slate-100 text-slate-600 ring-slate-500/15 dark:bg-slate-800 dark:text-slate-300';
+                        
                         return (
                           <tr key={r.id} draggable={canReorderRecords}
                             onDragStart={(event) => { if (!canReorderRecords) { event.preventDefault(); return; } setDraggedRecordId(r.id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', r.id); }}
@@ -827,8 +811,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' : r.type === 'individual' ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-teal-900 dark:text-teal-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
-                            <td className="px-4 py-4 align-middle"><span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ring-1 ring-inset ${statusTone}`}>{statusLabel}</span></td>
-                            <td className="px-4 py-4 align-middle text-right">{isLoggedIn ? <button type="button" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="inline-flex w-8 h-8 items-center justify-center rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors" title="แก้ไขกิจการ"><span className="material-symbols-outlined text-[18px]">edit</span></button> : <span className="text-slate-300">›</span>}</td>
+                            <td className="px-4 py-4 align-middle"><DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge></td>
+                            <td className="px-4 py-4 align-middle text-right">{isLoggedIn ? <DSButton type="button" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="ds-table-action" title="แก้ไขกิจการ" aria-label={`แก้ไขกิจการ ${r.companyName}`}><span className="material-symbols-outlined text-[18px]">edit</span></DSButton> : <span className="text-slate-300">›</span>}</td>
                           </tr>
                         );
                       })}
