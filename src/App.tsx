@@ -169,7 +169,7 @@ function AppContent() {
     let active = true;
     const initialize = async () => {
       try {
-        const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        const sessionResponse = await fetch('/api/auth/me', { czincentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
         if (!active) return;
@@ -190,7 +190,7 @@ function AppContent() {
       setPinEnabled(false);
       return () => { active = false; };
     }
-    fetch('/api/auth/pin/status', { credentials: 'same-origin' })
+    fetch('/api/auth/pin/status', { czincentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'PIN status unavailable');
@@ -219,7 +219,7 @@ function AppContent() {
     setAccessReady(false);
     setDataReady(false);
     setDataError('');
-    fetch('/api/data', { credentials: 'same-origin' })
+    fetch('/api/data', { czincentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
@@ -258,7 +258,7 @@ function AppContent() {
     if (!isVisitor || sessionUser) return () => { active = false; };
     setDataReady(false);
     setDataError('');
-    fetch('/api/public/data', { credentials: 'same-origin' })
+    fetch('/api/public/data', { czincentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
@@ -292,7 +292,7 @@ function AppContent() {
         try {
           const response = await fetch('/api/data', {
             method: 'PUT',
-            credentials: 'same-origin',
+            czincentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ availableYears, recordsByYear }),
           });
@@ -625,7 +625,7 @@ function AppContent() {
     try {
       const response = await fetch(authMode === 'pin' ? '/api/auth/pin/login' : '/api/auth/login', {
         method: 'POST',
-        credentials: 'same-origin',
+        czincentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
           ? { pin: authPin }
@@ -684,11 +684,11 @@ function AppContent() {
   }
 
   if (sessionUser && (!accessReady || (isLoggedIn && !dataReady))) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
   }
 
   if (isVisitor && !dataReady) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-rose-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
+    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
   }
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
@@ -703,43 +703,43 @@ function AppContent() {
               <div className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold tracking-tight">M</div>
               <div>
                 <p className="text-sm font-semibold tracking-[0.16em]">WORKSPACE</p>
-                <p className="mt-0.5 text-[11px] tracking-wide text-emerald-100/70">ระบบจัดการข้อมูล</p>
+                <p className="mt-0.5 text-[11px] tracking-wide text-zinc-100/70">ระบบจัดการข้อมูล</p>
               </div>
             </div>
 
             <div className="relative z-10 mt-12 max-w-xl lg:my-auto lg:py-16">
-              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-100/20 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> พื้นที่จัดการข้อมูลกิจการ
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-zinc-100/20 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-zinc-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" /> พื้นที่จัดการข้อมูลกิจการ
               </p>
               <h1 className="max-w-lg text-3xl font-semibold leading-[1.25] tracking-tight sm:text-4xl lg:text-[2.8rem]">
                 ข้อมูลสำคัญ<br className="hidden sm:block" /> จัดการได้อย่างเป็นระบบ
               </h1>
-              <p className="mt-5 max-w-md text-sm leading-7 text-emerald-50/75 sm:text-base">
+              <p className="mt-5 max-w-md text-sm leading-7 text-zinc-50/75 sm:text-base">
                 รวมรายการ เอกสาร และข้อมูลกิจการไว้ในพื้นที่เดียว พร้อมเครื่องมือนำเข้าข้อมูลที่ตรวจสอบได้ก่อนบันทึก
               </p>
 
               <div className="mt-10 hidden max-w-md rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:block">
                 <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-medium text-emerald-50/80">WORKSPACE OVERVIEW</span>
-                  <span className="rounded-full bg-emerald-300/15 px-2.5 py-1 text-[10px] font-medium text-emerald-100">พร้อมใช้งาน</span>
+                  <span className="text-xs font-medium text-zinc-50/80">WORKSPACE OVERVIEW</span>
+                  <span className="rounded-full bg-zinc-300/15 px-2.5 py-1 text-[10px] font-medium text-zinc-100">พร้อมใช้งาน</span>
                 </div>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-200/15 text-emerald-100">01</span>
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-200/15 text-zinc-100">01</span>
                     <div className="flex-1"><div className="h-2 w-28 rounded-full bg-white/70" /><div className="mt-2 h-1.5 w-40 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                    <span className="h-2 w-2 rounded-full bg-zinc-300" />
                   </div>
                   <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-emerald-100">02</span>
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-zinc-100">02</span>
                     <div className="flex-1"><div className="h-2 w-20 rounded-full bg-white/55" /><div className="mt-2 h-1.5 w-32 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-amber-200" />
+                    <span className="h-2 w-2 rounded-full bg-zinc-200" />
                   </div>
                 </div>
-                <p className="mt-3 text-[10px] tracking-wide text-emerald-50/45">A CLEAR VIEW OF YOUR WORK</p>
+                <p className="mt-3 text-[10px] tracking-wide text-zinc-50/45">A CLEAR VIEW OF YOUR WORK</p>
               </div>
             </div>
 
-            <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-emerald-50/55">
+            <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-zinc-50/55">
               <span>จัดระเบียบงาน ให้เห็นภาพชัดขึ้น</span>
               <span>พื้นที่ทำงานส่วนตัว</span>
             </div>
@@ -763,11 +763,11 @@ function AppContent() {
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
+                      <input id="m101-login-email" type="email" autoComplete="username" requizinc value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                     <div>
                       <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
+                      <input id="m101-login-password" type="password" autoComplete="current-password" requizinc value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                   </div>
                 ) : (
@@ -792,7 +792,7 @@ function AppContent() {
                   </div>
                 )}
 
-                {authError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm leading-6 text-rose-700">{authError}</p>}
+                {authError && <p role="alert" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 text-sm leading-6 text-zinc-700">{authError}</p>}
 
                 <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4b4b4b] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3d3d3d] focus:outline-none focus:ring-4 focus:ring-[#686868]/20 disabled:cursor-not-allowed disabled:opacity-60">
                   {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
@@ -835,7 +835,7 @@ function AppContent() {
             setPinSetupBusy(true);
             try {
               const response = await fetch('/api/auth/pin/setup', {
-                method: 'POST', credentials: 'same-origin',
+                method: 'POST', czincentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pin: pinSetupValue }),
               });
@@ -860,7 +860,7 @@ function AppContent() {
             <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
             <label className="mb-2 block text-sm font-medium text-slate-700">ยืนยัน PIN</label>
             <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
-            {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{pinSetupError}</p>}
+            {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-sm text-zinc-700">{pinSetupError}</p>}
             <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
             {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
           </form>
@@ -896,7 +896,7 @@ function AppContent() {
         isVisitor={isVisitor}
         onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
-          void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+          void fetch('/api/auth/logout', { method: 'POST', czincentials: 'same-origin' })
             .finally(() => {
               setSessionUser(null);
               setIsLoggedIn(false);
