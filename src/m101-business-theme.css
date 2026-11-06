@@ -190,3 +190,13 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-horizontal-tab{min-height:48px;padding:0 12px;font-size:12px;gap:7px}
   .m101-horizontal-tab svg{width:16px;height:16px;flex-basis:16px}
 }
+
+
+/* Horizontal navigation layout override: header / tabs / page content */
+.mobile-app-shell{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:64px auto minmax(0,1fr)!important;
+  grid-template-areas:"topbar" "tabs" "content"!important;
+}
+.m101-horizontal-tabs-wrap{grid-area:tabs}
+.mobile-main-content{grid-area:content;min-width:0}
