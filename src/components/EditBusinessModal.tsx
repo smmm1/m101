@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
 import { inferBusinessType } from '../utils/thaiDate';
 import { useSystemConfig } from '../context/SystemConfigContext';
+import { DSBadge, DSButton, DSInput, DSSelect } from '../design-system/components';
 
 interface EditBusinessModalProps {
   record: BusinessRecord | null;
@@ -139,14 +140,14 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
             </div>
           </div>
 
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            variant="ghost" className="w-9 h-9 flex items-center justify-center shrink-0"
             title="ปิดหน้าต่าง"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         {/* Scrollable Form Content */}
@@ -162,10 +163,10 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">สถานะการดำเนินงาน:</span>
-              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${currentBadge.bg}`}>
+              <DSBadge variant={status === 'completed' ? 'success' : status === 'in_progress' ? 'info' : 'warning'}>
                 <span className={`w-2 h-2 rounded-full ${currentBadge.dot}`} />
-                <span>{currentBadge.label}</span>
-              </span>
+                {currentBadge.label}
+              </DSBadge>
             </div>
 
             {/* Quick Status Buttons */}
@@ -174,19 +175,15 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 const b = getStatusBadge(s);
                 const isCurrent = status === s;
                 return (
-                  <button
+                  <DSButton
                     key={s}
                     type="button"
                     onClick={() => setStatus(s)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      isCurrent
-                        ? 'bg-teal-700 dark:bg-teal-600 text-white shadow-sm'
-                        : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700'
-                    }`}
+                    variant={isCurrent ? 'primary' : 'secondary'} className="ds-status-option"
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${b.dot}`} />
                     <span>{b.label}</span>
-                  </button>
+                  </DSButton>
                 );
               })}
             </div>
@@ -206,7 +203,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DSInput
                 type="text"
                 value={companyName}
                 onChange={(e) => handleCompanyNameChange(e.target.value)}
@@ -221,7 +218,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   ลำดับ
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={sequenceNo}
                   onChange={(e) => setSequenceNo(e.target.value)}
@@ -235,7 +232,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   เลขประจำตัวผู้เสียภาษี (13 หลัก)
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
@@ -249,7 +246,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   ประเภทนิติบุคคล
                 </label>
-                <select
+                <DSSelect
                   value={type}
                   onChange={(e) => setType(e.target.value as BusinessType)}
                   className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-teal-600 transition-all shadow-2xs cursor-pointer"
@@ -257,7 +254,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   <option value="company">บริษัทจำกัด (บจก.)</option>
                   <option value="partnership">ห้างหุ้นส่วนจำกัด (หจก.)</option>
                   <option value="individual">บุคคลธรรมดา</option>
-                </select>
+                </DSSelect>
               </div>
             </div>
           </div>
@@ -277,7 +274,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสผ่าน (Password)
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -291,7 +288,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสยื่น e-Filing
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={eFilingCode}
                   onChange={(e) => setEFilingCode(e.target.value)}
@@ -305,7 +302,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block font-mono">
                   รหัสประกันสังคม (สปส.)
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={ssoCode}
                   onChange={(e) => setSsoCode(e.target.value)}
@@ -330,7 +327,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   วันที่แจ้งผู้สอบบัญชี / ผู้สอบบัญชี
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={auditorDate}
                   onChange={(e) => setAuditorDate(e.target.value)}
@@ -343,7 +340,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                   หมายเหตุ / รหัสใหม่
                 </label>
-                <input
+                <DSInput
                   type="text"
                   value={remark}
                   onChange={(e) => setRemark(e.target.value)}
@@ -367,7 +364,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">
                 ชุดข้อมูล / หัวข้อ / ที่มาไฟล์
               </label>
-              <input
+              <DSInput
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -379,20 +376,20 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
           {/* Action Buttons in Footer */}
           <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800/80">
-            <button
+            <DSButton
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              variant="secondary"
             >
               ยกเลิก
-            </button>
-            <button
+            </DSButton>
+            <DSButton
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-teal-700 dark:bg-teal-600 hover:bg-teal-800 dark:hover:bg-teal-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
+              variant="primary" className="flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">save</span>
               <span>บันทึกการแก้ไข</span>
-            </button>
+            </DSButton>
           </div>
         </form>
       </div>
