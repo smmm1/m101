@@ -661,7 +661,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div role="menu" aria-label="เมนูบัญชีผู้ใช้" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-3 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">บัญชีที่กำลังใช้งาน</p>
-                        {/* 2. MAIN VIEW SWITCHER / CONTENT */}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         <div key={activeTab} className="m101-tab-transition min-h-full">
         {activeTab === 'directory' && (
