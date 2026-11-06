@@ -414,7 +414,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2">
               {filteredCommandItems.length ? filteredCommandItems.map((item) => (
-                <button key={item.id} type="button" onClick={() => { item.action(); setCommandOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-teal-50 focus-visible:bg-teal-50 focus-visible:outline-none dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800">
+                <button key={item.id} type="button" onClick={() => { item.action(); setCommandOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 focus-visible:outline-none dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><span className="material-symbols-outlined text-[19px]">{item.icon}</span></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{item.label}</span><span className="mt-0.5 block text-xs text-slate-400">{item.hint}</span></span>
                   <span className="text-xs text-slate-300">↵</span>
@@ -447,8 +447,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Floating 3-second Notification Toast */}
       {currentNotification && (
-        <div className="fixed top-20 right-6 z-50 bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200 border border-slate-700 dark:border-amber-400">
-          <span className="material-symbols-outlined text-[20px] text-amber-400 dark:text-slate-900 animate-spin">
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 dark:bg-zinc-500 text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200 border border-slate-700 dark:border-zinc-400">
+          <span className="material-symbols-outlined text-[20px] text-zinc-400 dark:text-slate-900 animate-spin">
             notifications_active
           </span>
           <div className="flex flex-col text-xs">
@@ -485,7 +485,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onClick={() => setShowYearDropdown(!showYearDropdown)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
             >
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-zinc-500 animate-pulse" />
               <span>ปีบัญชี {selectedYear}</span>
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
             </button>
@@ -503,7 +503,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         setShowYearDropdown(false);
                         onOpenYearModal();
                       }}
-                      className="text-[11px] text-amber-600 dark:text-amber-400 font-bold hover:underline"
+                      className="text-[11px] text-zinc-600 dark:text-zinc-400 font-bold hover:underline"
                     >
                       จัดการทั้งหมด
                     </button>
@@ -516,7 +516,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       key={yr}
                       className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${
                         yr === selectedYear
-                          ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                          ? 'bg-zinc-50 dark:bg-zinc-950/50 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                       }`}
                     >
@@ -529,7 +529,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         }}
                         className="flex-1 text-left flex items-center gap-2 cursor-pointer"
                       >
-                        <span className={`w-2 h-2 rounded-full ${yr === selectedYear ? 'bg-amber-500' : 'bg-transparent'}`} />
+                        <span className={`w-2 h-2 rounded-full ${yr === selectedYear ? 'bg-zinc-500' : 'bg-transparent'}`} />
                         <span>ปีบัญชี {yr}</span>
                       </button>
 
@@ -572,7 +572,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         onShowToast(`เพิ่มรอบปี ${newYearInput.trim()} สำเร็จ`, 'สำเร็จ', 'success');
                       }
                     }}
-                    className="px-3 py-1.5 bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-900 dark:bg-zinc-500 text-white dark:text-slate-900 rounded-xl text-xs font-bold cursor-pointer"
                   >
                     เพิ่ม
                   </button>
@@ -621,10 +621,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div key={log.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex flex-col gap-1">
                         <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
                           <span className={`font-bold px-1.5 py-0.5 rounded-md ${
-                            log.type === 'add' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                            log.type === 'edit' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
+                            log.type === 'add' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300' :
+                            log.type === 'edit' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300' :
                             log.type === 'delete' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' :
-                            'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
+                            'bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-300'
                           }`}>
                             {log.type.toUpperCase()}
                           </span>
@@ -648,9 +648,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               aria-expanded={showProfileDropdown}
               aria-label="เปิดเมนูบัญชีผู้ใช้"
               title="เมนูบัญชีผู้ใช้"
-              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
             >
-              <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 font-extrabold text-xs flex items-center justify-center shadow-xs">
+              <span className="w-8 h-8 rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-200 font-extrabold text-xs flex items-center justify-center shadow-xs">
                 {(userName.trim().charAt(0) || 'U').toUpperCase()}
               </span>
               <span className="hidden lg:flex flex-col items-start min-w-0">
@@ -772,7 +772,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       { id: 'no_efiling', label: 'ไม่มี E-Filing', count: records.filter((r) => !r.eFilingCode?.trim()).length },
                     ].map((tab) => (
                       <DSButton key={tab.id} type="button" variant={filterTab === tab.id ? 'primary' : 'secondary'} onClick={() => setFilterTab(tab.id as any)} className="inline-flex items-center gap-2">
-                        {tab.label}<span className={`text-[10px] ${filterTab === tab.id ? 'text-teal-100' : 'text-slate-400'}`}>{tab.count}</span>
+                        {tab.label}<span className={`text-[10px] ${filterTab === tab.id ? 'text-zinc-100' : 'text-slate-400'}`}>{tab.count}</span>
                       </DSButton>
                     ))}
                   </div>
@@ -806,9 +806,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             onDragOver={(event) => { if (draggedRecordId && canReorderRecords) { event.preventDefault(); setDragOverRecordId(r.id); } }}
                             onDrop={(event) => { event.preventDefault(); reorderRecords(r.id); }}
                             onDragEnd={() => { setDraggedRecordId(null); setDragOverRecordId(null); }}
-                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-teal-50 dark:focus:bg-teal-950/30 ${isSelected ? 'bg-teal-50/80 dark:bg-teal-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-teal-500' : ''}`}>
-                            <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-teal-700 dark:text-teal-300' : 'text-slate-400'}`}>{seqNum}</span></td>
-                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' : r.type === 'individual' ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-teal-900 dark:text-teal-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
+                            onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-zinc-50 dark:focus:bg-zinc-950/30 ${isSelected ? 'bg-zinc-50/80 dark:bg-zinc-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-teal-500' : ''}`}>
+                            <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-zinc-700 dark:text-zinc-300' : 'text-slate-400'}`}>{seqNum}</span></td>
+                            <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : r.type === 'individual' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge></td>
@@ -835,7 +835,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
                         {activeRecord.type === 'partnership' ? 'หจก.' : 'บจก.'}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 font-mono">
                         ลำดับ {activeRecord.sequenceNo || '1'}
                       </span>
                     </div>
@@ -847,7 +847,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {/* Status Display - Larger Score Bar Style */}
                   <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-700">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="w-3 h-3 rounded-full bg-zinc-500 animate-pulse" />
                       <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
                         {activeRecord.status === 'completed'
                           ? 'เสร็จสิ้น'
@@ -874,7 +874,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => copyToClipboard(activeRecord.taxId, 'เลขผู้เสียภาษี')}
-                          className="h-8 px-3 rounded-lg bg-white dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/30"
+                          className="h-8 px-3 rounded-lg bg-white dark:bg-slate-800 hover:bg-zinc-50 dark:hover:bg-zinc-950/40 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30"
                         >
                           <span className="material-symbols-outlined text-[13px]">content_copy</span>
                           <span>คัดลอก</span>
@@ -916,7 +916,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingRecord(activeRecord)}
-                        className="w-full h-11 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/20"
+                        className="w-full h-11 px-4 rounded-xl bg-zinc-700 hover:bg-zinc-800 active:bg-zinc-900 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-500/20"
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                         <span>แก้ไขข้อมูล</span>
@@ -926,9 +926,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsDetailModalOpen(true)}
-                      className="w-full h-11 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/15"
+                      className="w-full h-11 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-500/15"
                     >
-                      <span className="material-symbols-outlined text-[17px] text-amber-500">visibility</span>
+                      <span className="material-symbols-outlined text-[17px] text-zinc-500">visibility</span>
                       <span>ดูรายละเอียด</span>
                     </button>
 
