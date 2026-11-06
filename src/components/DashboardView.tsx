@@ -691,19 +691,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="m101-horizontal-tabs-wrap">
         <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
-            <Building2 aria-hidden="true" /><span>ภาพรวม</span>
+            <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
           </button>
           <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-horizontal-tab ${activeTab === "directory" ? "is-active" : ""}`}>
-            <FileText aria-hidden="true" /><span>ทะเบียน</span>
+            <Building2 aria-hidden="true" /><span>ทะเบียน</span>
           </button>
           {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-horizontal-tab ${activeTab === "tasks" ? "is-active" : ""}`}>
-            <CalendarCheck2 aria-hidden="true" /><span>งานประจำปี</span>
+            <ClipboardList aria-hidden="true" /><span>งาน</span>
           </button>}
           {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-horizontal-tab ${activeTab === "import" ? "is-active" : ""}`}>
             <FileSpreadsheet aria-hidden="true" /><span>นำเข้า</span>
           </button>}
           {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-horizontal-tab ${activeTab === "settings" ? "is-active" : ""}`}>
-            <ShieldCheck aria-hidden="true" /><span>ตั้งค่า</span>
+            <Settings aria-hidden="true" /><span>ตั้งค่า</span>
           </button>}
         </nav>
       </div>
