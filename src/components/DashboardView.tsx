@@ -11,6 +11,7 @@ import { DeleteBusinessModal } from './DeleteBusinessModal';
 import { useTheme } from '../context/ThemeContext';
 import '../m101-redesign.css';
 import '../m101-business-theme.css';
+import '../design-system/index.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 
 function AnimatedCount({ value }: { value: number }) {
