@@ -243,8 +243,8 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
       {contextTask && <>
         <button type="button" className="m101-task-context-backdrop" aria-label="ปิดเมนู" onClick={() => setContextTask(null)} />
         <div className="m101-task-context-menu" role="menu" style={{ left: contextTask.x, top: contextTask.y }}>
-          <button type="button" role="menuitem" onClick={() => { openEdit(contextTask.task); setContextTask(null); }}><span className="material-symbols-outlined text-[16px]">edit</span>แก้ไขงานนี้</button>
-          <button type="button" role="menuitem" className="is-delete" onClick={() => { const taskToDelete = contextTask.task; setContextTask(null); void deleteTask(taskToDelete); }}><span className="material-symbols-outlined text-[16px]">delete</span>ลบงานนี้</button>
+          <DSButton type="button" variant="ghost" role="menuitem" onClick={() => { openEdit(contextTask.task); setContextTask(null); }}><span className="material-symbols-outlined text-[16px]">edit</span>แก้ไขงานนี้</DSButton>
+          <DSButton type="button" variant="danger" role="menuitem" className="is-delete" onClick={() => { const taskToDelete = contextTask.task; setContextTask(null); void deleteTask(taskToDelete); }}><span className="material-symbols-outlined text-[16px]">delete</span>ลบงานนี้</DSButton>
         </div>
       </>}
       {showForm && <div className="m101-task-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) resetForm(); }}>
