@@ -1259,3 +1259,32 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 @media(prefers-reduced-motion:reduce){
  .m101-import-workspace *,.m101-task-workspace *,.m101-dialog-panel *{animation:none!important;transition:none!important}
 }
+
+
+/* Final component-level normalization for the annual-task module */
+.m101-overview-panel,.m101-task-list-panel,.m101-task-metric-grid article{
+  background:#fff!important;border:1px solid #e5e9ef!important;border-radius:10px!important;
+  box-shadow:0 1px 2px rgba(16,24,40,.035)!important
+}
+.m101-overview-panel:after,.m101-task-row:after{display:none!important}
+.m101-task-list-panel{padding:18px!important}
+.m101-task-row{background:#fff!important;border-bottom:1px solid #eef0f3!important;border-radius:0!important;box-shadow:none!important}
+.m101-task-row:hover{background:#f8fafc!important}
+.m101-task-row-title>strong,.m101-task-form-header h2{color:#182230!important}
+.m101-task-form-header,.m101-task-form-actions{border-color:#e5e9ef!important}
+.m101-task-form-header{background:#fff!important}
+.m101-task-form-header>button{background:#f8fafc!important;color:#475467!important;border:1px solid #e5e9ef!important}
+.m101-task-modal-backdrop{background:rgba(16,24,40,.38)!important;backdrop-filter:none!important}
+.m101-task-form{background:#fff!important;border:1px solid #e5e9ef!important;border-radius:10px!important;box-shadow:0 20px 56px rgba(16,24,40,.16)!important}
+.m101-task-form>label,.m101-task-form-grid>label{color:#475467!important;font-size:12px!important;font-weight:600!important}
+.m101-task-form input,.m101-task-form select,.m101-task-form textarea{color:#182230!important;background:#fff!important}
+.m101-task-form-actions button{min-height:36px!important}
+.m101-task-form-actions button:first-child{border:1px solid #e5e9ef!important;background:#fff!important;color:#475467!important}
+.m101-task-form-actions button:last-child{background:#256b5d!important;color:#fff!important}
+.m101-task-context-menu{border:1px solid #e5e9ef!important;border-radius:9px!important;background:#fff!important;box-shadow:0 8px 24px rgba(16,24,40,.1)!important}
+.m101-task-context-menu button{color:#344054!important}
+.m101-task-context-menu button:hover{background:#f8fafc!important}
+.m101-task-metric-grid article>strong,.m101-task-row-title>strong{color:#182230!important}
+.m101-task-status{padding:3px 7px!important;border:1px solid #e5e9ef!important;background:#f8fafc!important;color:#475467!important}
+.m101-task-overdue-segment{background:#b54708!important}
+.m101-status-dot{box-shadow:none!important}
