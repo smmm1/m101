@@ -4,7 +4,7 @@ import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
 import { getSoundSettings, saveSoundSettings, playUISound } from '../utils/cuteAudio';
-import { DSBadge, DSPageHeader } from '../design-system/components';
+import { DSBadge, DSButton, DSInput, DSPageHeader } from '../design-system/components';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -175,7 +175,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 ชื่อระบบ (Application Name)
               </label>
-              <input
+              <DSInput
                 type="text"
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
@@ -189,7 +189,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 คำโปรยระบบ (Tagline)
               </label>
-              <input
+              <DSInput
                 type="text"
                 value={appTagline}
                 onChange={(e) => setAppTagline(e.target.value)}
@@ -204,7 +204,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveConfig}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                  variant="primary" className="flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">save</span>
                   <span>บันทึกข้อมูลระบบ</span>
@@ -262,14 +262,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] text-slate-500">โทนเสียงเบา ไม่แหลม และไม่เล่นซ้ำถี่เกินไป</p>
-            <button
+            <DSButton
               type="button"
               onClick={() => playUISound('success', true)}
               data-sound="off"
-              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              variant="secondary"
             >
               ทดลองเสียง
-            </button>
+            </DSButton>
           </div>
         </section>
 
@@ -297,10 +297,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             />
 
             {isLoggedIn && (
-              <button
+              <DSButton
                 type="button"
                 onClick={handleBackupDatabase}
-                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+                variant="secondary" className="w-full justify-between ds-settings-action"
               >
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
@@ -309,11 +309,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>สำรองข้อมูล JSON (Backup)</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">.json</span>
-              </button>
+              </DSButton>
             )}
 
             {isLoggedIn && (
-              <button
+              <DSButton
                 type="button"
                 onClick={() => fileRestoreInputRef.current?.click()}
                 className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
@@ -325,14 +325,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>กู้คืนข้อมูล JSON (Restore)</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">นำเข้าไฟล์</span>
-              </button>
+              </DSButton>
             )}
 
             {isLoggedIn && (
-              <button
+              <DSButton
                 type="button"
                 onClick={handleExportExcel}
-                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-emerald-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+                variant="primary" className="w-full justify-between ds-settings-action"
               >
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-[20px] text-emerald-600 group-hover:scale-110 transition-transform">
@@ -341,7 +341,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>ส่งออกไฟล์ Excel ทั้งหมด (.xlsx)</span>
                 </div>
                 <span className="text-[10px] text-emerald-600 font-mono font-bold">.xlsx</span>
-              </button>
+              </DSButton>
             )}
           </div>
         </div>
@@ -373,7 +373,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     เติมข้อมูลนิติบุคคลและสถานประกอบการชุดมาตรฐานลงในรอบปีปัจจุบัน
                   </p>
                 </div>
-                <button
+                <DSButton
                   type="button"
                   onClick={() => {
                     if (onResetToDemoData) {
@@ -383,10 +383,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onShowToast('โหลดข้อมูลตัวอย่าง 69 รายการเรียบร้อยแล้ว', 'สำเร็จ');
                     }
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-200 dark:border-indigo-800 cursor-pointer transition-colors w-fit"
+                  variant="secondary" className="w-fit"
                 >
                   โหลดข้อมูลตัวอย่าง 69 รายการ
-                </button>
+                </DSButton>
               </div>
             )}
 
@@ -400,13 +400,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ลบรายการข้อมูลทั้งหมดเฉพาะรอบปี {selectedYear}
                   </p>
                 </div>
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setShowClearConfirm(true)}
-                  className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors w-fit"
+                  variant="danger" className="w-fit"
                 >
                   ล้างข้อมูลรอบปี {selectedYear}
-                </button>
+                </DSButton>
               </div>
             )}
 
@@ -423,7 +423,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     : 'คุณอยู่ในสถานะผู้เยี่ยมชมทั่วไป (ซ่อนปากกาพิเศษ แสดงหน้าเว็บแบบมาตรฐานเดิม)'}
                 </p>
               </div>
-              <button
+              <DSButton
                 type="button"
                 onClick={() => {
                   onToggleLogin();
@@ -433,17 +433,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     'success'
                   );
                 }}
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors w-fit flex items-center gap-1.5 ${
-                  isLoggedIn
-                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                }`}
+                variant={isLoggedIn ? "danger" : "primary"} className="w-fit flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {isLoggedIn ? 'logout' : 'login'}
                 </span>
                 <span>{isLoggedIn ? 'ออกจากระบบ (Log Out)' : 'เข้าสู่ระบบ Admin (Log In)'}</span>
-              </button>
+              </DSButton>
             </div>
           </div>
         </div>
@@ -466,14 +462,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมดในรอบปี <strong>{selectedYear}</strong>? รายการทั้งหมด {records.length} รายการจะถูกล้างออกจากระบบ
             </p>
             <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
+              <DSButton
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                variant="secondary"
               >
                 ยกเลิก
-              </button>
-              <button
+              </DSButton>
+              <DSButton
                 type="button"
                 onClick={() => {
                   if (onRestoreRecords) {
@@ -482,10 +478,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   setShowClearConfirm(false);
                   onShowToast(`ล้างข้อมูลรอบปี ${selectedYear} เรียบร้อยแล้ว`, 'สำเร็จ');
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md cursor-pointer"
+                variant="danger"
               >
                 ยืนยันล้างข้อมูล
-              </button>
+              </DSButton>
             </div>
           </div>
         </div>
