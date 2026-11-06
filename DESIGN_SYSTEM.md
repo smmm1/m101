@@ -129,12 +129,14 @@ The design-system foundation and first component migrations are in place:
 - `src/design-system/index.css` is loaded once from the application entry point.
 - The business theme and legacy M101 theme aliases now consume the global tokens.
 - The application is standardized on the requested clean light theme; the conflicting dark-mode toggle is removed and stale dark preference is cleared.
-- Annual Tasks, Add Business, and Edit Business forms have started using the shared React primitives.
+- Annual Tasks, Add Business, Edit Business, and Bulk Delete dialogs use the shared React primitives.
+- The business registry uses shared buttons, search input, status badges, and the shared table style contract.
+- Excel/CSV mapping and duplicate-conflict flows use shared buttons, selects, badges, and preview-table styles.
 
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
-- Registry tables, import/mapping flows, detail/delete dialogs, settings, and admin surfaces still need component-by-component migration.
+- Business detail actions, settings, admin surfaces, and remaining import controls still need component-by-component migration.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
