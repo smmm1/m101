@@ -1040,3 +1040,96 @@ html.dark .m101-top-loading>span{background:linear-gradient(90deg,#42b99d 0%,#8b
 @media(prefers-reduced-motion:reduce){
  .m101-tab-transition,.m101-tab-transition .m101-directory-list-panel,.m101-tab-transition .m101-selected-record-card,.m101-tab-transition .m101-overview-panel,.m101-detail-dialog,.m101-form-dialog,.m101-task-form{animation:none!important;filter:none!important;transform:none!important;will-change:auto}
 }
+
+
+/* ==========================================================================
+   M101 Clean Business UI — unified light design system
+   Applied across dashboard, directory, annual tasks, imports, settings and dialogs.
+   ========================================================================== */
+:root{
+  color-scheme:light;
+  --m101-canvas:#f7f8fa;
+  --m101-surface:#fff;
+  --m101-ink:#182230;
+  --m101-muted:#667085;
+  --m101-line:#e5e9ef;
+  --m101-accent:#256b5d;
+  --m101-accent-soft:#edf5f2;
+  --m101-radius:10px;
+  --m101-shadow:0 1px 2px rgba(16,24,40,.035);
+}
+html,body,#root{background:#f7f8fa!important;color:#182230!important;font-family:'Sarabun','Plus Jakarta Sans',sans-serif!important}
+html.dark{color-scheme:light!important}
+html.dark body{background:#f7f8fa!important;color:#182230!important}
+.m101-app-shell,.mobile-app-shell,.m101-workspace-shell{background:#f7f8fa!important;color:#182230!important}
+.m101-sidebar{background:#fff!important;border-right:1px solid #e5e9ef!important;padding:20px 14px!important}
+.m101-brand{padding:0 8px 22px!important}
+.m101-brand-mark{width:36px!important;height:36px!important;border-radius:9px!important;background:#256b5d!important}
+.m101-brand-copy strong{font-size:16px!important;font-weight:700!important;letter-spacing:-.025em!important;color:#182230!important}
+.m101-brand-copy span{font-size:9px!important;letter-spacing:.08em!important;color:#98a2b3!important}
+.m101-nav-caption{font-size:10px!important;letter-spacing:.04em!important;color:#98a2b3!important}
+.m101-side-link{min-height:40px!important;margin:2px 0!important;border-radius:8px!important;color:#475467!important;font-size:13px!important;font-weight:500!important}
+.m101-side-link .material-symbols-outlined{font-size:18px!important;color:#667085!important}
+.m101-side-link:hover{background:#f6f8fa!important;color:#182230!important}
+.m101-side-link.is-active{background:#edf5f2!important;color:#205d50!important;font-weight:700!important}
+.m101-side-link.is-active .material-symbols-outlined{color:#256b5d!important}
+.m101-side-count{border-radius:6px!important;background:#f2f4f7!important;color:#475467!important;font-family:'Sarabun',sans-serif!important}
+.m101-sidebar-foot{border-color:#eef0f3!important}
+.m101-sidebar-foot strong{color:#475467!important;font-weight:600!important}
+.m101-sidebar-foot span:not(.m101-status-dot){color:#98a2b3!important}
+.mobile-app-nav,.m101-topbar{min-height:64px!important;height:64px!important;padding:0 28px!important;background:#fff!important;border-bottom:1px solid #e5e9ef!important;box-shadow:none!important}
+.mobile-utility-nav button{border-radius:8px!important;box-shadow:none!important}
+.mobile-main-content{padding:24px 28px 32px!important;background:#f7f8fa!important}
+.mobile-main-content>div{max-width:1600px!important}
+.mobile-main-content [class*=rounded-3xl],
+.mobile-main-content [class*=rounded-2xl]{border-radius:10px!important}
+.mobile-main-content [class*=shadow-]{box-shadow:0 1px 2px rgba(16,24,40,.035)!important}
+.mobile-main-content [class*=border-slate-200]{border-color:#e5e9ef!important}
+.mobile-main-content [class*=bg-slate-50]{background:#f8fafc!important}
+.mobile-main-content button{font-weight:600}
+.mobile-main-content button:focus-visible,.m101-sidebar button:focus-visible{outline:3px solid rgba(37,107,93,.2)!important;outline-offset:2px}
+.m101-record-list{gap:0!important;padding:0!important;background:#fff!important}
+.m101-record-row{min-height:64px!important;padding:12px 16px!important;border:0!important;border-bottom:1px solid #eef0f3!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+.m101-record-row:hover{background:#f8fafc!important;box-shadow:none!important;border-color:#eef0f3!important}
+.m101-record-row.is-selected{background:#f0f6f3!important;box-shadow:inset 3px 0 #256b5d!important;border-color:#eef0f3!important}
+.m101-directory-list-panel,.m101-directory-shell>div,.mobile-main-content .bg-white{box-shadow:none!important}
+.m101-directory-list-panel{border:1px solid #e5e9ef!important;border-radius:10px!important}
+.m101-directory-toolbar{padding:18px 20px!important;background:#fff!important;border-bottom:1px solid #eef0f3!important}
+.m101-directory-toolbar h2{font-size:17px!important;font-weight:700!important;color:#182230!important}
+.m101-directory-toolbar p{font-size:12px!important;color:#667085!important}
+.m101-global-search{display:flex;align-items:center;gap:9px;width:min(420px,42vw);height:38px;margin-right:auto;margin-left:24px;padding:0 11px;border:1px solid #e5e9ef;border-radius:8px;background:#f9fafb;color:#667085}
+.m101-global-search>.material-symbols-outlined{font-size:18px;color:#98a2b3}
+.m101-global-search input{width:100%;min-width:0;border:0!important;outline:0!important;background:transparent!important;color:#182230!important;font:400 12px 'Sarabun',sans-serif!important;box-shadow:none!important}
+.m101-global-search input::placeholder{color:#98a2b3!important}
+.m101-global-search kbd{flex:0 0 auto;padding:2px 5px;border:1px solid #e5e9ef;border-radius:4px;background:#fff;color:#98a2b3;font:10px 'Plus Jakarta Sans',sans-serif}
+.m101-topbar-actions{margin-left:auto}
+.m101-topbar-actions button{min-height:34px!important;border:1px solid #e5e9ef!important;border-radius:8px!important;background:#fff!important;color:#475467!important;font-size:12px!important;box-shadow:none!important}
+.m101-topbar-actions button:hover{background:#f8fafc!important;border-color:#cfd6df!important}
+.m101-top-loading{background:#256b5d!important}
+.m101-command-palette{border-radius:10px!important;box-shadow:0 12px 32px rgba(16,24,40,.12)!important}
+.mobile-main-content input:not([type=checkbox]):not([type=radio]),
+.mobile-main-content select,.mobile-main-content textarea{border-radius:8px!important;border-color:#dfe4ea!important;box-shadow:none!important}
+.mobile-main-content input:focus,.mobile-main-content select:focus,.mobile-main-content textarea:focus{border-color:#7aa99c!important;box-shadow:0 0 0 3px rgba(37,107,93,.09)!important}
+.mobile-main-content [role=dialog] input,
+.mobile-main-content [role=dialog] select,
+.mobile-main-content [role=dialog] textarea{border-radius:8px!important}
+.mobile-main-content [role=dialog]{border-radius:12px!important;box-shadow:0 16px 48px rgba(16,24,40,.16)!important}
+.m101-sidebar-foot .m101-status-dot{width:7px!important;height:7px!important}
+@media(max-width:900px){
+ .m101-sidebar{position:sticky!important;top:0!important;min-height:58px!important;padding:7px 10px!important;background:#fff!important}
+ .m101-brand{padding-right:8px!important}
+ .mobile-app-nav{top:58px!important;min-height:56px!important;height:56px!important;padding:6px 12px!important}
+ .mobile-main-content{padding:16px 12px 24px!important}
+ .m101-global-search{width:auto;min-width:0;flex:1;margin:0 8px}
+ .m101-global-search kbd{display:none}
+}
+@media(max-width:560px){
+ .m101-global-search{height:36px;margin:0 4px}
+ .m101-global-search input{font-size:11px!important}
+ .m101-global-search input::placeholder{font-size:10px}
+ .mobile-app-nav{gap:6px!important}
+ .mobile-main-content{padding:12px 10px 20px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .mobile-main-content *,.m101-sidebar *{scroll-behavior:auto!important;transition:none!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
