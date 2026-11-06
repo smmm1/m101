@@ -159,7 +159,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* 1. System Information Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">tune</span>
             </div>
             <div>
@@ -181,7 +181,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) => setAppName(e.target.value)}
                 placeholder="SchoolHub"
                 disabled={!isLoggedIn || !isAdmin}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50"
               />
             </div>
 
@@ -195,7 +195,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onChange={(e) => setAppTagline(e.target.value)}
                 placeholder="ระบบบริหารจัดการทะเบียนข้อมูลและสถานประกอบการ"
                 disabled={!isLoggedIn}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50"
               />
             </div>
 
@@ -277,7 +277,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* 2. Backup & Export Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs m101-settings-card m101-settings-backup">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">backup</span>
             </div>
             <div>
@@ -304,7 +304,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 variant="secondary" className="w-full justify-between ds-settings-action"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[20px] text-zinc-600 group-hover:scale-110 transition-transform">
                     download
                   </span>
                   <span>สำรองข้อมูล JSON (Backup)</span>
@@ -317,10 +317,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <DSButton
                 type="button"
                 onClick={() => fileRestoreInputRef.current?.click()}
-                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-indigo-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
+                className="w-full p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 hover:border-zinc-400 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-zinc-50/50 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-indigo-600 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[20px] text-zinc-600 group-hover:scale-110 transition-transform">
                     upload
                   </span>
                   <span>กู้คืนข้อมูล JSON (Restore)</span>
@@ -336,12 +336,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 variant="primary" className="w-full justify-between ds-settings-action"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px] text-emerald-600 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[20px] text-zinc-600 group-hover:scale-110 transition-transform">
                     table_chart
                   </span>
                   <span>ส่งออกไฟล์ Excel ทั้งหมด (.xlsx)</span>
                 </div>
-                <span className="text-[10px] text-emerald-600 font-mono font-bold">.xlsx</span>
+                <span className="text-[10px] text-zinc-600 font-mono font-bold">.xlsx</span>
               </DSButton>
             )}
           </div>
@@ -350,7 +350,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* 3. Dataset Management Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#131B2E] flex flex-col gap-5 shadow-xs lg:col-span-2 m101-settings-card m101-settings-dataset">
           <div className="flex items-center gap-3.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[22px]">dataset</span>
             </div>
             <div>
@@ -412,13 +412,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             {/* Login / Auth Status Card */}
-            <div className="p-4 rounded-2xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 flex flex-col justify-between gap-3 sm:col-span-2 m101-dataset-option m101-auth-status">
+            <div className="p-4 rounded-2xl border border-zinc-200/70 dark:border-zinc-900/50 bg-zinc-50/40 dark:bg-zinc-950/20 flex flex-col justify-between gap-3 sm:col-span-2 m101-dataset-option m101-auth-status">
               <div>
-                <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[18px] text-amber-500">lock_person</span>
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-300 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-zinc-500">lock_person</span>
                   สถานะการเข้าสู่ระบบผู้ดูแล (Admin Login Mode)
                 </h4>
-                <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1">
+                <p className="text-[11px] text-zinc-700 dark:text-zinc-400 mt-1">
                   {isLoggedIn
                     ? 'คุณกำลังเข้าสู่ระบบเป็นผู้ดูแลระบบ (เปิดใช้งานปากกาพิเศษแก้ไขหัวข้อและชื่อระบบ)'
                     : 'คุณอยู่ในสถานะผู้เยี่ยมชมทั่วไป (ซ่อนปากกาพิเศษ แสดงหน้าเว็บแบบมาตรฐานเดิม)'}
