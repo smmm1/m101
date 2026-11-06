@@ -133,6 +133,7 @@ The design-system foundation and first component migrations are in place:
 - The business registry uses shared buttons, search input, status badges, and the shared table style contract.
 - Excel/CSV mapping, duplicate-conflict, and import landing flows use shared buttons, selects, badges, and preview-table styles.
 - Business detail and settings screens now use the shared page header, badges, and action buttons; settings text inputs also use shared fields.
+- Dialog overlays and panels across add/edit/detail/delete, import mapping, conflict resolution, and annual tasks now share tokenized surfaces, borders, shadows, radii, and subtle backdrop treatment.
 - The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
 
 Migration is not yet complete:
