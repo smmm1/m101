@@ -8,7 +8,6 @@ import { SettingsView } from './SettingsView';
 import { ImportDocumentView } from './ImportDocumentView';
 import { ExcelMappingImportModal } from './ExcelMappingImportModal';
 import { DeleteBusinessModal } from './DeleteBusinessModal';
-import { useTheme } from '../context/ThemeContext';
 import '../m101-redesign.css';
 import '../m101-business-theme.css';
 import { parseDocumentFile } from '../utils/excelHelper';
@@ -93,7 +92,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onReturnToLogin,
   onToggleLogin,
 }) => {
-  const { isDark, toggleTheme } = useTheme();
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [draggedRecordId, setDraggedRecordId] = useState<string | null>(null);
   const [dragOverRecordId, setDragOverRecordId] = useState<string | null>(null);
@@ -639,18 +637,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             )}
           </div>
-
-          {/* Theme Toggle (Dark Mode) */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-2xs"
-            title={isDark ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'}
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              {isDark ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
 
           {/* Profile menu */}
           <div className="relative pl-2 border-l border-slate-200 dark:border-slate-800" ref={profileDropdownRef}>
