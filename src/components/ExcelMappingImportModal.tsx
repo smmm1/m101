@@ -195,6 +195,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   const preview = useMemo(() => dataRows, [dataRows]);
   const mappedFields = Object.values(mapping).filter(Boolean);
   const hasCompanyName = mappedFields.includes('companyName');
+  const mappedColumns = Object.entries(mapping).filter(([, field]) => Boolean(field));
 
   const toggleAll = () => {
     setSelectedRows((current) => current.length === dataRows.length ? [] : dataRows.map((_, index) => index));
@@ -263,6 +264,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       } else if (company) {
         record.type = 'individual';
       }
+      return record;
     });
     onImportRecords(output);
     onShowToast(`นำเข้าข้อมูล ${output.length} รายการ จาก ${sheetName} สำเร็จ`, 'นำเข้าสำเร็จ', 'success');
@@ -272,72 +274,33 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
-      <div className="m101-dialog-panel m101-import-dialog-panel w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-300 dark:bg-white flex flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-          <div className="min-w-0">
-            <h2 id="excel-mapping-title" className="text-base font-extrabold text-slate-900 dark:text-white">จับคู่คอลัมน์</h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">นำเข้าข้อมูลจาก Excel/CSV อย่างเป็นขั้นตอน · ปีบัญชี {selectedYear}</p>
-          </div>
-          <DSButton type="button" onClick={close} variant="ghost">ปิด</DSButton>
-        </div>
-
-        <div className="m101-import-stepper" aria-label="ขั้นตอนนำเข้า">
-          <div className={workbook ? 'is-done' : 'is-current'}><span>1</span><b>เลือกไฟล์</b></div>
-          <i />
-          <div className={workbook ? (step === 'sheet' ? 'is-current' : 'is-done') : ''}><span>2</span><b>เลือก Sheet / ตาราง</b></div>
-          <i />
-          <div className={step === 'mapping' ? 'is-current' : ''}><span>3</span><b>จับคู่และตรวจสอบ</b></div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {!workbook ? (
-            <div className="mx-auto flex min-h-[320px] max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><span className="material-symbols-outlined text-4xl">upload_file</span></div>
-              <div><h3 className="text-base font-bold text-slate-900 dark:text-white">เลือกไฟล์ที่ต้องการนำเข้า</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">เลือกไฟล์จากอุปกรณ์ของคุณ</p><p className="mt-2 text-xs text-slate-400">รองรับ Excel และ CSV · .xlsx, .xls, .csv</p></div>
-              <DSButton type="button" onClick={() => inputRef.current?.click()} variant="primary">เลือกไฟล์</DSButton>
-              <p className="text-xs text-slate-500">ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p>
-            </div>
-          ) : (
-            <>
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
-                <div className="flex min-w-0 items-center gap-3"><span className="material-symbols-outlined text-2xl text-slate-700">description</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{fileName}</p><p className="text-xs text-slate-500">{workbook.SheetNames.length} Sheet ในไฟล์นี้</p></div></div>
-                <DSButton type="button" onClick={reset} variant="secondary">เปลี่ยนไฟล์</DSButton>
-              </div>
-              <div className="mb-6 grid grid-cols-3 gap-2">
-                {['เลือกไฟล์', 'เลือก Sheet / ตาราง', 'จับคู่คอลัมน์'].map((label, index) => {
-                  const active = (step === 'sheet' && index === 1) || (step === 'mapping' && index === 2);
-                  const complete = index === 0 || (step === 'mapping' && index === 1);
-                  return <div key={label} className="min-w-0"><div className={`mb-2 h-1.5 rounded-full ${active || complete ? 'bg-zinc-900' : 'bg-slate-200 dark:bg-slate-700'}`} /><p className={`truncate text-[10px] font-semibold sm:text-xs ${active ? 'text-slate-700' : 'text-slate-500'}`}>{index + 1}. {label}</p></div>;
-                })}
-              </div>
-
-              {step === 'sheet' ? (
-                <div className="space-y-5">
-                  <section className="space-y-2">
-                    <div><h3 className="text-sm font-bold text-slate-900 dark:text-white">เลือก Sheet ที่ต้องการ</h3><p className="text-xs text-slate-500">ไฟล์นี้มี {workbook.SheetNames.length} Sheet · เลือก Sheet ที่มีข้อมูลของคุณ</p></div>
-                    <div className="flex flex-wrap gap-2">{workbook.SheetNames.map((name) => <DSButton key={name} type="button" onClick={() => loadSheet(workbook, name)} variant={sheetName === name ? 'primary' : 'secondary'} className="ds-button--sheet"><span className="material-symbols-outlined mr-1 align-middle text-sm">table_view</span>{name}</DSButton>)}</div>
-                  </section>
-                  <section className="space-y-3">
-                    <div className="flex flex-wrap items-end justify-between gap-2"><div><h3 className="text-sm font-bold text-slate-900 dark:text-white">เลือกตารางข้อมูล</h3><p className="text-xs text-slate-500">ระบบตรวจหาตารางใน Sheet ให้แล้ว คุณเลือกตารางที่ต้องการได้</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">พบ {regions.length} ตาราง</span></div>
-                    {regions.length === 0 ? <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800 dark:border-zinc-900 dark:bg-zinc-950/30 dark:text-zinc-200">ไม่พบตารางข้อมูลใน Sheet นี้ ลองเลือก Sheet อื่น</div> : <div className="grid gap-3 sm:grid-cols-2">{regions.map((region, index) => <DSButton key={region.id} type="button" onClick={() => setRegionId(region.id)} variant={regionId === region.id ? 'primary' : 'secondary'} className="ds-button--card"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">ตาราง {index + 1}</span>{regionId === region.id && <span className="material-symbols-outlined text-lg text-slate-700">check_circle</span>}</div><p className="mt-1 text-xs text-slate-500">ข้อมูล {region.rows.length} แถว · {region.rows[region.headerIndex]?.filter(Boolean).length ?? 0} คอลัมน์</p><p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{region.rows[region.headerIndex]?.filter(Boolean).join(' · ')}</p></DSButton>)}</div>}
-                    {selectedRegion && <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"><div className="border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">ตัวอย่างข้อมูลจากตารางที่เลือก</div><table className="ds-table w-full min-w-[420px] text-left text-xs"><tbody>{selectedRegion.rows.slice(0, 4).map((row, index) => <tr key={index} className="border-b border-slate-100 last:border-0 dark:border-slate-800">{row.map((cell, col) => <td key={col} className="max-w-[180px] truncate px-3 py-2 text-slate-600 dark:text-slate-300">{cell || '—'}</td>)}</tr>)}</tbody></table></div>}
-                  </section>
-                  <div className="flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800"><DSButton type="button" disabled={!selectedRegion} onClick={beginMapping} variant="primary">ถัดไป: จับคู่คอลัมน์ <span className="material-symbols-outlined ml-1 align-middle text-base">arrow_forward</span></DSButton></div>
-                </div>
-              ) : selectedRegion ? (
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-bold text-slate-900 dark:text-white">จับคู่คอลัมน์กับข้อมูล M101</h3><p className="text-xs text-slate-500">เลือกว่าคอลัมน์จากไฟล์นี้จะนำไปเก็บในช่องข้อมูลใด</p></div><DSButton type="button" onClick={() => setStep('sheet')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"><span className="material-symbols-outlined mr-1 align-middle text-sm">arrow_back</span>เปลี่ยน Sheet / ตาราง</DSButton></div>
-                  <div className="grid gap-2 sm:grid-cols-2">{headers.map((header, index) => <label key={index} className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"><div className="min-w-0 flex-1"><span className="block text-[10px] font-medium text-slate-500">คอลัมน์จากไฟล์</span><span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{header || `คอลัมน์ ${index + 1}`}</span></div><span className="material-symbols-outlined text-slate-400">arrow_forward</span><div className="min-w-0 flex-1"><span className="block text-[10px] font-medium text-slate-500">ช่องข้อมูล M101</span><DSSelect value={mapping[index] ?? ''} onChange={(event) => { const nextField = event.target.value as ImportField | ''; setMapping((current) => { const next = { ...current }; if (nextField) Object.keys(next).forEach((key) => { if (Number(key) !== index && next[Number(key)] === nextField) next[Number(key)] = ''; }); next[index] = nextField; return next; }); }} className="ds-import-field"><option value="">ไม่ใช้คอลัมน์นี้</option>{FIELD_OPTIONS.map((field) => <option key={field.value} value={field.value}>{field.label}</option>)}</DSSelect></div></label>)}</div>
-                  <section className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-bold text-slate-900 dark:text-white">ตรวจตัวอย่างก่อนนำเข้า</h4><p className="text-xs text-slate-500">แสดง {preview.length} จาก {dataRows.length} แถว · ต้องจับคู่ “ชื่อกิจการ” ก่อน</p></div><DSButton type="button" onClick={toggleAll} variant="secondary">{selectedRows.length === dataRows.length ? 'ไม่เลือกทั้งหมด' : 'เลือกทุกรายการ'}</DSButton></div><div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"><table className="ds-table w-full min-w-[600px] text-left text-xs"><thead className="bg-slate-50 dark:bg-slate-900"><tr><th className="px-3 py-2">นำเข้า</th>{headers.map((header, index) => <th key={index} className="px-3 py-2 font-semibold text-slate-500">{header || `คอลัมน์ ${index + 1}`}</th>)}</tr></thead><tbody>{preview.map((row, index) => <tr key={index} className="border-t border-slate-100 dark:border-slate-800"><td className="px-3 py-2"><input type="checkbox" checked={selectedRows.includes(index)} onChange={() => setSelectedRows((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])} /></td>{headers.map((_, col) => <td key={col} className="max-w-[220px] truncate px-3 py-2 text-slate-600 dark:text-slate-300">{row[col] || '—'}</td>)}</tr>)}</tbody></table></div></section>
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4 dark:border-slate-800">
-          <p className="text-[11px] text-slate-500">{step === 'mapping' ? `เลือกนำเข้า ${selectedRows.length} / ${dataRows.length} รายการ` : 'ข้อมูลเดิมจะไม่ถูกแก้ไขจนกว่าจะกดยืนยันนำเข้า'}</p>
-          <div className="flex items-center gap-2"><DSButton type="button" onClick={close} variant="secondary">ยกเลิก</DSButton>{workbook && step === 'mapping' && <DSButton type="button" onClick={confirmImport} disabled={!hasCompanyName || selectedRows.length === 0} variant="primary">ยืนยันนำเข้า ({selectedRows.length})</DSButton>}</div>
+    <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
+      <div className="m101-import-wizard w-full max-w-5xl max-h-[94vh] overflow-hidden rounded-2xl border bg-white shadow-2xl flex flex-col">
+        <header className="m101-import-wizard__header"><div><p className="m101-import-kicker">M101 · นำเข้าข้อมูล</p><h2 id="excel-mapping-title">นำเข้ารายชื่อกิจการ</h2><p>ปีบัญชี {selectedYear} · ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p></div><DSButton type="button" onClick={close} variant="ghost">ปิด</DSButton></header>
+        <nav className="m101-import-progress" aria-label="ขั้นตอนนำเข้า"><div className={!workbook ? 'is-current' : 'is-done'}><span>1</span><b>เลือกไฟล์</b></div><i /><div className={workbook && step === 'sheet' ? 'is-current' : step === 'mapping' ? 'is-done' : ''}><span>2</span><b>เลือกข้อมูล</b></div><i /><div className={step === 'mapping' ? 'is-current' : ''}><span>3</span><b>จับคู่และยืนยัน</b></div></nav>
+        <div className="m101-import-wizard__body">
+          {!workbook ? <section className="m101-import-upload"><div className="m101-import-upload__icon"><span className="material-symbols-outlined">upload_file</span></div><h3>เลือกไฟล์ทะเบียนที่ต้องการนำเข้า</h3><p>รองรับไฟล์ Excel และ CSV</p><div className="m101-import-filetypes"><span>.xlsx</span><span>.xls</span><span>.csv</span></div><DSButton type="button" variant="primary" onClick={() => inputRef.current?.click()}>เลือกไฟล์จากอุปกรณ์</DSButton><small>ข้อมูลจะยังไม่ถูกบันทึกจนกว่าคุณจะกดยืนยัน</small></section> : <>
+            <div className="m101-import-file-summary"><span className="material-symbols-outlined">description</span><div><b title={fileName}>{fileName}</b><small>{workbook.SheetNames.length} Sheet · {sheetName}</small></div><DSButton type="button" variant="secondary" onClick={reset}>เปลี่ยนไฟล์</DSButton></div>
+            {step === 'sheet' ? <div className="m101-import-step-content">
+              <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ขั้นตอน 1</span><h3>เลือก Sheet ที่มีข้อมูล</h3><p>เลือกชื่อ Sheet จากไฟล์ Excel ด้วยตัวเอง</p></div></div><label className="m101-import-control"><span>Sheet ในไฟล์</span><DSSelect value={sheetName} onChange={(event) => loadSheet(workbook, event.target.value)}>{workbook.SheetNames.map((name) => <option key={name} value={name}>{name}</option>)}</DSSelect></label></section>
+              <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ขั้นตอน 2</span><h3>เลือกตารางที่จะนำเข้า</h3><p>ระบบพบ {regions.length} ตารางใน Sheet นี้ เลือกตารางที่ต้องการ</p></div><strong className="m101-import-count">{regions.length} ตาราง</strong></div>
+                {regions.length === 0 ? <div className="m101-import-empty"><b>ยังไม่พบตารางข้อมูล</b><p>ลองเลือก Sheet อื่น หรือตรวจสอบว่าใน Sheet มีข้อมูล</p></div> : <div className="m101-import-table-options">{regions.map((region, index) => { const selected = regionId === region.id; const sample = region.rows[region.headerIndex] ?? []; return <button key={region.id} type="button" className={'m101-import-table-option ' + (selected ? 'is-selected' : '')} aria-pressed={selected} onClick={() => { setRegionId(region.id); setHeaderRowIndex(region.headerIndex); }}><span className="m101-import-table-option__check">{selected ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="m101-import-table-option__copy"><b>ตาราง {index + 1}</b><small>ประมาณ {region.rows.length} แถว · {sample.filter(Boolean).length} คอลัมน์ · เริ่มแถว {region.startRow + 1}</small><em>{sample.filter(Boolean).slice(0, 5).join(' · ') || 'ยังไม่มีหัวคอลัมน์'}</em></span><span className="material-symbols-outlined">{selected ? 'radio_button_checked' : 'radio_button_unchecked'}</span></button>; })}</div>}
+              </section>
+              {selectedRegion && <section className="m101-import-section"><div className="m101-import-section__heading"><div><h3>แถวไหนเป็นหัวตาราง?</h3><p>ถ้าระบบเลือกไม่ตรง สามารถเปลี่ยนได้</p></div></div><label className="m101-import-control"><span>เลือกแถวหัวตาราง</span><DSSelect value={String(headerRowIndex)} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); }}>{selectedRegion.rows.slice(0, Math.min(12, selectedRegion.rows.length)).map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} — {row.filter(Boolean).slice(0, 4).join(' / ') || 'ไม่มีข้อความ'}</option>)}</DSSelect></label><div className="m101-import-mini-preview"><b>หัวตารางที่เลือก</b><div>{(selectedRegion.rows[headerRowIndex] ?? []).map((cell, index) => <span key={index}>{cell || 'คอลัมน์ ' + (index + 1)}</span>)}</div></div></section>}
+              <div className="m101-import-wizard__actions"><span>ยังไม่บันทึกข้อมูลในขั้นตอนนี้</span><DSButton type="button" disabled={!selectedRegion} onClick={beginMapping} variant="primary">ถัดไป: จับคู่คอลัมน์ <span className="material-symbols-outlined">arrow_forward</span></DSButton></div>
+            </div> : selectedRegion ? <div className="m101-import-step-content">
+              <div className="m101-import-context"><div><b>{sheetName} / ตาราง {regions.findIndex((item) => item.id === regionId) + 1}</b><small>เลือกว่าคอลัมน์จากไฟล์จะไปเก็บในช่องใดของ M101</small></div><DSButton type="button" variant="secondary" onClick={() => setStep('sheet')}>เปลี่ยน Sheet / ตาราง</DSButton></div>
+              <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ขั้นตอน 3</span><h3>จับคู่คอลัมน์</h3><p>ระบบจับคู่ให้อัตโนมัติ คุณสามารถแก้ไขได้ทุกช่อง</p></div><strong className="m101-import-count">{mappedColumns.length} / {headers.length} คอลัมน์</strong></div>
+                <div className="m101-import-mapping-list">{headers.map((header, index) => { const target = mapping[index] ?? ''; const sample = dataRows.find((row) => clean(row[index]) !== '')?.[index] || 'ไม่มีข้อมูล'; return <div key={index} className="m101-import-mapping-row"><div className="m101-import-mapping-source"><small>คอลัมน์จากไฟล์</small><b>{header || 'คอลัมน์ ' + (index + 1)}</b><em>ตัวอย่าง: {sample}</em></div><span className="material-symbols-outlined m101-import-mapping-arrow">arrow_forward</span><label className="m101-import-mapping-target"><small>นำไปเก็บที่</small><DSSelect value={target} onChange={(event) => { const field = event.target.value as ImportField | ''; setMapping((current) => { const next = { ...current }; if (field) Object.keys(next).forEach((key) => { if (Number(key) !== index && next[Number(key)] === field) next[Number(key)] = ''; }); next[index] = field; return next; }); }}><option value="">ไม่ใช้คอลัมน์นี้</option>{FIELD_OPTIONS.map((field) => <option key={field.value} value={field.value}>{field.label}</option>)}</DSSelect></label></div>; })}</div>
+                <div className={'m101-import-required-note ' + (hasCompanyName ? 'is-ready' : '')}><span className="material-symbols-outlined">{hasCompanyName ? 'check_circle' : 'info'}</span>{hasCompanyName ? 'จับคู่ชื่อกิจการแล้ว พร้อมตรวจสอบรายการ' : 'ต้องจับคู่ “ชื่อกิจการ” ก่อนจึงจะนำเข้าได้'}</div>
+              </section>
+              <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ตรวจสอบก่อนบันทึก</span><h3>ตัวอย่างข้อมูลที่จะเข้า M101</h3><p>เลือกเฉพาะแถวที่ต้องการ · แสดง {Math.min(preview.length, 8)} จาก {dataRows.length} แถว</p></div><DSButton type="button" variant="secondary" onClick={toggleAll}>{selectedRows.length === dataRows.length ? 'ยกเลิกเลือกทั้งหมด' : 'เลือกทั้งหมด'}</DSButton></div>
+                {mappedColumns.length === 0 ? <div className="m101-import-empty">เลือกช่องข้อมูล M101 อย่างน้อย 1 คอลัมน์เพื่อดูตัวอย่าง</div> : <div className="m101-import-preview-list">{preview.slice(0, 8).map((row, index) => <label key={index} className={'m101-import-preview-row ' + (selectedRows.includes(index) ? 'is-selected' : '')}><input type="checkbox" checked={selectedRows.includes(index)} onChange={() => setSelectedRows((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])} /><span className="m101-import-preview-row__number">{index + 1}</span><span className="m101-import-preview-row__values">{mappedColumns.map(([column, field]) => <span key={column}><small>{FIELD_OPTIONS.find((item) => item.value === field)?.label}</small><b>{clean(row[Number(column)]) || '—'}</b></span>)}</span></label>)}</div>}
+                {dataRows.length > 8 && <p className="m101-import-preview-more">ยังมีอีก {dataRows.length - 8} แถว · รายการทั้งหมดที่เลือกจะถูกนำเข้า ไม่ใช่แค่ตัวอย่าง 8 แถวนี้</p>}
+              </section>
+              <div className="m101-import-wizard__actions"><span>เลือกนำเข้า {selectedRows.length} จาก {dataRows.length} รายการ</span><DSButton type="button" onClick={confirmImport} disabled={!hasCompanyName || selectedRows.length === 0} variant="primary">ยืนยันนำเข้า {selectedRows.length} รายการ</DSButton></div>
+            </div> : null}
+          </>}
         </div>
       </div>
       <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
