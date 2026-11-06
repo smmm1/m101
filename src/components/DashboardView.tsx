@@ -428,15 +428,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
       
       <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        <div className="m101-tree-heading">DIRECTORY / MENU</div>
-        <button type="button" onClick={() => navigateToTab('dashboard')} className={`m101-side-link ${activeTab === 'dashboard' ? 'is-active' : ''}`}><span className="m101-tree-branch">L--</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
-        <button type="button" onClick={() => navigateToTab('directory')} className={`m101-side-link ${activeTab === 'directory' ? 'is-active' : ''}`}><span className="m101-tree-branch">|--</span><span>ไดเรกทอรีบัญชีธุรกิจ</span></button>
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} className={`m101-side-link ${activeTab === 'tasks' ? 'is-active' : ''}`}><span className="m101-tree-branch">|--</span><span>งานภาษีและกฎหมาย</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className={`m101-side-link ${activeTab === 'import' ? 'is-active' : ''}`}><span className="m101-tree-branch">|--</span><span>นำเข้า / จับคู่ไฟล์</span></button>}
-        {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} className={`m101-side-link ${activeTab === 'settings' ? 'is-active' : ''}`}><span className="m101-tree-branch">L--</span><span>ตั้งค่าระบบ</span></button>}
-        <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>DATABASE</strong><span>Cloudflare D1</span></div></div>
+        <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button><div><strong>M101</strong><span>Business Directory</span></div></div>
+        <div className="m101-nav-section-label">เมนูหลัก</div>
+        <button type="button" onClick={() => navigateToTab("dashboard")} className={"m101-side-link " + (activeTab === "dashboard" ? "is-active" : "")}><span className="material-symbols-outlined">space_dashboard</span><span>ภาพรวมระบบ</span><span className="m101-side-count">{records.length}</span></button>
+        <button type="button" onClick={() => navigateToTab("directory")} className={"m101-side-link " + (activeTab === "directory" ? "is-active" : "")}><span className="material-symbols-outlined">folder_open</span><span>ทะเบียนกิจการ</span></button>
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab("tasks")} className={"m101-side-link " + (activeTab === "tasks" ? "is-active" : "")}><span className="material-symbols-outlined">event_note</span><span>งานประจำปี</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab("import")} className={"m101-side-link " + (activeTab === "import" ? "is-active" : "")}><span className="material-symbols-outlined">upload_file</span><span>นำเข้า / ส่งออก</span></button>}
+        {isLoggedIn && <button type="button" onClick={() => navigateToTab("settings")} className={"m101-side-link " + (activeTab === "settings" ? "is-active" : "")}><span className="material-symbols-outlined">settings</span><span>ตั้งค่าระบบ</span></button>}
+        <div className="m101-sidebar-spacer" /><div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>สถานะฐานข้อมูล</strong><span>Cloudflare D1</span></div></div>
       </aside>
-
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -461,11 +461,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือและการตั้งค่ารอบปี">
-        <div className="m101-terminal-brand">
-          <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-terminal-title">m101 // PERSONAL DIRECTORY</button>
-          <span className="m101-terminal-subtitle">BUSINESS RECORDS & DOCUMENT CONTROL</span>
+        <div className="m101-page-context">
+          <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
+          <span>จัดการข้อมูลกิจการและเอกสารในที่เดียว</span>
         </div>
-        <div className="m101-terminal-live"><i /> SYSTEM ONLINE <span>·</span> {isLoggedIn ? 'AUTHENTICATED' : 'READ ONLY'}</div>
         {/* Primary navigation is in the workspace sidebar. */}
         <div className="m101-global-search" role="search">
           <span className="material-symbols-outlined" aria-hidden="true">search</span>
