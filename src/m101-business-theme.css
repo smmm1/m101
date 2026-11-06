@@ -128,7 +128,7 @@ button { -webkit-tap-highlight-color:transparent; }
 .m101-dialog-panel { border:1px solid var(--m101-border) !important; border-radius:9px !important; background:#fff !important; box-shadow:0 16px 48px rgba(20,32,44,.14) !important; }
 .m101-dialog-panel > div:first-child { background:var(--ds-color-surface-subtle) !important; border-color:var(--m101-border) !important; }
 .m101-dialog-panel input,.m101-dialog-panel select,.m101-dialog-panel textarea { border-color:var(--m101-border-strong) !important; border-radius:6px !important; background:#fff !important; color:var(--ds-color-text) !important; }
-.m101-dialog-panel input:focus,.m101-dialog-panel select:focus,.m101-dialog-panel textarea:focus { border-color:var(--ds-color-primary) !important; box-shadow:0 0 0 3px rgba(49,95,140,.09) !important; }
+.m101-dialog-panel input:focus,.m101-dialog-panel select:focus,.m101-dialog-panel textarea:focus { border-color:var(--ds-color-primary) !important; box-shadow:0 0 0 3px rgba(24,24,27,.10) !important; }
 .m101-command-palette { border-radius:9px !important; box-shadow:0 16px 48px rgba(20,32,44,.16) !important; }
 .m101-top-loading { background:var(--ds-color-primary-soft) !important; }
 .m101-top-loading span { background:var(--ds-color-primary) !important; }
