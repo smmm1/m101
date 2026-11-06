@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BusinessRecord } from '../types';
+import { DSButton } from '../design-system/components';
 
 interface DeleteBusinessModalProps {
   records: BusinessRecord[];
@@ -44,13 +45,13 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
               <p className="text-[11px] text-slate-400">เลือกรายการที่ต้องการลบออกจากระบบ</p>
             </div>
           </div>
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+            variant="ghost" className="w-8 h-8 flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         {confirming ? (
@@ -65,21 +66,21 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
               ข้อมูลที่เลือกจะถูกลบออกจากรอบปีบัญชีปัจจุบันอย่างถาวร กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ
             </p>
             <div className="flex items-center gap-3 mt-4">
-              <button
+              <DSButton
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                variant="secondary"
               >
                 ย้อนกลับ
-              </button>
-              <button
+              </DSButton>
+              <DSButton
                 type="button"
                 onClick={handleConfirmDelete}
-                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                variant="danger" className="flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">delete_forever</span>
                 <span>ยืนยันลบทันที</span>
-              </button>
+              </DSButton>
             </div>
           </div>
         ) : (
@@ -141,22 +142,22 @@ export const DeleteBusinessModal: React.FC<DeleteBusinessModalProps> = ({ record
             </div>
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
-              <button
+              <DSButton
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+                variant="secondary"
               >
                 ยกเลิก
-              </button>
-              <button
+              </DSButton>
+              <DSButton
                 type="button"
                 onClick={() => setConfirming(true)}
                 disabled={selectedIds.length === 0}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md disabled:opacity-40 transition-all cursor-pointer flex items-center gap-1.5"
+                variant="danger" className="flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">delete</span>
                 <span>ลบรายการที่เลือก ({selectedIds.length})</span>
-              </button>
+              </DSButton>
             </div>
           </>
         )}
