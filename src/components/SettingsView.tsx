@@ -4,6 +4,7 @@ import { BusinessRecord } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
 import { getSoundSettings, saveSoundSettings, playUISound } from '../utils/cuteAudio';
+import { DSBadge, DSPageHeader } from '../design-system/components';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -146,25 +147,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 select-none transition-colors m101-settings">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 m101-settings-header">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white font-headline tracking-tight">
-            การตั้งค่าระบบ (Settings)
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            ข้อมูลระบบ รอบปีบัญชี และการจัดการสำรองข้อมูล
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 text-xs font-bold font-mono">
-            รอบปีปัจจุบัน: {selectedYear}
-          </span>
-          <span className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold font-mono border border-slate-200/80 dark:border-slate-700">
-            {records.length} กิจการ
-          </span>
-        </div>
-      </div>
+      <DSPageHeader
+        eyebrow="SYSTEM SETTINGS"
+        title="การตั้งค่าระบบ"
+        description="ข้อมูลระบบ รอบปีบัญชี และการจัดการสำรองข้อมูล"
+        className="m101-settings-header"
+        actions={<><DSBadge variant="info">รอบปีปัจจุบัน: {selectedYear}</DSBadge><DSBadge variant="neutral">{records.length} กิจการ</DSBadge></>}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl m101-settings-grid">
         {/* 1. System Information Card */}
