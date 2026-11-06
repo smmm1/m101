@@ -160,7 +160,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
           )}
 
           {/* 1. Status Bar & Fast Switcher */}
-          <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="ds-form-status-row p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">สถานะการดำเนินงาน:</span>
               <DSBadge variant={status === 'completed' ? 'success' : status === 'in_progress' ? 'info' : 'warning'}>
@@ -223,7 +223,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={sequenceNo}
                   onChange={(e) => setSequenceNo(e.target.value)}
                   placeholder="เช่น 01"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field ds-field--mono"
                 />
               </div>
 
@@ -237,7 +237,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
                   placeholder="เช่น 0105500000000"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-semibold focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field ds-field--mono"
                 />
               </div>
 
@@ -249,7 +249,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 <DSSelect
                   value={type}
                   onChange={(e) => setType(e.target.value as BusinessType)}
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-teal-600 transition-all shadow-2xs cursor-pointer"
+                  className="ds-field"
                 >
                   <option value="company">บริษัทจำกัด (บจก.)</option>
                   <option value="partnership">ห้างหุ้นส่วนจำกัด (หจก.)</option>
@@ -279,7 +279,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="ระบุรหัสผ่าน e-Filing"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field ds-field--mono"
                 />
               </div>
 
@@ -293,7 +293,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={eFilingCode}
                   onChange={(e) => setEFilingCode(e.target.value)}
                   placeholder="ระบุรหัสยื่น"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field ds-field--mono"
                 />
               </div>
 
@@ -307,7 +307,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={ssoCode}
                   onChange={(e) => setSsoCode(e.target.value)}
                   placeholder="ระบุรหัส สปส."
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field ds-field--mono"
                 />
               </div>
             </div>
@@ -332,7 +332,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={auditorDate}
                   onChange={(e) => setAuditorDate(e.target.value)}
                   placeholder="ระบุวันที่แจ้ง หรือชื่อผู้สอบบัญชี"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field"
                 />
               </div>
 
@@ -345,7 +345,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   value={remark}
                   onChange={(e) => setRemark(e.target.value)}
                   placeholder="ระบุหมายเหตุเพิ่มเติม"
-                  className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                  className="ds-field"
                 />
               </div>
             </div>
@@ -369,7 +369,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="เช่น ชุดไฟล์นำเข้าปี 69, บันทึกข้อมูลเอง"
-                className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15 outline-none text-slate-900 dark:text-white transition-all shadow-2xs"
+                className="ds-field"
               />
             </div>
           </div>
