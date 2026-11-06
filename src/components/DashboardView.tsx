@@ -427,8 +427,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
       
-      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก" aria-hidden="true">
+      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
         <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button><div><strong>M101</strong><span>Business Directory</span></div></div>
+        <div className="m101-nav-section-label">WORKSPACE</div>
+        <nav className="m101-sidebar-navigation" aria-label="เมนูหลัก">
+          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-side-link ${activeTab === "dashboard" ? "is-active" : ""}`}><LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span></button>
+          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-side-link ${activeTab === "directory" ? "is-active" : ""}`}><Building2 aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-side-link ${activeTab === "tasks" ? "is-active" : ""}`}><ClipboardList aria-hidden="true" /><span>งานประจำปี</span></button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-side-link ${activeTab === "import" ? "is-active" : ""}`}><FileSpreadsheet aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-side-link ${activeTab === "settings" ? "is-active" : ""}`}><Settings aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
+        </nav>
+        <div className="m101-sidebar-spacer" />
+        <div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>M101 WORKSPACE</strong><span>ระบบทะเบียนกิจการ</span></div></div>
       </aside>
       {/* Hidden file input */}
       <input
@@ -458,35 +468,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
         </div>
-        <div className="m101-nav-search-group">
-        <nav className="m101-horizontal-tabs" aria-label="เมนูหลัก">
-          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
-            <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
-          </button>
-          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-horizontal-tab ${activeTab === "directory" ? "is-active" : ""}`}>
-            <Building2 aria-hidden="true" /><span>ทะเบียน</span>
-          </button>
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-horizontal-tab ${activeTab === "tasks" ? "is-active" : ""}`}>
-            <ClipboardList aria-hidden="true" /><span>งาน</span>
-          </button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-horizontal-tab ${activeTab === "import" ? "is-active" : ""}`}>
-            <FileSpreadsheet aria-hidden="true" /><span>นำเข้า</span>
-          </button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-horizontal-tab ${activeTab === "settings" ? "is-active" : ""}`}>
-            <Settings aria-hidden="true" /><span>ตั้งค่า</span>
-          </button>}
-        </nav>
         <div className="m101-global-search" role="search">
           <Search size={17} aria-hidden="true" />
-          <input
-            type="search"
-            aria-label="ค้นหาทะเบียนกิจการ"
-            placeholder="ค้นหากิจการ…"
-            value={searchQuery}
-            onChange={(event) => onSearchChange?.(event.target.value)}
-          />
+          <input type="search" aria-label="ค้นหาทะเบียนกิจการ" placeholder="ค้นหากิจการ…" value={searchQuery} onChange={(event) => onSearchChange?.(event.target.value)} />
           <kbd>⌘ K</kbd>
-        </div>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           
@@ -676,26 +661,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div role="menu" aria-label="เมนูบัญชีผู้ใช้" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-3 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">บัญชีที่กำลังใช้งาน</p>
-                  <lassName="m101-horizontal-tabs" aria-label="เมนูหลัก">
-          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-horizontal-tab ${activeTab === "dashboard" ? "is-active" : ""}`}>
-            <LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span>
-          </button>
-          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-horizontal-tab ${activeTab === "directory" ? "is-active" : ""}`}>
-            <Building2 aria-hidden="true" /><span>ทะเบียน</span>
-          </button>
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-horizontal-tab ${activeTab === "tasks" ? "is-active" : ""}`}>
-            <ClipboardList aria-hidden="true" /><span>งาน</span>
-          </button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-horizontal-tab ${activeTab === "import" ? "is-active" : ""}`}>
-            <FileSpreadsheet aria-hidden="true" /><span>นำเข้า</span>
-          </button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-horizontal-tab ${activeTab === "settings" ? "is-active" : ""}`}>
-            <Settings aria-hidden="true" /><span>ตั้งค่า</span>
-          </button>}
-        </nav>
-      </div>
-
-      {/* 2. MAIN VIEW SWITCHER / CONTENT */}
+                        {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         <div key={activeTab} className="m101-tab-transition min-h-full">
         {activeTab === 'directory' && (
