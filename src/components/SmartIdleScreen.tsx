@@ -62,10 +62,10 @@ const scenario = [
 ] as const;
 
 const levelColor: Record<LogLine['level'], string> = {
-  INFO: 'text-[#8fa49a]',
-  DEBUG: 'text-[#788b9c]',
-  NOTICE: 'text-[#a5aa7d]',
-  WARNING: 'text-[#c3a078]',
+  INFO: 'text-[#a1a1aa]',
+  DEBUG: 'text-[#a1a1aa]',
+  NOTICE: 'text-[#a1a1aa]',
+  WARNING: 'text-[#71717a]',
 };
 
 function createLine(id: number, index: number, baseTime: number): LogLine {
