@@ -59,8 +59,8 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
       case 'pending':
       default:
         return {
-          bg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-800',
-          dot: 'bg-rose-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700 dark:text-zinc-300 border-zinc-200/80 dark:border-zinc-800',
+          dot: 'bg-zinc-500',
           label: config.statusPending || 'รอดำเนินการ',
         };
     }
@@ -209,7 +209,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
+          {/* 3. Czincentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
               <span className="material-symbols-outlined text-[18px] text-zinc-500">key</span>
@@ -363,7 +363,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
             <div className="flex items-center gap-2">
               {showDeleteConfirm ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-rose-600 dark:text-rose-400">ยืนยันลบกิจการนี้?</span>
+                  <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">ยืนยันลบกิจการนี้?</span>
                   <DSButton
                     type="button"
                     onClick={() => {
