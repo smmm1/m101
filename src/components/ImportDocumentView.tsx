@@ -1,4 +1,5 @@
 import React from 'react';
+import { DSButton } from '../design-system/components';
 
 interface ImportDocumentViewProps {
   selectedYear: string;
@@ -13,7 +14,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
         <h1>นำเข้าข้อมูลทะเบียน</h1>
         <p>ตรวจสอบโครงสร้างไฟล์และกำหนดปลายทางของแต่ละคอลัมน์ก่อนบันทึกเข้ารอบปีบัญชี {selectedYear}</p>
       </div>
-      <button type="button" className="m101-button-primary" onClick={onOpenMapping}>＋ เริ่มนำเข้าไฟล์</button>
+      <DSButton type="button" variant="primary" onClick={onOpenMapping}>＋ เริ่มนำเข้าไฟล์</DSButton>
     </header>
 
     <section className="m101-import-flow" aria-label="ขั้นตอนการนำเข้าข้อมูล">
@@ -32,7 +33,7 @@ export const ImportDocumentView: React.FC<ImportDocumentViewProps> = ({ selected
         <p className="m101-eyebrow">IMPORT WORKSPACE</p>
         <h2>เริ่มจากไฟล์ที่ต้องการนำเข้า</h2>
         <p>รองรับ Excel (.xlsx, .xls) และ CSV โดยไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p>
-        <button type="button" className="m101-button-primary" onClick={onOpenMapping}>เลือกไฟล์และตั้งค่าการนำเข้า</button>
+        <DSButton type="button" className="m101-button-primary" onClick={onOpenMapping}>เลือกไฟล์และตั้งค่าการนำเข้า</DSButton>
         <small>ยังไม่มีการบันทึกข้อมูลจนกว่าจะกดยืนยันในขั้นตอนสุดท้าย</small>
       </section>
 
