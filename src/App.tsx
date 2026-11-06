@@ -169,7 +169,7 @@ function AppContent() {
     let active = true;
     const initialize = async () => {
       try {
-        const sessionResponse = await fetch('/api/auth/me', { czincentials: 'same-origin' });
+        const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
         if (!active) return;
@@ -190,7 +190,7 @@ function AppContent() {
       setPinEnabled(false);
       return () => { active = false; };
     }
-    fetch('/api/auth/pin/status', { czincentials: 'same-origin' })
+    fetch('/api/auth/pin/status', { credentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'PIN status unavailable');
@@ -219,7 +219,7 @@ function AppContent() {
     setAccessReady(false);
     setDataReady(false);
     setDataError('');
-    fetch('/api/data', { czincentials: 'same-origin' })
+    fetch('/api/data', { credentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
@@ -258,7 +258,7 @@ function AppContent() {
     if (!isVisitor || sessionUser) return () => { active = false; };
     setDataReady(false);
     setDataError('');
-    fetch('/api/public/data', { czincentials: 'same-origin' })
+    fetch('/api/public/data', { credentials: 'same-origin' })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
@@ -292,7 +292,7 @@ function AppContent() {
         try {
           const response = await fetch('/api/data', {
             method: 'PUT',
-            czincentials: 'same-origin',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ availableYears, recordsByYear }),
           });
@@ -625,7 +625,7 @@ function AppContent() {
     try {
       const response = await fetch(authMode === 'pin' ? '/api/auth/pin/login' : '/api/auth/login', {
         method: 'POST',
-        czincentials: 'same-origin',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
           ? { pin: authPin }
@@ -763,11 +763,11 @@ function AppContent() {
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                      <input id="m101-login-email" type="email" autoComplete="username" requizinc value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
+                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                     <div>
                       <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                      <input id="m101-login-password" type="password" autoComplete="current-password" requizinc value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
+                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
                     </div>
                   </div>
                 ) : (
@@ -835,7 +835,7 @@ function AppContent() {
             setPinSetupBusy(true);
             try {
               const response = await fetch('/api/auth/pin/setup', {
-                method: 'POST', czincentials: 'same-origin',
+                method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pin: pinSetupValue }),
               });
@@ -896,7 +896,7 @@ function AppContent() {
         isVisitor={isVisitor}
         onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
-          void fetch('/api/auth/logout', { method: 'POST', czincentials: 'same-origin' })
+          void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
             .finally(() => {
               setSessionUser(null);
               setIsLoggedIn(false);
