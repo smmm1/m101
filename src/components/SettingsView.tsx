@@ -201,14 +201,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {isLoggedIn && isAdmin && (
               <div className="pt-2">
-                <button
+                <DSButton
                   type="button"
                   onClick={handleSaveConfig}
-                  variant="primary" className="flex items-center gap-1.5"
+                  variant="primary"
+                  className="flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">save</span>
                   <span>บันทึกข้อมูลระบบ</span>
-                </button>
+                </DSButton>
               </div>
             )}
           </div>
