@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BusinessRecord, BusinessStatus, BusinessType } from '../types';
 import { generateRandomPassword, inferBusinessType } from '../utils/thaiDate';
 import { useSystemConfig } from '../context/SystemConfigContext';
+import { DSButton, DSInput } from '../design-system/components';
 
 interface AddBusinessModalProps {
   allRecords: BusinessRecord[];
@@ -92,13 +93,13 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
               </p>
             </div>
           </div>
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            variant="ghost" className="w-8 h-8 rounded-xl flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[72vh] overflow-y-auto no-scrollbar">
@@ -120,19 +121,15 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
                 { value: 'in_progress', label: config.statusInProgress || 'กำลังทำ', color: 'bg-amber-500' },
                 { value: 'completed', label: config.statusCompleted || 'เสร็จสิ้น', color: 'bg-emerald-500' },
               ].map((s) => (
-                <button
+                <DSButton
                   key={s.value}
                   type="button"
                   onClick={() => setStatus(s.value as any)}
-                  className={`py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    status === s.value
-                      ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 border-slate-900 dark:border-amber-500 shadow-md'
-                      : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                  }`}
+                  variant={status === s.value ? 'primary' : 'secondary'} className="ds-status-option"
                 >
                   <span className={`w-2 h-2 rounded-full ${s.color}`} />
                   <span>{s.label}</span>
-                </button>
+                </DSButton>
               ))}
             </div>
           </div>
@@ -141,7 +138,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">ลำดับ</label>
-              <input
+              <DSInput
                 type="text"
                 value={sequenceNo}
                 onChange={(e) => setSequenceNo(e.target.value)}
@@ -152,7 +149,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 เลขประจำตัวผู้เสียภาษี (13 หลัก) <span className="text-rose-500">*</span>
               </label>
-              <input
+              <DSInput
                 type="text"
                 value={taxId}
                 onChange={(e) => setTaxId(e.target.value)}
@@ -167,7 +164,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
               ชื่อบริษัท / ห้างหุ้นส่วนจำกัด <span className="text-rose-500">*</span>
             </label>
-            <input
+            <DSInput
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
@@ -183,15 +180,15 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   รหัสผ่าน / e-Filing <span className="text-rose-500">*</span>
                 </label>
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setPassword(generateRandomPassword(8))}
-                  className="text-[10px] text-emerald-600 hover:underline cursor-pointer"
+                  variant="ghost" className="text-xs"
                 >
                   สุ่มรหัส
-                </button>
+                </DSButton>
               </div>
-              <input
+              <DSInput
                 type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -201,7 +198,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
 
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">วันที่ผู้สอบ</label>
-              <input
+              <DSInput
                 type="text"
                 value={auditorDate}
                 onChange={(e) => setAuditorDate(e.target.value)}
@@ -215,7 +212,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">รหัสยื่น e-Filing</label>
-              <input
+              <DSInput
                 type="text"
                 value={eFilingCode}
                 onChange={(e) => setEFilingCode(e.target.value)}
@@ -225,7 +222,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             </div>
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">รหัสประกันสังคม</label>
-              <input
+              <DSInput
                 type="text"
                 value={ssoCode}
                 onChange={(e) => setSsoCode(e.target.value)}
@@ -239,7 +236,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">หมายเหตุ</label>
-              <input
+              <DSInput
                 type="text"
                 value={remark}
                 onChange={(e) => setRemark(e.target.value)}
@@ -249,7 +246,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             </div>
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">หัวข้อ / กลุ่ม</label>
-              <input
+              <DSInput
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -261,20 +258,20 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
-            <button
+            <DSButton
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              variant="secondary"
             >
               ยกเลิก
-            </button>
-            <button
+            </DSButton>
+            <DSButton
               type="submit"
-              className="px-6 py-2.5 rounded-2xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-900 text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
+              variant="primary" className="flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[16px]">add</span>
               <span>เพิ่มกิจการ</span>
-            </button>
+            </DSButton>
           </div>
         </form>
 
