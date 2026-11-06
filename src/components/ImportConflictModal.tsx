@@ -92,11 +92,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 1: Update Existing (Recommended) */}
           <label
-            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              selectedMode === 'update_existing'
-                ? 'bg-blue-50 text-slate-900 border-blue-500 shadow-sm'
-                : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
-            }`}
+            className={`m101-conflict-option ds-choice-option ${selectedMode === 'update_existing' ? 'is-selected' : ''}`}
           >
             <input
               type="radio"
@@ -112,9 +108,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                 <DSBadge variant="warning">แนะนำ</DSBadge>
               </span>
               <span
-                className={`text-[11px] mt-0.5 leading-relaxed ${
-                  text-[#64748b]
-                }`}
+                className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
                 นำข้อมูลใหม่จากไฟล์ไปอัปเดตทับรายการเดิมที่มีเลขประจำตัวผู้เสียภาษีตรงกัน (เช่น รหัสผ่าน, วันที่แจ้งผู้สอบ, รหัส e-Filing) และนำเข้ารายการใหม่อัตโนมัติ
               </span>
@@ -123,11 +117,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 2: Skip Duplicates */}
           <label
-            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              selectedMode === 'skip_duplicates'
-                ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
-                : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
-            }`}
+            className={`m101-conflict-option ds-choice-option ${selectedMode === 'skip_duplicates' ? 'is-selected' : ''}`}
           >
             <input
               type="radio"
@@ -142,9 +132,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                 ข้ามรายการที่ซ้ำ (นำเข้าเฉพาะรายการใหม่ {newItems.length} รายการ)
               </span>
               <span
-                className={`text-[11px] mt-0.5 leading-relaxed ${
-                  text-[#64748b]
-                }`}
+                className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
                 ไม่แก้ไขข้อมูลเดิมในระบบ และข้ามรายการที่เลขผู้เสียภาษีซ้ำทั้งหมด โดยจะนำเข้าเฉพาะกิจการที่ยังไม่เคยมีในระบบ
               </span>
@@ -153,11 +141,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {/* Option 3: Import All as New (Allow duplicates) */}
           <label
-            className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              selectedMode === 'import_all'
-                ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
-                : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
-            }`}
+            className={`m101-conflict-option ds-choice-option ${selectedMode === 'import_all' ? 'is-selected' : ''}`}
           >
             <input
               type="radio"
@@ -172,9 +156,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                 นำเข้าทั้งหมด {totalIncoming} รายการ (ยอมรับให้มีข้อมูลซ้ำ)
               </span>
               <span
-                className={`text-[11px] mt-0.5 leading-relaxed ${
-                  text-[#64748b]
-                }`}
+                className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
                 เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีเลขผู้เสียภาษีซ้ำกับของเดิมหรือไม่
               </span>
