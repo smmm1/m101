@@ -65,3 +65,8 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-choice-option:hover { background:var(--ds-color-surface-subtle); }
 .ds-choice-option.is-selected { border-color:var(--ds-color-primary); background:var(--ds-color-primary-soft); color:var(--ds-color-text); box-shadow:inset 0 0 0 1px var(--ds-color-primary); }
 .ds-choice-option .text-slate-600 { color:var(--ds-color-text-secondary); }
+
+.ds-copy-action { min-height:28px!important; height:28px; padding:0 8px!important; font-size:var(--ds-text-xs)!important; }
+.ds-copy-icon { min-height:28px!important; width:28px; height:28px; padding:0!important; }
+.ds-delete-action { color:var(--ds-color-danger)!important; }
+.ds-delete-action:hover { background:var(--ds-color-danger-soft)!important; color:#B91C1C!important; }
