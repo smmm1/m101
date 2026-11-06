@@ -259,7 +259,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
   return (
     <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
-      <div className="m101-dialog-panel m101-import-dialog-panel w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-[#111827] flex flex-col">
+      <div className="m101-dialog-panel m101-import-dialog-panel w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-300 dark:bg-white flex flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
           <div className="min-w-0">
             <h2 id="excel-mapping-title" className="text-base font-extrabold text-slate-900 dark:text-white">จับคู่คอลัมน์</h2>
@@ -278,7 +278,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {!workbook ? (
             <div className="mx-auto flex min-h-[320px] max-w-2xl flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center dark:border-slate-700 dark:bg-slate-900/50">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"><span className="material-symbols-outlined text-4xl">upload_file</span></div>
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"><span className="material-symbols-outlined text-4xl">upload_file</span></div>
               <div><h3 className="text-base font-bold text-slate-900 dark:text-white">เลือกไฟล์ที่ต้องการนำเข้า</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">เลือกไฟล์จากอุปกรณ์ของคุณ</p><p className="mt-2 text-xs text-slate-400">รองรับ Excel และ CSV · .xlsx, .xls, .csv</p></div>
               <DSButton type="button" onClick={() => inputRef.current?.click()} variant="primary">เลือกไฟล์</DSButton>
               <p className="text-xs text-slate-500">ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p>
@@ -286,14 +286,14 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
           ) : (
             <>
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
-                <div className="flex min-w-0 items-center gap-3"><span className="material-symbols-outlined text-2xl text-emerald-700 dark:text-emerald-300">description</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{fileName}</p><p className="text-xs text-slate-500">{workbook.SheetNames.length} Sheet ในไฟล์นี้</p></div></div>
+                <div className="flex min-w-0 items-center gap-3"><span className="material-symbols-outlined text-2xl text-slate-700">description</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{fileName}</p><p className="text-xs text-slate-500">{workbook.SheetNames.length} Sheet ในไฟล์นี้</p></div></div>
                 <DSButton type="button" onClick={reset} variant="secondary">เปลี่ยนไฟล์</DSButton>
               </div>
               <div className="mb-6 grid grid-cols-3 gap-2">
                 {['เลือกไฟล์', 'เลือก Sheet / ตาราง', 'จับคู่คอลัมน์'].map((label, index) => {
                   const active = (step === 'sheet' && index === 1) || (step === 'mapping' && index === 2);
                   const complete = index === 0 || (step === 'mapping' && index === 1);
-                  return <div key={label} className="min-w-0"><div className={`mb-2 h-1.5 rounded-full ${active || complete ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700'}`} /><p className={`truncate text-[10px] font-semibold sm:text-xs ${active ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500'}`}>{index + 1}. {label}</p></div>;
+                  return <div key={label} className="min-w-0"><div className={`mb-2 h-1.5 rounded-full ${active || complete ? 'bg-zinc-900' : 'bg-slate-200 dark:bg-slate-700'}`} /><p className={`truncate text-[10px] font-semibold sm:text-xs ${active ? 'text-slate-700' : 'text-slate-500'}`}>{index + 1}. {label}</p></div>;
                 })}
               </div>
 
@@ -305,7 +305,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                   </section>
                   <section className="space-y-3">
                     <div className="flex flex-wrap items-end justify-between gap-2"><div><h3 className="text-sm font-bold text-slate-900 dark:text-white">เลือกตารางข้อมูล</h3><p className="text-xs text-slate-500">ระบบตรวจหาตารางใน Sheet ให้แล้ว คุณเลือกตารางที่ต้องการได้</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">พบ {regions.length} ตาราง</span></div>
-                    {regions.length === 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">ไม่พบตารางข้อมูลใน Sheet นี้ ลองเลือก Sheet อื่น</div> : <div className="grid gap-3 sm:grid-cols-2">{regions.map((region, index) => <DSButton key={region.id} type="button" onClick={() => setRegionId(region.id)} variant={regionId === region.id ? 'primary' : 'secondary'} className="ds-button--card"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">ตาราง {index + 1}</span>{regionId === region.id && <span className="material-symbols-outlined text-lg text-emerald-700 dark:text-emerald-300">check_circle</span>}</div><p className="mt-1 text-xs text-slate-500">ข้อมูล {region.rows.length} แถว · {region.rows[region.headerIndex]?.filter(Boolean).length ?? 0} คอลัมน์</p><p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{region.rows[region.headerIndex]?.filter(Boolean).join(' · ')}</p></DSButton>)}</div>}
+                    {regions.length === 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">ไม่พบตารางข้อมูลใน Sheet นี้ ลองเลือก Sheet อื่น</div> : <div className="grid gap-3 sm:grid-cols-2">{regions.map((region, index) => <DSButton key={region.id} type="button" onClick={() => setRegionId(region.id)} variant={regionId === region.id ? 'primary' : 'secondary'} className="ds-button--card"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">ตาราง {index + 1}</span>{regionId === region.id && <span className="material-symbols-outlined text-lg text-slate-700">check_circle</span>}</div><p className="mt-1 text-xs text-slate-500">ข้อมูล {region.rows.length} แถว · {region.rows[region.headerIndex]?.filter(Boolean).length ?? 0} คอลัมน์</p><p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{region.rows[region.headerIndex]?.filter(Boolean).join(' · ')}</p></DSButton>)}</div>}
                     {selectedRegion && <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"><div className="border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">ตัวอย่างข้อมูลจากตารางที่เลือก</div><table className="ds-table w-full min-w-[420px] text-left text-xs"><tbody>{selectedRegion.rows.slice(0, 4).map((row, index) => <tr key={index} className="border-b border-slate-100 last:border-0 dark:border-slate-800">{row.map((cell, col) => <td key={col} className="max-w-[180px] truncate px-3 py-2 text-slate-600 dark:text-slate-300">{cell || '—'}</td>)}</tr>)}</tbody></table></div>}
                   </section>
                   <div className="flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800"><DSButton type="button" disabled={!selectedRegion} onClick={beginMapping} variant="primary">ถัดไป: จับคู่คอลัมน์ <span className="material-symbols-outlined ml-1 align-middle text-base">arrow_forward</span></DSButton></div>
