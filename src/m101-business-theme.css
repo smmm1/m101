@@ -316,3 +316,9 @@ html.dark .m101-dialog-panel input, html.dark .m101-dialog-panel select, html.da
   .m101-sidebar > .m101-sidebar-foot { display: none !important; }
   .m101-side-link { flex: 0 0 auto; min-height: 52px !important; }
 }
+
+@media (max-width: 900px) {
+  .mobile-app-nav { order: 1 !important; }
+  .m101-sidebar { order: 2 !important; }
+  .mobile-main-content { order: 3 !important; }
+}
