@@ -119,7 +119,26 @@ All modules use the same page-header hierarchy, spacing, action placement, searc
 7. Run typecheck/build and relevant tests.
 8. Verify the real deployment before reporting it live.
 
-## 10. Definition of done
+## 10. Current migration status
+
+The first foundation pass is in place:
+
+- `src/design-system/tokens.css` is the central token source.
+- `src/design-system/components.css` defines token-driven shared style contracts.
+- `src/design-system/index.css` is loaded from the application entry point.
+- The existing business theme consumes the global tokens through compatibility aliases.
+- Existing routes, data flow, authentication, D1 bindings, and import/export logic have not been intentionally changed.
+
+Migration is not yet complete:
+
+- `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
+- Existing React views and modals still contain page/component-specific markup and styles. They must be migrated to shared component APIs in controlled batches.
+- The existing theme/settings behavior and responsive shell require a full route-by-route audit.
+- The initial successful build validates the CSS entrypoint and bundle, not full visual QA or functional regression testing.
+
+Next migration sequence: audit legacy selectors and component consumers, establish shared React primitives, migrate the global shell, then migrate tables/forms/dialogs and each module template.
+
+## 11. Definition of done
 
 - [ ] One authoritative token source is used.
 - [ ] Shared components do not have conflicting page-level copies.
