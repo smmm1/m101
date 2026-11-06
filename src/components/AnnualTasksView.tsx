@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DSBadge, DSButton, DSInput, DSSelect, DSTextarea } from '../design-system/components';
+import { DSBadge, DSButton, DSInput, DSSelect, DSPageHeader, DSTextarea } from '../design-system/components';
 import { BusinessRecord } from '../types';
 
 type TaskStatus = 'pending' | 'in_progress' | 'completed';
@@ -210,10 +210,13 @@ export const AnnualTasksView: React.FC<AnnualTasksViewProps> = ({
 
   return (
     <section className={`m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-5 ${celebrate ? 'm101-success-burst' : ''}`}>
-      <header className="m101-overview-header">
-        <div><p className="m101-eyebrow">ANNUAL TASK MANAGEMENT</p><h1>งานประจำปี</h1><p>ติดตามงานภาษี บัญชี และงานตามรอบปี แยกตามกิจการ · ปี {selectedYear}</p></div>
-        <div className="m101-overview-actions"><DSButton type="button" variant="primary" onClick={openCreate} disabled={!records.length}>＋ เพิ่มงาน</DSButton></div>
-      </header>
+      <DSPageHeader
+        eyebrow="ANNUAL TASK MANAGEMENT"
+        title="งานประจำปี"
+        description={`ติดตามงานภาษี บัญชี และงานตามรอบปี แยกตามกิจการ · ปี ${selectedYear}`}
+        className="m101-overview-header"
+        actions={<DSButton type="button" variant="primary" onClick={openCreate} disabled={!records.length}>＋ เพิ่มงาน</DSButton>}
+      />
       <div className="m101-task-metric-grid">
         <article><span>งานทั้งหมด</span><strong>{counts.total}</strong></article>
         <article><span>เสร็จแล้ว</span><strong className="is-done">{counts.completed}</strong></article>
