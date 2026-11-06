@@ -506,7 +506,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="text-[11px] text-amber-600 dark:text-amber-400 font-bold hover:underline"
                     >
                       จัดการทั้งหมด
-                    </DSButton>
+                    </button>
                   )}
                 </div>
 
