@@ -133,18 +133,19 @@ The design-system foundation and first component migrations are in place:
 - The business registry uses shared buttons, search input, status badges, and the shared table style contract.
 - Excel/CSV mapping, duplicate-conflict, and import landing flows use shared buttons, selects, badges, and preview-table styles.
 - Business detail and settings screens now use the shared page header, badges, and action buttons; settings text inputs also use shared fields.
+- Admin Control Center navigation, global toast actions, and fiscal-year management controls now use the shared button, badge, input, select, and dialog styling contracts.
 - Dialog overlays and panels across add/edit/detail/delete, import mapping, conflict resolution, and annual tasks now share tokenized surfaces, borders, shadows, radii, and subtle backdrop treatment.
 - The legacy global palette's primary neutrals and brand-action colors have been remapped to the same design tokens to reduce cross-module color drift.
 
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
-- Admin surfaces, remaining import controls, and any unconverted utility actions still need component-by-component migration.
+- Remaining admin subviews, import progress/result states, and any unconverted utility actions still need component-by-component migration.
 - The legacy stylesheet still contains module-specific semantic colors and dark-theme selectors; these need a careful audit rather than a blind global replacement.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
-Next migration sequence: finish the shared dialog and form contracts, migrate registry and import tables, then settings/admin views; finally remove dead legacy selectors after consumer verification.
+Next migration sequence: audit the global shell and every route at mobile/tablet/desktop widths; finish import progress/result and remaining utility controls; then remove dead legacy selectors only after verifying their consumers.
 
 ## 11. Definition of done
 
