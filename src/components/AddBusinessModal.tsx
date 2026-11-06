@@ -118,8 +118,8 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             <div className="grid grid-cols-3 gap-2">
               {[
                 { value: 'pending', label: config.statusPending || 'รอดำเนินการ', color: 'bg-rose-500' },
-                { value: 'in_progress', label: config.statusInProgress || 'กำลังทำ', color: 'bg-amber-500' },
-                { value: 'completed', label: config.statusCompleted || 'เสร็จสิ้น', color: 'bg-emerald-500' },
+                { value: 'in_progress', label: config.statusInProgress || 'กำลังทำ', color: 'bg-zinc-500' },
+                { value: 'completed', label: config.statusCompleted || 'เสร็จสิ้น', color: 'bg-zinc-500' },
               ].map((s) => (
                 <DSButton
                   key={s.value}
