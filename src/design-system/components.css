@@ -108,3 +108,25 @@ button.ds-button.ds-button--danger { color:#fff; background:var(--ds-color-dange
 .ds-year-number { background:var(--ds-color-surface-subtle); color:var(--ds-color-text-secondary); }
 .ds-year-number.is-current { background:var(--ds-color-primary); color:#fff; }
 .ds-year-add.ds-button { width:100%; min-height:42px; justify-content:center; border-style:dashed; }
+
+
+/* Bulk-delete dialog: shared neutral modal surface and semantic danger states. */
+.ds-modal-overlay { background:rgba(15,23,42,.48); backdrop-filter:blur(2px); }
+.ds-delete-modal { padding:24px; border:1px solid var(--ds-color-border); border-radius:var(--ds-radius-xl); background:var(--ds-color-surface); color:var(--ds-color-text); box-shadow:var(--ds-shadow-dialog); }
+.ds-modal-header { padding-bottom:16px; margin-bottom:4px; }
+.ds-modal-icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:var(--ds-radius-md); background:var(--ds-color-surface-subtle); color:var(--ds-color-text-secondary); }
+.ds-modal-icon--danger { background:var(--ds-color-danger-soft); color:var(--ds-color-danger); }
+.ds-modal-icon--large { width:52px; height:52px; flex-basis:52px; border-radius:var(--ds-radius-lg); }
+.ds-modal-title { margin:0; color:var(--ds-color-text); font-size:15px; line-height:1.4; font-weight:650; }
+.ds-modal-title--large { font-size:18px; }
+.ds-modal-description { margin:4px 0 0; color:var(--ds-color-text-secondary); font-size:12px; line-height:1.55; }
+.ds-modal-description--center { text-align:center; }
+.ds-modal-footer { border-top:1px solid var(--ds-color-border); margin-top:12px; }
+.ds-delete-toolbar { border-bottom:1px solid var(--ds-color-border); }
+.ds-delete-select-label { display:flex; align-items:center; gap:8px; color:var(--ds-color-text); font-size:13px; font-weight:600; }
+.ds-delete-count,.ds-delete-taxid { color:var(--ds-color-text-muted); font:400 var(--ds-text-xs)/1.5 var(--ds-font-mono); }
+.ds-delete-row { border-color:transparent; border-radius:var(--ds-radius-md); }
+.ds-delete-row.is-selected { border-color:var(--ds-color-danger); background:var(--ds-color-danger-soft); }
+.ds-delete-row.is-unselected:hover { border-color:var(--ds-color-border); background:var(--ds-color-surface-subtle); }
+.ds-delete-business { color:var(--ds-color-text); font-size:13px; font-weight:600; }
+@media(max-width:640px) { .ds-delete-modal { padding:16px; max-height:90vh; } }
