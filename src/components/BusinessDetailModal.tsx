@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BusinessRecord, BusinessStatus } from '../types';
 import { useSystemConfig } from '../context/SystemConfigContext';
 import { formatThaiTaxId, getThaiFormattedDate } from '../utils/thaiDate';
+import { DSBadge, DSButton } from '../design-system/components';
 
 interface BusinessDetailModalProps {
   record: BusinessRecord | null;
@@ -107,14 +108,14 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
             </div>
           </div>
 
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            variant="ghost" className="w-9 h-9 flex items-center justify-center shrink-0"
             title="ปิดหน้าต่าง"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         {/* Scrollable Content */}
@@ -123,10 +124,10 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
           <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">สถานะปัจจุบัน:</span>
-              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${currentBadge.bg}`}>
+              <DSBadge variant={record.status === 'completed' ? 'success' : record.status === 'in_progress' ? 'info' : 'warning'}>
                 <span className={`w-2 h-2 rounded-full ${currentBadge.dot}`} />
-                <span>{currentBadge.label}</span>
-              </span>
+                {currentBadge.label}
+              </DSBadge>
             </div>
 
             {/* Quick Status Buttons */}
@@ -135,7 +136,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 const b = getStatusBadge(s);
                 const isCurrent = record.status === s;
                 return (
-                  <button
+                  <DSButton
                     key={s}
                     type="button"
                     disabled={!isLoggedIn}
@@ -147,15 +148,11 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                         onShowToast(`เปลี่ยนสถานะเป็น ${b.label}`, 'บันทึกสำเร็จ', 'success', 2000);
                       }
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      isCurrent
-                        ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-900 shadow-xs'
-                        : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700'
-                    } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    variant={isCurrent ? 'primary' : 'secondary'} className="ds-status-option"
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${b.dot}`} />
                     <span>{b.label}</span>
-                  </button>
+                  </DSButton>
                 );
               })}
             </div>
@@ -181,16 +178,16 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     {isLoggedIn ? formattedTax : `${record.taxId.slice(0, 4)}*********`}
                   </span>
                   {isLoggedIn && record.taxId && (
-                    <button
+                    <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.taxId, 'เลขผู้เสียภาษี', 'taxId')}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 hover:text-amber-700 dark:hover:text-amber-300 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                      variant="secondary" className="ds-copy-action"
                     >
                       <span className="material-symbols-outlined text-[14px]">
                         {copiedKey === 'taxId' ? 'check' : 'content_copy'}
                       </span>
                       <span>{copiedKey === 'taxId' ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
-                    </button>
+                    </DSButton>
                   )}
                 </div>
               </div>
@@ -232,16 +229,16 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     {isLoggedIn ? (record.password || '-') : '********'}
                   </span>
                   {isLoggedIn && record.password && (
-                    <button
+                    <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.password, 'รหัสผ่าน', 'password')}
-                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
+                      variant="ghost" className="ds-copy-icon shrink-0"
                       title="คัดลอกรหัสผ่าน"
                     >
                       <span className="material-symbols-outlined text-[15px]">
                         {copiedKey === 'password' ? 'check' : 'content_copy'}
                       </span>
-                    </button>
+                    </DSButton>
                   )}
                 </div>
               </div>
@@ -256,7 +253,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     {isLoggedIn ? (record.eFilingCode || '-') : '********'}
                   </span>
                   {isLoggedIn && record.eFilingCode && (
-                    <button
+                    <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.eFilingCode, 'รหัส e-Filing', 'efiling')}
                       className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
@@ -265,7 +262,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                       <span className="material-symbols-outlined text-[15px]">
                         {copiedKey === 'efiling' ? 'check' : 'content_copy'}
                       </span>
-                    </button>
+                    </DSButton>
                   )}
                 </div>
               </div>
@@ -280,7 +277,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                     {isLoggedIn ? (record.ssoCode || '-') : '********'}
                   </span>
                   {isLoggedIn && record.ssoCode && (
-                    <button
+                    <DSButton
                       type="button"
                       onClick={() => copyToClipboard(record.ssoCode, 'รหัสประกันสังคม', 'sso')}
                       className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:text-amber-600 dark:hover:text-amber-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
@@ -289,7 +286,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                       <span className="material-symbols-outlined text-[15px]">
                         {copiedKey === 'sso' ? 'check' : 'content_copy'}
                       </span>
-                    </button>
+                    </DSButton>
                   )}
                 </div>
               </div>
@@ -367,58 +364,58 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
               {showDeleteConfirm ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-rose-600 dark:text-rose-400">ยืนยันลบกิจการนี้?</span>
-                  <button
+                  <DSButton
                     type="button"
                     onClick={() => {
                       onDelete(record.id);
                       onClose();
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    variant="danger"
                   >
                     ยืนยันลบ
-                  </button>
-                  <button
+                  </DSButton>
+                  <DSButton
                     type="button"
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer"
+                    variant="secondary"
                   >
                     ยกเลิก
-                  </button>
+                  </DSButton>
                 </div>
               ) : (
-                <button
+                <DSButton
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  variant="ghost" className="ds-delete-action flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">delete</span>
                   <span>ลบรายการนี้</span>
-                </button>
+                </DSButton>
               )}
             </div>
           )}
 
           <div className="flex items-center gap-2.5">
-            <button
+            <DSButton
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              variant="secondary"
             >
               ปิดหน้าต่าง
-            </button>
+            </DSButton>
 
             {isLoggedIn && (
-              <button
+              <DSButton
                 type="button"
                 onClick={() => {
                   onClose();
                   onEdit(record);
                 }}
-                className="px-5 py-2 rounded-xl bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-600 text-white dark:text-slate-900 text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                variant="primary" className="flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[16px]">edit</span>
                 <span>แก้ไขข้อมูล</span>
-              </button>
+              </DSButton>
             )}
           </div>
         </div>
