@@ -414,3 +414,67 @@ button { -webkit-tap-highlight-color:transparent; }
     display: none;
   }
 }
+
+
+/* Final header composition: keep the title, search and utilities together
+   as one centered group instead of pushing the side groups toward the search. */
+@media (min-width: 761px) {
+  .mobile-app-nav {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: clamp(16px, 2vw, 30px) !important;
+    padding-inline: clamp(16px, 2.4vw, 36px) !important;
+  }
+
+  .m101-page-context {
+    flex: 0 1 220px;
+    min-width: 0;
+    max-width: 220px;
+    justify-self: auto;
+    text-align: center;
+    align-items: center;
+  }
+
+  .m101-global-search {
+    flex: 0 1 460px;
+    width: min(100%, 460px) !important;
+    min-width: 240px;
+    justify-self: auto;
+    margin-inline: 0;
+  }
+
+  .mobile-utility-nav {
+    flex: 0 1 auto;
+    justify-self: auto;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .mobile-app-nav {
+    gap: 12px !important;
+    padding-inline: 12px !important;
+  }
+
+  .m101-page-context {
+    flex-basis: 150px;
+    max-width: 150px;
+  }
+
+  .m101-page-context span {
+    display: none;
+  }
+
+  .m101-global-search {
+    flex-basis: 300px;
+    min-width: 190px;
+  }
+
+  .mobile-utility-nav {
+    gap: 5px !important;
+  }
+}
