@@ -1,73 +1,35 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
-  theme: ThemeMode;
-  isDark: boolean;
+  theme: 'light';
+  isDark: false;
   toggleTheme: () => void;
   setTheme: (theme: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'mustang_theme_mode';
-
+/** M101 currently ships one governed visual theme: clean light.
+ * Keep the context API stable for existing consumers while preventing
+ * stale browser preferences from reintroducing a second, conflicting theme.
+ */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-      if (saved && (saved === 'light' || saved === 'dark' || saved === 'system')) {
-        return saved;
-      }
-    } catch {}
-    return 'light';
-  });
-
-  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemIsDark(e.matches);
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove('light');
+    document.documentElement.style.colorScheme = 'light';
+    try {
+      localStorage.removeItem('mustang_theme_mode');
+    } catch {}
   }, []);
 
-  const isDark = theme === 'dark' || (theme === 'system' && systemIsDark);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY, theme);
-    } catch {}
-  }, [theme, isDark]);
-
-  const toggleTheme = () => {
-    setThemeState((prev) => {
-      if (prev === 'dark') return 'light';
-      return 'dark';
-    });
-  };
-
-  const setTheme = (newTheme: ThemeMode) => {
-    setThemeState(newTheme);
-  };
+  const toggleTheme = () => {};
+  const setTheme = (_theme: ThemeMode) => {};
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: 'light', isDark: false, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -75,8 +37,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 };
