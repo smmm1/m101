@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BusinessRecord } from '../types';
+import { DSBadge, DSButton } from '../design-system/components';
 
 export interface DuplicateConflictItem {
   incoming: Partial<BusinessRecord>;
@@ -52,13 +53,13 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               </p>
             </div>
           </div>
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1 rounded-md cursor-pointer"
+            variant="ghost"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
+          </DSButton>
         </div>
 
         {/* Stats Summary Box */}
@@ -93,7 +94,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
           <label
             className={`m101-conflict-option flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               selectedMode === 'update_existing'
-                ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+                ? 'bg-blue-50 text-slate-900 border-blue-500 shadow-sm'
                 : 'bg-white border-[#e4e4e7] text-[#18181b] hover:bg-[#fafafa]'
             }`}
           >
@@ -108,19 +109,11 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold flex items-center gap-1.5">
                 <span>อัปเดตข้อมูลเดิม ({duplicateItems.length} รายการ) + เพิ่มรายการใหม่ ({newItems.length} รายการ)</span>
-                <span
-                  className={`text-[9.5px] px-1.5 py-0.2 rounded font-mono uppercase ${
-                    selectedMode === 'update_existing'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-amber-100 text-amber-800'
-                  }`}
-                >
-                  แนะนำ
-                </span>
+                <DSBadge variant="warning">แนะนำ</DSBadge>
               </span>
               <span
                 className={`text-[11px] mt-0.5 leading-relaxed ${
-                  selectedMode === 'update_existing' ? 'text-neutral-300' : 'text-[#71717a]'
+                  text-[#64748b]
                 }`}
               >
                 นำข้อมูลใหม่จากไฟล์ไปอัปเดตทับรายการเดิมที่มีเลขประจำตัวผู้เสียภาษีตรงกัน (เช่น รหัสผ่าน, วันที่แจ้งผู้สอบ, รหัส e-Filing) และนำเข้ารายการใหม่อัตโนมัติ
@@ -150,7 +143,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               </span>
               <span
                 className={`text-[11px] mt-0.5 leading-relaxed ${
-                  selectedMode === 'skip_duplicates' ? 'text-neutral-300' : 'text-[#71717a]'
+                  text-[#64748b]
                 }`}
               >
                 ไม่แก้ไขข้อมูลเดิมในระบบ และข้ามรายการที่เลขผู้เสียภาษีซ้ำทั้งหมด โดยจะนำเข้าเฉพาะกิจการที่ยังไม่เคยมีในระบบ
@@ -180,7 +173,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               </span>
               <span
                 className={`text-[11px] mt-0.5 leading-relaxed ${
-                  selectedMode === 'import_all' ? 'text-neutral-300' : 'text-[#71717a]'
+                  text-[#64748b]
                 }`}
               >
                 เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีเลขผู้เสียภาษีซ้ำกับของเดิมหรือไม่
@@ -191,10 +184,10 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
         {/* Duplicate Preview Collapsible */}
         <div className="border border-[#e4e4e7] rounded-xl overflow-hidden bg-[#fafafa]">
-          <button
+          <DSButton
             type="button"
             onClick={() => setShowPreviewList(!showPreviewList)}
-            className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-[#18181b] hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+            variant="ghost" className="ds-conflict-preview-toggle"
           >
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[16px] text-amber-600">
@@ -205,7 +198,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
             <span className="material-symbols-outlined text-[18px] text-slate-400">
               {showPreviewList ? 'expand_less' : 'expand_more'}
             </span>
-          </button>
+          </DSButton>
 
           {showPreviewList && (
             <div className="max-h-48 overflow-y-auto divide-y divide-[#ececec] border-t border-[#e4e4e7] bg-white p-2">
@@ -220,9 +213,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono">
-                      ตรงกับในระบบ
-                    </span>
+                    <DSBadge variant="warning">ตรงกับในระบบ</DSBadge>
                   </div>
                 </div>
               ))}
@@ -232,17 +223,17 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f4f4f5]">
-          <button
+          <DSButton
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-[#e4e4e7] text-[#18181b] hover:bg-[#f4f4f5] text-xs font-medium cursor-pointer"
+            variant="secondary"
           >
             ยกเลิก
-          </button>
-          <button
+          </DSButton>
+          <DSButton
             type="button"
             onClick={() => onResolve(selectedMode)}
-            className="px-4 py-2 rounded-lg bg-[#18181b] hover:bg-black text-white text-xs font-medium cursor-pointer shadow-2xs flex items-center gap-1.5"
+            variant="primary" className="flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-[16px]">check</span>
             <span>
@@ -252,7 +243,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                 ? 'ยืนยันข้ามรายการซ้ำ'
                 : 'ยืนยันนำเข้าทั้งหมด'}
             </span>
-          </button>
+          </DSButton>
         </div>
       </div>
     </div>
