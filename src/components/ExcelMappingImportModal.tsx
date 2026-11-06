@@ -245,10 +245,24 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
         if (field) (record as Record<string, unknown>)[field] = clean(source[Number(column)]);
       });
       const company = clean(record.companyName);
-      if (company.includes('ห้างหุ้นส่วน') || company.includes('หจก') || /partnership/i.test(company)) record.type = 'partnership';
-      else if (company.includes('บริษัท') || company.includes('บจก') || /company|co\.,?ltd/i.test(company)) record.type = 'company';
-      else if (company) record.type = 'individual';
-      return record;
+      const hasMappedType = Object.values(mapping).includes('type');
+      const mappedType = hasMappedType ? normalize(record.type) : '';
+
+      // Preserve an explicitly mapped type column. Infer from the company name only
+      // when no type column was mapped or the source value is not recognizable.
+      if (mappedType.includes('ห้างหุ้นส่วน') || mappedType.includes('หจก') || mappedType.includes('partnership')) {
+        record.type = 'partnership';
+      } else if (mappedType.includes('บุคคล') || mappedType.includes('individual') || mappedType === 'person') {
+        record.type = 'individual';
+      } else if (mappedType.includes('บริษัท') || mappedType.includes('บจก') || mappedType.includes('company') || mappedType.includes('ltd')) {
+        record.type = 'company';
+      } else if (company.includes('ห้างหุ้นส่วน') || company.includes('หจก') || /partnership/i.test(company)) {
+        record.type = 'partnership';
+      } else if (company.includes('บริษัท') || company.includes('บจก') || /company|co\\.,?ltd/i.test(company)) {
+        record.type = 'company';
+      } else if (company) {
+        record.type = 'individual';
+      }
     });
     onImportRecords(output);
     onShowToast(`นำเข้าข้อมูล ${output.length} รายการ จาก ${sheetName} สำเร็จ`, 'นำเข้าสำเร็จ', 'success');
