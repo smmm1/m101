@@ -42,7 +42,7 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss, onUndo
           </div>
 
           {canUndo && onUndo && toast.type !== 'error' && <DSButton type="button" variant="secondary" onClick={() => { onUndo(); onDismiss(toast.id); }} className="ds-toast-undo ml-auto shrink-0">ย้อนกลับ</DSButton>}
-          <button
+          <DSButton
             type="button"
             onClick={() => onDismiss(toast.id)}
             variant="ghost" className="ds-toast-close shrink-0"
