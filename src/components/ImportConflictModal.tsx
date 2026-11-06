@@ -39,7 +39,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
         {/* Header */}
         <div className="m101-conflict-header flex items-center justify-between pb-3 border-b border-[#f4f4f5]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center shadow-2xs">
               <span className="material-symbols-outlined text-[22px]">
                 sync_problem
               </span>
@@ -70,15 +70,15 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               {totalIncoming.toLocaleString()}
             </span>
           </div>
-          <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
-            <span className="text-[11px] text-emerald-700 block">รายการใหม่</span>
-            <span className="text-lg font-bold font-mono text-emerald-800">
+          <div className="p-3 rounded-xl border border-slate-300 bg-slate-100">
+            <span className="text-[11px] text-slate-700 block">รายการใหม่</span>
+            <span className="text-lg font-bold font-mono text-slate-900">
               {newItems.length.toLocaleString()}
             </span>
           </div>
-          <div className="p-3 rounded-xl border border-amber-200 bg-amber-50/60">
-            <span className="text-[11px] text-amber-800 block">ซ้ำตามเลขภาษี</span>
-            <span className="text-lg font-bold font-mono text-amber-900">
+          <div className="p-3 rounded-xl border border-slate-300 bg-slate-100">
+            <span className="text-[11px] text-slate-700 block">ซ้ำตามเลขภาษี</span>
+            <span className="text-lg font-bold font-mono text-slate-900">
               {duplicateItems.length.toLocaleString()}
             </span>
           </div>
@@ -172,7 +172,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
             variant="ghost" className="ds-conflict-preview-toggle"
           >
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-amber-600">
+              <span className="material-symbols-outlined text-[16px] text-slate-600">
                 visibility
               </span>
               <span>ดูรายชื่อกิจการที่ซ้ำ ({duplicateItems.length} รายการ)</span>
