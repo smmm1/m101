@@ -3,27 +3,27 @@
   color-scheme: light;
 
   /* Color: foundation */
-  --ds-color-canvas: #FAFAFA;
+  --ds-color-canvas: #F4F6FA;
   --ds-color-surface: #FFFFFF;
-  --ds-color-surface-subtle: #F4F4F5;
-  --ds-color-border: #E4E4E7;
-  --ds-color-border-strong: #A1A1AA;
-  --ds-color-text: #18181B;
-  --ds-color-text-secondary: #52525B;
-  --ds-color-text-muted: #A1A1AA;
-  --ds-color-primary: #18181B;
-  --ds-color-primary-hover: #09090B;
-  --ds-color-primary-soft: #F4F4F5;
+  --ds-color-surface-subtle: #EEF2F7;
+  --ds-color-border: #D9E1EC;
+  --ds-color-border-strong: #9AAAC0;
+  --ds-color-text: #172033;
+  --ds-color-text-secondary: #526176;
+  --ds-color-text-muted: #8190A5;
+  --ds-color-primary: #142B4D;
+  --ds-color-primary-hover: #0F213B;
+  --ds-color-primary-soft: #E8EEF7;
 
   /* Color: semantic */
-  --ds-color-success: #3F3F46;
-  --ds-color-success-soft: #F4F4F5;
-  --ds-color-warning: #52525B;
-  --ds-color-warning-soft: #F4F4F5;
-  --ds-color-danger: #27272A;
-  --ds-color-danger-soft: #F4F4F5;
-  --ds-color-info: #52525B;
-  --ds-color-info-soft: #F4F4F5;
+  --ds-color-success: #18794E;
+  --ds-color-success-soft: #EAF5EF;
+  --ds-color-warning: #A66A12;
+  --ds-color-warning-soft: #FFF5E5;
+  --ds-color-danger: #B42318;
+  --ds-color-danger-soft: #FEF0EE;
+  --ds-color-info: #315F8C;
+  --ds-color-info-soft: #EDF3FA;
 
   /* Typography */
   --ds-font-sans: 'Inter', 'Noto Sans Thai', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -59,7 +59,7 @@
   --ds-shadow-dialog: 0 16px 48px rgba(15, 23, 42, .14);
   --ds-header-height: 64px;
   --ds-content-max: 1440px;
-  --ds-focus-ring: 0 0 0 3px rgba(24, 24, 27, .12);
+  --ds-focus-ring: 0 0 0 3px rgba(49, 95, 140, .18);
 
   /* Compatibility aliases for the existing M101 shell.
      Keep these aliases; feature styles must migrate to --ds-* tokens. */
