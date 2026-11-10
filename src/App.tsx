@@ -1005,14 +1005,20 @@ function AppContent() {
             </div>
             <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
               <p className="text-xs font-semibold text-amber-900">ชุดข้อมูลที่ยังไม่ได้บันทึก</p>
-              <ul className="mt-2 space-y-1.5 text-sm text-slate-800">
-                {(saveConflict.changedYears.length ? saveConflict.changedYears : saveConflict.availableYears).map((year) => (
-                  <li key={year} className="flex items-center justify-between gap-3">
-                    <span>รอบปีบัญชี {year}</span>
-                    <span className="text-xs text-amber-800">{(saveConflict.recordsByYear[year] || []).length.toLocaleString()} รายการในฉบับของคุณ</span>
-                  </li>
-                ))}
-              </ul>
+              {saveConflict.changedYears.length > 0 ? (
+                <ul className="mt-2 space-y-1.5 text-sm text-slate-800">
+                  {saveConflict.changedYears.map((year) => (
+                    <li key={year} className="flex items-center justify-between gap-3">
+                      <span>รอบปีบัญชี {year}</span>
+                      <span className="text-xs text-amber-800">{(saveConflict.recordsByYear[year] || []).length.toLocaleString()} รายการในฉบับของคุณ</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  ไม่พบความแตกต่างของรายการในฉบับนี้เมื่อเทียบกับข้อมูลที่เคยโหลดไว้ แต่เวอร์ชันบนเซิร์ฟเวอร์เปลี่ยนไปแล้ว ระบบจึงหยุดบันทึกเพื่อให้คุณตรวจสอบข้อมูลล่าสุดก่อน
+                </p>
+              )}
               <p className="mt-3 text-xs leading-5 text-amber-900">ก่อนโหลดข้อมูลล่าสุด ระบบจะดาวน์โหลดฉบับที่ยังไม่บันทึกเป็นไฟล์ JSON ให้อัตโนมัติ ไฟล์สำรองอาจมีข้อมูลสำคัญและรหัสของกิจการ ควรเก็บไว้ในที่ปลอดภัย</p>
             </div>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
