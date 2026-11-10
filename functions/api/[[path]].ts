@@ -307,8 +307,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = workspaceAccess?.user || null;
       if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const result = await env.DB.prepare('SELECT fiscal_year, records FROM directory_year_data ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
+      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) recordsByYear[String(row.fiscal_year)] = JSON.parse(String(row.records || '[]'));
       const availableYears = Object.keys(recordsByYear);
@@ -352,12 +351,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
       const user = workspaceAccess?.user || null;
       if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
       if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const result = await env.DB.prepare(
-        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? AND ( ? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = annual_tasks.workspace_id AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?) ) ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
-      ).bind(workspaceAccess.workspaceId, fiscalYear, workspaceAccess.membershipType, user.id).all();
+        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? AND ( ? = ? OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = annual_tasks.workspace_id AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?) ) ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
+      ).bind(workspaceAccess.workspaceId, fiscalYear, workspaceAccess.membershipType, 'owner', user.id).all();
       const tasks = (result.results || []).map((row: Record<string, unknown>) => ({
         id: String(row.id),
         fiscalYear: String(row.fiscal_year),
@@ -451,7 +449,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
           'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
         ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id).run();
       } catch (error) {
-        const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ?').bind(id).first() as { fiscal_year?: string; business_id?: string } | null;
+        const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, workspaceAccess.workspaceId).first() as { fiscal_year?: string; business_id?: string } | null;
         if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
         const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(current.fiscal_year, current.business_id, taskCode, id).first();
         if (duplicate) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
