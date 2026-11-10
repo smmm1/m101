@@ -143,8 +143,9 @@ The design-system foundation and first component migrations are in place:
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
+- The executive annual summary is now a separate navigation destination and reads annual-task data from the existing D1 API; employee assignment and exempt/not-required states remain unmodeled.
 - Remaining admin subviews, import progress/result states, and any unconverted utility actions still need component-by-component migration.
-- Login, business-detail, settings, and dashboard screens have had their remaining emerald, rose, amber, and sky utility accents converted to grayscale; this was a visual-only change.
+- The shared design-token source has been switched to Modern Navy. Existing route-level styles are not yet fully migrated and require route-by-route verification.
 - The legacy redesign stylesheet still contains page-level color values that need a route-by-route audit against Modern Navy tokens.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
