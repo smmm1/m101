@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History } from 'lucide-react';
 import { BusinessRecord } from '../types';
 import { AnnualTasksView } from './AnnualTasksView';
+import { ExecutiveAnnualDashboard } from './ExecutiveAnnualDashboard';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
 import { EditBusinessModal } from './EditBusinessModal';
@@ -985,7 +986,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </article>
             </div>
 
-            {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} mode="summary" />}
+            {isLoggedIn && <ExecutiveAnnualDashboard selectedYear={selectedYear} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} />}
 
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
