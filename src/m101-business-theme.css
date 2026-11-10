@@ -3104,3 +3104,16 @@ button { -webkit-tap-highlight-color:transparent; }
 @media (prefers-reduced-motion: reduce) {
   .m101-side-link { transition: none !important; }
 }
+
+/* Responsive login correction: stack the two panels until desktop width. */
+@media (max-width: 1023px) {
+  .m101-login-layout { display: flex !important; flex-direction: column !important; }
+  .m101-login-brand { min-height: 300px !important; }
+  .m101-login-panel { flex: 1 0 auto !important; padding: 28px 22px !important; }
+}
+@media (max-width: 767px) {
+  .m101-login-brand { min-height: 190px !important; }
+  .m101-login-brand .mt-10.hidden { display: none !important; }
+  .m101-login-brand > div.relative.z-10 { margin-top: 22px !important; padding: 0 !important; }
+  .m101-login-brand > div:last-child { margin-top: 22px !important; }
+}
