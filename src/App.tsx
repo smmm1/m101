@@ -72,6 +72,7 @@ function AppContent() {
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const directoryRevisionRef = React.useRef<number | null>(null);
+  const lastSavedSnapshotRef = React.useRef<string | null>(null);
   const saveInFlightRef = React.useRef(false);
   const saveRequestedRef = React.useRef(false);
   const saveBlockedRef = React.useRef(false);
@@ -219,6 +220,7 @@ function AppContent() {
       setAccessReady(true);
       setDataReady(false);
       directoryRevisionRef.current = null;
+      lastSavedSnapshotRef.current = null;
       saveBlockedRef.current = false;
       saveRequestedRef.current = false;
       return () => { active = false; };
@@ -244,6 +246,7 @@ function AppContent() {
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
         directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+        lastSavedSnapshotRef.current = JSON.stringify({ availableYears: years.length ? years : ['69'], recordsByYear: nextRecords });
         saveBlockedRef.current = false;
         saveRequestedRef.current = false;
         undoStackRef.current = [];
@@ -282,6 +285,7 @@ function AppContent() {
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
         directoryRevisionRef.current = null;
+        lastSavedSnapshotRef.current = null;
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName('ผู้เยี่ยมชม');
@@ -304,6 +308,11 @@ function AppContent() {
       if (saveBlockedRef.current) return;
       if (saveInFlightRef.current) {
         saveRequestedRef.current = true;
+        return;
+      }
+      const snapshotKey = JSON.stringify({ availableYears, recordsByYear });
+      if (snapshotKey === lastSavedSnapshotRef.current) {
+        pendingDatabaseWriteRef.current = false;
         return;
       }
       const expectedDirectoryRevision = directoryRevisionRef.current;
@@ -333,6 +342,7 @@ function AppContent() {
           }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
           directoryRevisionRef.current = Number(payload.directoryRevision);
+          lastSavedSnapshotRef.current = snapshotKey;
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
