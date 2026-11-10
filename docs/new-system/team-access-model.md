@@ -68,6 +68,7 @@ Additive tables, names subject to implementation review:
 - `business_credential_grants(id, workspace_id, business_id, user_id, granted_by, created_at)`
 - `business_relationship_groups(id, workspace_id, name, created_at, updated_at)`
 - `business_relationship_group_memberships(group_id, business_id, created_at)`
+- `workspace_directory_year_data(workspace_id, fiscal_year, records, revision, updated_by, updated_at)` for future workspace-scoped directory storage
 - `audit_events(id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at)`
 
 Business relationship groups and business assignments are separate concepts. Relationship groups describe how businesses are connected; assignments define which collaborators may work on them. A business may belong to multiple relationship groups but remains one canonical business record with its own accounting, revenue, tax, and compliance data.
@@ -88,8 +89,8 @@ When business entities are normalized, each business and annual task must carry 
 
 ## Migration and rollout sequence
 
-1. **Inventory and preserve** — export/verify D1 schema and row counts; identify current users, roles, directory years, and annual tasks. No production data access was performed for this design.
-2. **Additive schema** — create workspace, membership, invitation, business assignment, credential grant, relationship group, and audit tables. Do not drop or rewrite existing tables.
+1. **Inventory and preserve** — export/verify D1 schema and row counts; identify current users, legacy role labels, directory years, and annual tasks. No production data access was performed for this design.
+2. **Additive schema** — migration `0004_workspace_collaboration.sql` creates workspace, membership, invitation, business assignment, credential grant, relationship group, audit, and future workspace-scoped directory tables. It adds a nullable `workspace_id` to annual tasks. It does not seed a workspace, assign an owner, backfill existing records, or change API behavior. Do not drop or rewrite existing tables.
 3. **Legacy workspace mapping** — create one legacy workspace and map the current owner and legitimate existing users using a reviewed mapping. Backfill directory years and annual tasks without changing contents.
 4. **Authorization layer** — add centralized server-side authorization helpers and tests for anonymous, uninvited, owner, collaborator, assigned, unassigned, and cross-workspace access.
 5. **Invitation flow** — replace implicit workspace access with owner-issued invitations. Do not enable broad access until existing legitimate users are mapped and verified.
@@ -118,3 +119,11 @@ This must be closed as part of the authorization rollout. Do not hot-change logi
 - A business in multiple relationship groups retains one canonical record and independent financial/tax/compliance data.
 - PIN authentication does not bypass workspace membership or business assignment.
 - Audit events record actor, action, target, and time without storing secrets.
+
+
+## Current implementation status
+
+- Migration `0004_workspace_collaboration.sql` is committed as an additive schema change on the feature branch.
+- CI runs `wrangler d1 migrations apply m101_db --local` to validate the full migration chain against a temporary local D1 database.
+- No production migration has been applied. No workspace or owner has been seeded. Existing directory and annual-task data remain on the legacy API/storage paths.
+- Runtime authorization, invitations, member assignment UI, credential encryption, and legacy data backfill are not implemented yet.
