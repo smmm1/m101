@@ -515,7 +515,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!user) return json({ error: 'บัญชีนี้ยังไม่มีข้อมูลผู้ใช้ M101 ที่เตรียมไว้ กรุณาติดต่อ Owner ให้ตรวจสอบการเตรียมบัญชีก่อนรับคำเชิญ' }, 403);
       const tokenHash = await digest(inviteToken);
       const invitation = await env.DB.prepare(
-        'SELECT id, workspace_id FROM workspace_invitations WHERE token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?'
+        'SELECT wi.id, wi.workspace_id FROM workspace_invitations wi JOIN workspaces w ON w.id = wi.workspace_id AND w.status = 'active' JOIN workspace_memberships owner_membership ON owner_membership.workspace_id = w.id AND owner_membership.user_id = w.owner_user_id AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' WHERE wi.token_hash = ? AND lower(wi.email) = ? AND wi.accepted_at IS NULL AND wi.revoked_at IS NULL AND wi.expires_at > ?'
       ).bind(tokenHash, email, Math.floor(Date.now() / 1000)).first() as { id?: string; workspace_id?: string } | null;
       if (!invitation?.id || !invitation.workspace_id) return json({ error: 'คำเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' }, 403);
 
@@ -532,7 +532,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const membershipId = randomToken(18);
       const auditId = randomToken(18);
       const consumed = await env.DB.batch([
-        env.DB.prepare("UPDATE workspace_invitations SET accepted_by = ?, accepted_at = ? WHERE id = ? AND token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?")
+        env.DB.prepare("UPDATE workspace_invitations SET accepted_by = ?, accepted_at = ? WHERE id = ? AND token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ? AND EXISTS (SELECT 1 FROM workspaces w JOIN workspace_memberships om ON om.workspace_id = w.id AND om.user_id = w.owner_user_id AND om.membership_type = 'owner' AND om.status = 'active' WHERE w.id = workspace_invitations.workspace_id AND w.status = 'active')")
           .bind(user.id, now, invitation.id, tokenHash, email, Math.floor(Date.now() / 1000)),
         env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, workspace_id, ?, 'collaborator', 'active', ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ? ON CONFLICT(workspace_id, user_id) DO UPDATE SET membership_type = 'collaborator', status = 'active', updated_at = excluded.updated_at WHERE workspace_memberships.status = 'revoked'")
           .bind(membershipId, user.id, now, now, invitation.id, user.id, now),
