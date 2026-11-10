@@ -77,6 +77,8 @@ function AppContent() {
   const saveRequestedRef = React.useRef(false);
   const saveBlockedRef = React.useRef(false);
   const [dataSaveCycle, setDataSaveCycle] = useState(0);
+  const [saveConflict, setSaveConflict] = useState<{ changedYears: string[]; availableYears: string[]; recordsByYear: Record<string, BusinessRecord[]> } | null>(null);
+  const [loadingLatestAfterConflict, setLoadingLatestAfterConflict] = useState(false);
   type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
   const undoStackRef = React.useRef<UndoSnapshot[]>([]);
   const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -337,6 +339,18 @@ function AppContent() {
             saveBlockedRef.current = true;
             pendingDatabaseWriteRef.current = false;
             pendingSuccessToastsRef.current = [];
+            let baseline: { availableYears?: string[]; recordsByYear?: Record<string, BusinessRecord[]> } = {};
+            try { baseline = lastSavedSnapshotRef.current ? JSON.parse(lastSavedSnapshotRef.current) : {}; } catch { baseline = {}; }
+            const baselineRecords = baseline.recordsByYear || {};
+            const baselineYears = baseline.availableYears || [];
+            const changedYears = Array.from(new Set([
+              ...Object.keys(baselineRecords), ...Object.keys(recordsByYear), ...baselineYears, ...availableYears,
+            ])).filter((year) => JSON.stringify(baselineRecords[year] || []) !== JSON.stringify(recordsByYear[year] || []) || baselineYears.includes(year) !== availableYears.includes(year));
+            setSaveConflict({
+              changedYears,
+              availableYears: [...availableYears],
+              recordsByYear: JSON.parse(JSON.stringify(recordsByYear)) as Record<string, BusinessRecord[]>,
+            });
             showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
             return;
           }
@@ -399,6 +413,63 @@ function AppContent() {
 
   const handleDismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  useEffect(() => {
+    if (!saveConflict) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = 'ยังมีข้อมูลที่ไม่ได้บันทึก';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [saveConflict]);
+
+  const handleLoadLatestAfterConflict = async () => {
+    if (!saveConflict || loadingLatestAfterConflict) return;
+    setLoadingLatestAfterConflict(true);
+    try {
+      // Download the unsaved local snapshot before replacing the in-memory data.
+      const recovery = new Blob([JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        purpose: 'M101 recovery copy of changes that were not saved because the server snapshot changed.',
+        availableYears: saveConflict.availableYears,
+        recordsByYear: saveConflict.recordsByYear,
+      }, null, 2)], { type: 'application/json' });
+      const recoveryUrl = URL.createObjectURL(recovery);
+      const anchor = document.createElement('a');
+      anchor.href = recoveryUrl;
+      anchor.download = `m101-unsaved-recovery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(recoveryUrl), 1000);
+
+      const response = await fetch('/api/data', { credentials: 'same-origin', cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลล่าสุดไม่สำเร็จ');
+      const latestRecords = payload.recordsByYear && Object.keys(payload.recordsByYear).length
+        ? payload.recordsByYear as Record<string, BusinessRecord[]>
+        : { '69': [] };
+      const latestYears = Array.isArray(payload.availableYears) && payload.availableYears.length
+        ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
+        : Object.keys(latestRecords);
+      const normalizedYears = latestYears.length ? latestYears : ['69'];
+      directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+      lastSavedSnapshotRef.current = JSON.stringify({ availableYears: normalizedYears, recordsByYear: latestRecords });
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
+      undoStackRef.current = [];
+      setRecordsByYear(latestRecords);
+      setAvailableYears(normalizedYears);
+      setSelectedYear((current) => normalizedYears.includes(current) ? current : (normalizedYears[0] || '69'));
+      setSaveConflict(null);
+      showToast('โหลดข้อมูลล่าสุดแล้ว และดาวน์โหลดฉบับที่ยังไม่บันทึกไว้ให้แล้ว', 'ซิงก์ข้อมูลสำเร็จ', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'โหลดข้อมูลล่าสุดไม่สำเร็จ', 'ยังไม่ได้โหลดข้อมูล', 'error');
+    } finally {
+      setLoadingLatestAfterConflict(false);
+    }
   };
 
   // Year Handlers
@@ -915,6 +986,40 @@ function AppContent() {
             <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
             {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
           </form>
+        </div>
+      )}
+      {saveConflict && (
+        <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="m101-save-conflict-title">
+          <section className="w-full max-w-xl rounded-2xl border border-amber-200 bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg font-bold text-amber-700" aria-hidden="true">!</span>
+              <div className="min-w-0">
+                <h2 id="m101-save-conflict-title" className="text-base font-semibold text-slate-900">ข้อมูลในระบบเปลี่ยนแปลงก่อนบันทึกของคุณ</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">ระบบหยุดบันทึกอัตโนมัติแล้ว ข้อมูลชุดที่คุณแก้ไขยังอยู่ในหน้านี้ แต่ยังไม่ได้บันทึก และจะไม่ถูกเขียนทับข้อมูลล่าสุดบนเซิร์ฟเวอร์</p>
+              </div>
+            </div>
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <p className="text-xs font-semibold text-amber-900">ชุดข้อมูลที่ยังไม่ได้บันทึก</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-slate-800">
+                {(saveConflict.changedYears.length ? saveConflict.changedYears : saveConflict.availableYears).map((year) => (
+                  <li key={year} className="flex items-center justify-between gap-3">
+                    <span>รอบปีบัญชี {year}</span>
+                    <span className="text-xs text-amber-800">{(saveConflict.recordsByYear[year] || []).length.toLocaleString()} รายการในฉบับของคุณ</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs leading-5 text-amber-900">ก่อนโหลดข้อมูลล่าสุด ระบบจะดาวน์โหลดฉบับที่ยังไม่บันทึกเป็นไฟล์ JSON ให้อัตโนมัติ ไฟล์สำรองอาจมีข้อมูลสำคัญและรหัสของกิจการ ควรเก็บไว้ในที่ปลอดภัย</p>
+            </div>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={loadingLatestAfterConflict} onClick={() => {
+                const recovery = new Blob([JSON.stringify({ availableYears: saveConflict.availableYears, recordsByYear: saveConflict.recordsByYear }, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(recovery);
+                const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'm101-unsaved-recovery.json'; anchor.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">ดาวน์โหลดฉบับที่ยังไม่บันทึก</button>
+              <button type="button" disabled={loadingLatestAfterConflict} onClick={() => void handleLoadLatestAfterConflict()} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60">{loadingLatestAfterConflict ? 'กำลังสำรองและโหลดข้อมูล…' : 'สำรองฉบับนี้แล้วโหลดข้อมูลล่าสุด'}</button>
+            </div>
+          </section>
         </div>
       )}
       <DashboardView
