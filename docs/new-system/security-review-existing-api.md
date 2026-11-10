@@ -127,3 +127,17 @@ The feature branch now contains an initial runtime authorization cutover in `fun
 - Collaborator directory read/write with safe assigned-record filtering and merge is not yet enabled; collaborators receive a deliberate denial for directory APIs.
 - Owner business assignment UI/API, credential reveal grants, encryption of existing plaintext business credentials, and persistent audit-event writes are not yet implemented.
 - No Production D1 migration, data write, deployment, or browser runtime test was performed. These changes are only on the feature branch pending CI and review.
+
+
+## Directory autosave concurrency protection (feature branch)
+
+The directory API now uses a workspace-wide compare-and-swap revision:
+
+- Authenticated `GET /api/data` returns `directoryRevision` with the workspace snapshot.
+- `PUT /api/data` requires the exact `expectedDirectoryRevision` read by the client. Missing or invalid revisions are rejected.
+- Migration `0006_workspace_directory_revision.sql` adds the workspace revision, and migration `0007_workspace_directory_write_token.sql` adds a unique write token for each attempted save.
+- The first statement in the D1 batch increments the revision only when the expected revision matches and records the unique token. Every year upsert and deletion is gated on both the resulting revision and that exact token. This prevents a losing stale batch from passing a revision-only gate after a competing request has incremented the revision.
+- A stale save receives HTTP 409 and does not apply its record updates or year deletions. The client blocks further autosaves from that stale snapshot rather than silently overwriting newer data.
+- The client serializes overlapping autosaves and skips snapshots that are identical to the last successfully saved snapshot.
+
+The GitHub Actions workflow validates D1 migrations, dependencies, TypeScript, and the Cloudflare Pages build. This is not a substitute for a production D1 concurrency test. The migration and code remain on the feature branch; no production migration or deployment has been performed.
