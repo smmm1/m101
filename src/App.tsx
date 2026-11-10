@@ -343,13 +343,16 @@ function AppContent() {
             try { baseline = lastSavedSnapshotRef.current ? JSON.parse(lastSavedSnapshotRef.current) : {}; } catch { baseline = {}; }
             const baselineRecords = baseline.recordsByYear || {};
             const baselineYears = baseline.availableYears || [];
+            // Capture the latest React state, including edits made while this request was in flight.
+            const unsavedRecords = recordsByYearRef.current;
+            const unsavedYears = availableYearsRef.current;
             const changedYears = Array.from(new Set([
-              ...Object.keys(baselineRecords), ...Object.keys(recordsByYear), ...baselineYears, ...availableYears,
-            ])).filter((year) => JSON.stringify(baselineRecords[year] || []) !== JSON.stringify(recordsByYear[year] || []) || baselineYears.includes(year) !== availableYears.includes(year));
+              ...Object.keys(baselineRecords), ...Object.keys(unsavedRecords), ...baselineYears, ...unsavedYears,
+            ])).filter((year) => JSON.stringify(baselineRecords[year] || []) !== JSON.stringify(unsavedRecords[year] || []) || baselineYears.includes(year) !== unsavedYears.includes(year));
             setSaveConflict({
               changedYears,
-              availableYears: [...availableYears],
-              recordsByYear: JSON.parse(JSON.stringify(recordsByYear)) as Record<string, BusinessRecord[]>,
+              availableYears: [...unsavedYears],
+              recordsByYear: JSON.parse(JSON.stringify(unsavedRecords)) as Record<string, BusinessRecord[]>,
             });
             showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
             return;
