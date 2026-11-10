@@ -33,6 +33,10 @@ jobs:
       - name: Install dependencies
         run: npm install --no-package-lock
 
+      - name: Dependency vulnerability report
+        run: |
+          npm audit --json > /tmp/m101-npm-audit.json || true
+          node -e "const a=require('/tmp/m101-npm-audit.json'); const v=Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, direct:item.isDirect, range:item.range, fixAvailable:item.fixAvailable})); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities, vulnerabilities:v}, null, 2));"
       - name: Type-check
         run: npm run lint
 
