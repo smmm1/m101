@@ -207,15 +207,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (path === '/api/auth/pin/status' && request.method === 'GET') {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (!workspaceAccess) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const user = workspaceAccess.user;
       const row = await env.DB.prepare('SELECT pin_hash FROM users WHERE id = ?').bind(user.id).first() as { pin_hash?: string | null } | null;
       return json({ enabled: Boolean(row?.pin_hash) });
     }
 
     if (path === '/api/auth/pin/setup' && request.method === 'POST') {
       const user = await requireUser(request, env);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
       if (!/^\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
@@ -304,8 +303,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/data' && request.method === 'GET') {
 
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
       const recordsByYear: Record<string, unknown[]> = {};
@@ -321,8 +320,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/data' && request.method === 'PUT') {
 
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as { availableYears?: string[]; recordsByYear?: Record<string, unknown[]> };
@@ -349,8 +348,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     // Annual work tracking is stored in its own D1 table, separate from directory JSON.
     if (path === '/api/annual-tasks' && request.method === 'GET') {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
       if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const result = await env.DB.prepare(
@@ -374,8 +373,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (path === '/api/annual-tasks' && request.method === 'POST') {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as {
         fiscalYear?: string; businessId?: string; businessName?: string;
@@ -417,8 +416,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
     if (annualTaskMatch && request.method === 'PUT') {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const id = annualTaskMatch[1];
       const currentTask = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?')
@@ -461,8 +460,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (annualTaskMatch && request.method === 'DELETE') {
       const workspaceAccess = await requireWorkspaceAccess(request, env);
-      const user = workspaceAccess?.user || null;
-      if (!user) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const task = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], workspaceAccess.workspaceId).first() as { business_id?: string } | null;
       if (!task) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
