@@ -62,6 +62,7 @@ export const ExecutiveAnnualDashboard: React.FC<ExecutiveAnnualDashboardProps> =
     return () => { active = false; };
   }, [selectedYear, reloadKey]);
 
+  const displayYear = selectedYear.length === 2 ? `25${selectedYear}` : selectedYear;
   const today = todayISO();
   const stats = useMemo(() => {
     const completed = tasks.filter((task) => task.status === 'completed').length;
@@ -109,10 +110,10 @@ export const ExecutiveAnnualDashboard: React.FC<ExecutiveAnnualDashboardProps> =
         <div>
           <p className="text-[11px] font-semibold tracking-[0.14em] text-[#526985]">EXECUTIVE WORKSPACE</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#142B4D]">สรุปผู้บริหาร · งานประจำปี</h1>
-          <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">ติดตาม ภ.ง.ด.51 · ประชุมใหญ่ · บอจ.5 · ภ.ง.ด.50 · ส.บช.3 · ปีบัญชี {selectedYear}</p>
+          <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">ติดตาม ภ.ง.ด.51 · ประชุมใหญ่ · บอจ.5 · ภ.ง.ด.50 · ส.บช.3 · ปีบัญชี {displayYear}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-md border border-[#D9E1EC] bg-white px-3 py-2 text-xs font-medium text-[#314967]">ปีบัญชี {selectedYear}</span>
+          <span className="rounded-md border border-[#D9E1EC] bg-white px-3 py-2 text-xs font-medium text-[#314967]">ปีบัญชี {displayYear}</span>
           <DSButton type="button" variant="secondary" onClick={() => setReloadKey((value) => value + 1)} disabled={loading}><RefreshCw size={14} aria-hidden="true" /> รีเฟรช</DSButton>
           <DSButton type="button" variant="primary" onClick={onOpenTasks}>จัดการงาน <span aria-hidden="true">→</span></DSButton>
         </div>
