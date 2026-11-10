@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History } from 'lucide-react';
+import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History, Menu, X } from 'lucide-react';
 import { BusinessRecord } from '../types';
 import { AnnualTasksView } from './AnnualTasksView';
 import { AddBusinessModal } from './AddBusinessModal';
@@ -102,6 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showNavigationProgress, setShowNavigationProgress] = useState(false);
   const navigationProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -188,6 +189,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Save the outgoing tab's scroll position before switching views.
   const navigateToTab = (nextTab: typeof activeTab) => {
+    setMobileNavOpen(false);
     if (nextTab === activeTabRef.current) return;
     const container = mainContentRef.current;
     if (container) scrollPositionsRef.current[activeTabRef.current] = container.scrollTop;
@@ -427,8 +429,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
       
-      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button><div><strong>M101</strong><span>Business Directory</span></div></div>
+      {mobileNavOpen && <button type="button" className="m101-mobile-nav-backdrop" aria-label="ปิดเมนู" onClick={() => setMobileNavOpen(false)} />}
+      <aside className={`m101-sidebar m101-primary-sidebar ${mobileNavOpen ? 'is-open' : ''}`} aria-label="เมนูหลัก">
+        <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="Mustang Directory" className="m101-brand-mark">M</button><div><strong>MUSTANG</strong><span>BUSINESS DIRECTORY</span></div></div>
         <div className="m101-nav-section-label">WORKSPACE</div>
         <nav className="m101-sidebar-navigation" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-side-link ${activeTab === "dashboard" ? "is-active" : ""}`}><LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span></button>
@@ -464,6 +467,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือหลัก">
+        <button type="button" className="m101-mobile-menu-button" aria-label={mobileNavOpen ? 'ปิดเมนูหลัก' : 'เปิดเมนูหลัก'} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={18} /> : <Menu size={18} />}</button>
         <div className="m101-page-context">
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
