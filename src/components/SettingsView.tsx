@@ -128,8 +128,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         ชื่อกิจการ: r.companyName,
         ประเภท: r.type === 'company' ? 'บริษัทจำกัด' : r.type === 'partnership' ? 'ห้างหุ้นส่วน' : 'บุคคลธรรมดา',
         เลขประจำตัวผู้เสียภาษี: r.taxId,
-        รหัสผ่าน: r.password,
-        'e-Filing': r.eFilingCode,
         วันที่ผู้สอบ: r.auditorDate,
         สถานะ: r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ',
         หมายเหตุ: r.remark || '',
@@ -343,6 +341,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
                 <span className="text-[10px] text-zinc-600 font-mono font-bold">.xlsx</span>
               </DSButton>
+            )}
+
+            {isLoggedIn && (
+              <p className="m101-settings-security-note">
+                <span className="material-symbols-outlined" aria-hidden="true">shield</span>
+                ไฟล์ Excel จะไม่ส่งออกรหัสผ่านหรือรหัส e-Filing เพื่อป้องกันข้อมูลลับรั่วไหล หากต้องการสำรองข้อมูลครบทุกช่อง ให้ใช้ JSON Backup และเก็บไฟล์ไว้ในที่ปลอดภัย
+              </p>
             )}
           </div>
         </div>
