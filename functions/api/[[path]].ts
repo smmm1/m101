@@ -484,7 +484,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');
       const inviteToken = String(body.token || '').trim();
-      if (!email || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !password || password.length > 1024 || !inviteToken || inviteToken.length > 256) {
+      if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password || password.length > 1024 || !inviteToken || inviteToken.length > 256) {
         return json({ error: 'กรุณาตรวจสอบอีเมล รหัสผ่าน และรหัสคำเชิญ' }, 400);
       }
 
