@@ -3471,3 +3471,26 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-detail-dialog > .px-6.py-4 { gap: 8px !important; padding: 9px 10px !important; }
   .m101-detail-dialog > .px-6.py-4 > div:last-child { width: 100% !important; justify-content: flex-end !important; }
 }
+
+
+.m101-detail-dialog .m101-credential-toggle {
+  display: inline-flex !important;
+  min-height: 27px !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 5px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 9px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+}
+.m101-detail-dialog .m101-credential-toggle:hover {
+  border-color: var(--ds-color-primary) !important;
+  background: var(--ds-color-primary-soft) !important;
+}
+.m101-detail-dialog .m101-credential-toggle .material-symbols-outlined {
+  font-size: 15px !important;
+}
