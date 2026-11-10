@@ -13,7 +13,7 @@ When a request describes a global visual change, update the design-system source
 ## 2. Product direction
 
 - Clean, minimalist, human-centric business and account management SaaS.
-- Light theme: strict monochrome palette — white surfaces, neutral gray canvas and borders, charcoal text, black primary actions. No blue, green, amber, or decorative accent hues.
+- Light theme: Modern Navy — deep navy primary actions and navigation, white surfaces, cool slate canvas/borders, restrained blue information accents, and semantic green/amber/red status colors. Color must communicate meaning, never decorate.
 - Optimize readability, low cognitive load, and rapid data scanning.
 - No terminal/retro styling, ASCII decoration, excessive gradients, glass effects, or decorative dashboard clutter.
 - Direct data structures and clear forms; decoration must never compete with business information.
@@ -22,21 +22,21 @@ When a request describes a global visual change, update the design-system source
 
 | Token | Value | Meaning |
 |---|---|---|
-| `--ds-color-canvas` | `#FAFAFA` | Application canvas |
+| `--ds-color-canvas` | `#F4F6FA` | Application canvas |
 | `--ds-color-surface` | `#FFFFFF` | Surface |
-| `--ds-color-surface-subtle` | `#F4F4F5` | Subtle section/header fill |
-| `--ds-color-border` | `#E4E4E7` | Dividers and borders |
-| `--ds-color-border-strong` | `#A1A1AA` | Input/strong border |
-| `--ds-color-text` | `#18181B` | Primary text |
-| `--ds-color-text-secondary` | `#52525B` | Secondary text |
-| `--ds-color-text-muted` | `#A1A1AA` | Placeholder/metadata |
-| `--ds-color-primary` | `#18181B` | Main action |
-| `--ds-color-success` | `#3F3F46` | Success (monochrome) |
-| `--ds-color-warning` | `#52525B` | Warning (monochrome) |
-| `--ds-color-danger` | `#27272A` | Destructive/error (monochrome) |
-| `--ds-color-info` | `#52525B` | Informational (monochrome) |
+| `--ds-color-surface-subtle` | `#EEF2F7` | Subtle section/header fill |
+| `--ds-color-border` | `#D9E1EC` | Dividers and borders |
+| `--ds-color-border-strong` | `#9AAAC0` | Input/strong border |
+| `--ds-color-text` | `#172033` | Primary text |
+| `--ds-color-text-secondary` | `#526176` | Secondary text |
+| `--ds-color-text-muted` | `#8190A5` | Placeholder/metadata |
+| `--ds-color-primary` | `#142B4D` | Main action / navy |
+| `--ds-color-success` | `#18794E` | Success |
+| `--ds-color-warning` | `#A66A12` | Warning |
+| `--ds-color-danger` | `#B42318` | Destructive/error |
+| `--ds-color-info` | `#315F8C` | Informational |
 
-All colors must be consumed through tokens. Semantic colors retain the same meaning across modules.
+All colors must be consumed through tokens. Semantic colors retain the same meaning across modules; use navy for primary navigation/actions and reserve green, amber, and red for status.
 
 ## 4. Typography
 
@@ -143,9 +143,10 @@ The design-system foundation and first component migrations are in place:
 Migration is not yet complete:
 
 - `src/m101-redesign.css` remains a large legacy stylesheet. Do not delete it until every selector has been mapped to actual consumers and replacement styles have been verified.
+- The executive annual summary is now a separate navigation destination and reads annual-task data from the existing D1 API; employee assignment and exempt/not-required states remain unmodeled.
 - Remaining admin subviews, import progress/result states, and any unconverted utility actions still need component-by-component migration.
-- Login, business-detail, settings, and dashboard screens have had their remaining emerald, rose, amber, and sky utility accents converted to grayscale; this was a visual-only change.
-- The legacy redesign stylesheet's previous chromatic values have been converted to grayscale; remaining selectors still need a route-by-route visual audit.
+- The shared design-token source has been switched to Modern Navy. Existing route-level styles are not yet fully migrated and require route-by-route verification.
+- The legacy redesign stylesheet still contains page-level color values that need a route-by-route audit against Modern Navy tokens.
 - The global shell, all page templates, responsive states, and accessibility behavior still require a route-by-route audit.
 - Deployment build success is not equivalent to full visual QA or functional regression testing.
 
