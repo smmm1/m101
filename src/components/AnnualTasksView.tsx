@@ -26,9 +26,9 @@ interface AnnualTasksViewProps {
 }
 const TASK_TYPES = [
   { code: 'PND50', name: 'ภ.ง.ด.50', description: 'แบบแสดงรายการภาษีเงินได้นิติบุคคลประจำปี' },
-  { code: 'SBCH3', name: 'ส.บ.ช.3', description: 'นำส่งบัญชีรายชื่อผู้ถือหุ้น' },
+  { code: 'SBCH3', name: 'บอจ.5', description: 'นำส่งบัญชีรายชื่อผู้ถือหุ้น' },
   { code: 'PND51', name: 'ภ.ง.ด.51', description: 'แบบแสดงรายการภาษีเงินได้นิติบุคคลครึ่งปี' },
-  { code: 'DBD_FS', name: 'นำส่งงบการเงินต่อ DBD', description: 'งานนำส่งงบการเงินประจำปี' },
+  { code: 'DBD_FS', name: 'ส.บช.3', description: 'นำส่งงบการเงินต่อกรมพัฒนาธุรกิจการค้า' },
   { code: 'AGM', name: 'ประชุมสามัญผู้ถือหุ้น', description: 'งานประชุมสามัญผู้ถือหุ้นประจำปี' },
 ];
 const customTaskCode = (value: string) => {
