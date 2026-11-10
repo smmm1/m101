@@ -208,6 +208,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!mobileNavOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
     const handleOwnerNavigate = (event: Event) => {
       if (!isAdmin) return;
       const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
