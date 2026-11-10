@@ -1,6 +1,6 @@
 # M101 — New System Blueprint v1
 
-**Status:** Product architecture proposal — not approved for implementation yet  
+**Status:** Product direction selected — Option C (hybrid); detailed scope and architecture still require approval  
 **Date:** 2026-11-10  
 **Repository:** `smmm1/m101`  
 **Design direction:** Modern Navy  
@@ -21,7 +21,38 @@ M101 is being redesigned as a new business-management system. This is not a visu
 - Treat existing application code and data structures as legacy references only. Reuse is allowed only after a deliberate fit-and-safety review.
 - No production deployment, destructive data operation, or database migration until the new product and data strategy are approved.
 
-## 2. Proposed product concept
+## 2. Confirmed product direction — Option C (hybrid)
+
+M101 combines two connected capabilities:
+
+1. **Business management foundation:** maintain business entities, their profiles, their relationships, and their own records.
+2. **Work and annual-obligation operations:** plan, assign, monitor, complete, and review recurring and one-off work for those entities, including an executive dashboard similar in information purpose to the supplied Team1 reference.
+
+The two capabilities are parts of one system, not separate products. Business/entity records provide the context for work; work records link back to the relevant entity; portfolio dashboards summarize progress across entities without merging their underlying records.
+
+The supplied Team1 dashboard is the reference for the annual-work overview concept and information hierarchy, not for M101's visual design. M101 retains its own Modern Navy design direction.
+
+### Product hierarchy
+
+- **Portfolio layer:** cross-entity overview, relationship context, aggregate metrics, risks, and upcoming work.
+- **Entity layer:** one business profile with its own details, obligations, documents, history, and activity.
+- **Work layer:** an actionable work item with period, category, deadline, assignee, status, evidence, and history.
+- **Administration layer:** workspace configuration, users, permissions, work categories, and deadline rules.
+
+### Core navigation proposal
+
+1. Command Center
+2. Business Portfolio
+3. Work & Annual Obligations
+4. Calendar / Deadlines
+5. Documents
+6. Reports & Insights
+7. Activity & Audit
+8. Administration
+
+Navigation labels and release grouping remain subject to UX review; this is not a final menu specification.
+
+## 3. Proposed product concept
 
 **M101 — Business Portfolio Workspace**
 
@@ -37,7 +68,7 @@ The product should answer five questions quickly:
 
 This is a proposed product definition, not a claim that these modules already exist.
 
-## 3. Proposed information architecture
+## 4. Proposed information architecture
 
 | Workspace area | Purpose | New-system behavior |
 |---|---|---|
@@ -52,7 +83,7 @@ This is a proposed product definition, not a claim that these modules already ex
 
 These are candidate areas for discussion. They are not a commitment to implement every area in the first release.
 
-## 4. New domain model — proposal
+## 5. New domain model — proposal
 
 ### Core records
 
@@ -86,7 +117,7 @@ Every Business Entity retains its own identity and its own records. Relationship
 
 Do not implement relationship semantics until these rules are agreed.
 
-## 5. Proposed key journeys
+## 6. Proposed key journeys
 
 ### A. Create a business entity
 
@@ -116,7 +147,7 @@ Do not implement relationship semantics until these rules are agreed.
 
 These journeys are proposals and need validation against actual work practices.
 
-## 6. UX/UI principles
+## 7. UX/UI principles
 
 - Modern Navy palette with restrained contrast and clear hierarchy.
 - A purposeful workspace shell, not a direct port of the legacy sidebar or topbar.
@@ -129,7 +160,7 @@ These journeys are proposals and need validation against actual work practices.
 - Mobile workflows should be designed deliberately, not squeezed desktop layouts.
 - Accessibility: keyboard navigation, visible focus, readable contrast, and reduced-motion support.
 
-## 7. Technical direction — decision pending
+## 8. Technical direction — decision pending
 
 Do not assume the legacy implementation architecture is the new architecture.
 
@@ -143,7 +174,7 @@ Candidate constraints to validate before choosing the stack:
 
 No infrastructure, database, or production settings were changed as part of this blueprint.
 
-## 8. Data transition — intentionally undecided
+## 9. Data transition — intentionally undecided
 
 The user has not yet selected how existing business records should be handled.
 
@@ -158,7 +189,7 @@ Possible approaches:
 2. Start with a clean database and leave legacy records read-only.
 3. Selectively migrate approved fields and records into a new schema.
 
-## 9. Release strategy proposal
+## 10. Release strategy proposal
 
 1. **Product definition** — confirm the product purpose, users, permissions, and primary workflows.
 2. **Domain model** — settle entity identity, relationship semantics, obligations, documents, and audit events.
@@ -168,12 +199,13 @@ Possible approaches:
 6. **Feature expansion** — add modules based on validated workflows.
 7. **Migration and release** — only after data strategy, backup, rollback, and acceptance tests are approved.
 
-## 10. Decisions required before implementation
+## 11. Decisions required before implementation
 
 1. **Data transition:** preserve/map, clean start, or selective migration?
 2. **Primary users:** only the owner, an internal team, or multiple organizations with separate workspaces?
-3. **First-release priority:** portfolio overview, entity management, relationship map, obligations, or documents?
+3. **First-release priority:** which complete workflow should be delivered first across the business-management and annual-work capabilities?
 4. **Relationship types:** fully user-defined, or a small set of defaults plus custom types?
 5. **Permissions:** single owner initially, or role-based access from the first release?
+6. **Work taxonomy:** are the five Team1 reference categories the initial required categories, or examples only?
 
 No old feature is assumed to be carried forward merely because it exists in the current app.
