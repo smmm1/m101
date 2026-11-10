@@ -214,7 +214,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/pin/setup' && request.method === 'POST') {
-      const user = await requireUser(request, env);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const user = workspaceAccess.user;
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
       if (!/^\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
