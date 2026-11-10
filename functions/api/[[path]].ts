@@ -316,7 +316,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const statements = years.map((year: string) => env.DB.prepare(
         'INSERT INTO directory_year_data (fiscal_year, records, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(fiscal_year) DO UPDATE SET records = excluded.records, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
       ).bind(year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, new Date().toISOString()));
-      for (const removed of existingYears.filter((year) => !years.includes(year))) {
+      for (const removed of existingYears.filter((year: string) => !years.includes(year))) {
         statements.push(env.DB.prepare('DELETE FROM directory_year_data WHERE fiscal_year = ?').bind(removed));
       }
       await env.DB.batch(statements);
