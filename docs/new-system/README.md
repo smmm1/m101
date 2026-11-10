@@ -241,4 +241,4 @@ Possible approaches:
 6. **Permissions:** single owner initially, or role-based access from the first release?
 7. **Work taxonomy:** are the five Team1 reference categories the initial required categories, or examples only?
 
-No old feature is assumed to be carried forward merely because it exists in the current app.
+Existing features are reviewed against real M101 workflows. Keep, improve, combine, defer, or remove them deliberately; do not discard working capabilities by default.
