@@ -508,7 +508,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, invitation: { id, email, expiresAt, token } }, 201);
     }
 
-    const invitationRevokeMatch = path.match(/^\\/api\\/workspace\\/invitations\\/([A-Za-z0-9_-]+)\\/revoke$/);
+    const invitationRevokeMatch = path.match(/^\/api\/workspace\/invitations\/([A-Za-z0-9_-]+)\/revoke$/);
     if (invitationRevokeMatch && request.method === 'POST') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
@@ -551,7 +551,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, id }, 201);
     }
 
-    const assignmentDeleteMatch = path.match(/^\\/api\\/workspace\\/assignments\\/([A-Za-z0-9_-]+)$/);
+    const assignmentDeleteMatch = path.match(/^\/api\/workspace\/assignments\/([A-Za-z0-9_-]+)$/);
     if (assignmentDeleteMatch && request.method === 'DELETE') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
