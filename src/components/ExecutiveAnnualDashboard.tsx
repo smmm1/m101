@@ -19,7 +19,6 @@ interface AnnualTask {
 interface ExecutiveAnnualDashboardProps {
   selectedYear: string;
   onOpenTasks: () => void;
-  onShowToast: (msg: string, title?: string, type?: 'success' | 'error' | 'info') => void;
 }
 const TASK_CATEGORIES = [
   { code: 'PND51', label: 'ภ.ง.ด.51', description: 'ภาษีเงินได้นิติบุคคลครึ่งปี' },
@@ -36,7 +35,7 @@ const todayISO = () => {
 const isOverdue = (task: AnnualTask, today: string) => task.status !== 'completed' && Boolean(task.dueDate) && task.dueDate < today;
 const formatDate = (value: string) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : 'ไม่กำหนด';
 
-export const ExecutiveAnnualDashboard: React.FC<ExecutiveAnnualDashboardProps> = ({ selectedYear, onOpenTasks, onShowToast }) => {
+export const ExecutiveAnnualDashboard: React.FC<ExecutiveAnnualDashboardProps> = ({ selectedYear, onOpenTasks }) => {
   const [tasks, setTasks] = useState<AnnualTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,6 +46,7 @@ export const ExecutiveAnnualDashboard: React.FC<ExecutiveAnnualDashboardProps> =
     const load = async () => {
       setLoading(true);
       setError('');
+      setTasks([]);
       try {
         const response = await fetch(`/api/annual-tasks?year=${encodeURIComponent(selectedYear)}`, { credentials: 'same-origin' });
         const payload = await response.json();
