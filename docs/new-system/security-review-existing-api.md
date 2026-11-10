@@ -67,5 +67,36 @@ Recommended remediation:
 - Static source review only; no production database or user records were accessed.
 - No authentication or authorization behavior was changed in this review.
 - No data migration, secret provisioning, deployment, or production test was performed.
-- The latest verified TypeScript/build success was for commit `568f75d`. The later CI-only commit `96280ac` has not yet produced a verified workflow run in the available run list.
-- The dependency audit step was added to CI, but a completed audit result for the latest commit has not yet been confirmed.
+- The latest verified TypeScript/build success before the SheetJS upgrade was commit `568f75d`; commit `e0d6041` upgraded SheetJS and its CI completed successfully with zero npm audit findings.
+- CI now creates an ephemeral package lock and runs `npm audit --audit-level=high`; high/critical findings fail the workflow instead of being masked.
+- This review remains source-only. No browser visual review, D1 mutation, credential migration, or production deployment has been performed.
+
+## Authorization design decision required before enforcement
+
+The current `admin` and `member` roles do not encode a confirmed product policy. Do not silently assume that every member should be read-only, or that every M101 user should see all businesses.
+
+Proposed policy for owner-only mode:
+- Admin/owner: read and write all directory and annual-task data; manage users/settings; reveal sensitive credentials only through a separately protected action.
+- Member: no access until explicitly invited and assigned a scope.
+- Visitor: public allowlist only, with all tax identifiers and credentials redacted.
+
+Proposed policy for team mode (requires user confirmation):
+- Team owner: manage membership and permissions.
+- Team editor: create/update records and annual tasks within assigned groups.
+- Team viewer: read only within assigned groups.
+- Sensitive credential reveal: separate permission from ordinary record read.
+- Cross-group access: deny by default; relationships between businesses do not automatically grant access to each other's records.
+
+Before implementation, decide whether M101 should launch in owner-only mode first, or support team mode immediately. Also define whether the existing first `admin` is the permanent owner or merely the initial account administrator.
+
+## Credential protection design
+
+Because business credentials must be recoverable for legitimate use, password hashing is not an appropriate replacement. Recommended design is authenticated encryption at rest using Web Crypto AES-GCM, a Cloudflare secret-managed key, and a key-version marker. Migration must be staged:
+1. Provision and validate the secret in a non-production environment.
+2. Add versioned encrypted-field support while retaining reads for existing plaintext rows.
+3. Back up and verify the current D1 data before migration.
+4. Migrate in bounded batches and verify decryptability and record counts.
+5. Change normal API responses to omit credentials; add a separately authorized reveal endpoint only after permission rules are approved.
+6. Test export/import, backup restore, key rotation, and rollback before production rollout.
+
+No encryption implementation or credential migration is included in this branch yet.
