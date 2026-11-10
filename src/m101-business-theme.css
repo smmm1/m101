@@ -2003,3 +2003,124 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-settings-dataset .m101-auth-status { grid-column: auto !important; }
   .m101-settings-confirm > div { padding: 17px !important; }
 }
+
+
+/* Modern Navy — owner control center */
+.m101-dialog-overlay {
+  padding: 16px !important;
+  background: rgb(13 29 49 / 54%) !important;
+  backdrop-filter: blur(3px) !important;
+}
+.ds-admin-dialog {
+  width: min(100%, 720px) !important;
+  max-height: min(88dvh, 720px) !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 10px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: 0 24px 72px rgb(10 30 54 / 24%) !important;
+}
+.ds-admin-header {
+  padding: 22px 24px !important;
+  background: var(--ds-color-surface) !important;
+}
+.ds-admin-header > div:first-child { min-width: 0 !important; }
+.ds-admin-header .ds-badge {
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 4px !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 9px !important;
+  letter-spacing: .08em !important;
+}
+.ds-admin-heading {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.02em !important;
+}
+.ds-admin-subtitle {
+  max-width: 460px !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+.ds-admin-close.ds-button {
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  color: var(--ds-color-text-secondary) !important;
+}
+.ds-admin-destinations {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  padding: 16px 20px 20px !important;
+}
+.ds-admin-destination.ds-button {
+  min-height: 72px !important;
+  padding: 11px 12px !important;
+  gap: 11px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.ds-admin-destination.ds-button:hover {
+  border-color: var(--ds-color-border-strong) !important;
+  background: var(--ds-color-surface-subtle) !important;
+  transform: translateY(-1px) !important;
+}
+.ds-admin-icon {
+  width: 34px !important;
+  height: 34px !important;
+  flex-basis: 34px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 19px !important;
+}
+.ds-admin-destination > span:nth-child(2) { min-width: 0 !important; }
+.ds-admin-destination .ds-admin-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+.ds-admin-destination .ds-admin-description {
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+}
+.ds-admin-arrow {
+  flex: 0 0 auto !important;
+  font-size: 14px !important;
+}
+.ds-admin-destination.ds-button.ds-admin-preview {
+  border-style: solid !important;
+  border-color: var(--ds-color-border) !important;
+}
+.ds-admin-preview .block {
+  color: var(--ds-color-text) !important;
+  font-size: 12px !important;
+}
+.ds-admin-preview .mt-1 {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+}
+.ds-admin-footer {
+  min-height: 38px !important;
+  padding: 9px 22px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  font-size: 10px !important;
+}
+@media (max-width: 560px) {
+  .m101-dialog-overlay { padding: 10px !important; }
+  .ds-admin-dialog { max-height: 92dvh !important; overflow-y: auto !important; }
+  .ds-admin-header { padding: 17px !important; }
+  .ds-admin-destinations {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 12px 14px 16px !important;
+  }
+  .ds-admin-destination.ds-button { min-height: 62px !important; }
+  .ds-admin-footer { padding: 9px 14px !important; }
+}
