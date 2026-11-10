@@ -8,18 +8,48 @@
 
 ---
 
-## 1. Product reset
+## 1. Modernization of the existing M101 application
 
-M101 is being redesigned as a new business-management system. This is not a visual refresh of the legacy application.
+**This is an evolution of the existing M101 website, not a separate product or greenfield replacement.**
 
-### Explicit direction
+The existing repository, Cloudflare Pages production target, application routes, authentication, D1 data, and useful business workflows remain the starting point. The purpose of this blueprint is to improve M101's information architecture, UX/UI, and internal structure while retaining and strengthening the existing product.
 
-- Do not carry the old feature set forward by default.
-- Do not reproduce old screens, navigation, tables, forms, or workflows merely because they exist.
-- Design the product structure, domain model, user journeys, and UX/UI as a coherent new system.
-- Modern Navy is the visual direction, not a constraint to preserve old interaction patterns.
-- Treat existing application code and data structures as legacy references only. Reuse is allowed only after a deliberate fit-and-safety review.
-- No production deployment, destructive data operation, or database migration until the new product and data strategy are approved.
+### Non-negotiable continuity rules
+
+- Keep the existing repository: `smmm1/m101`.
+- Keep the existing production target: `https://m101-directory.pages.dev/`.
+- Keep Cloudflare Pages and the existing Cloudflare D1 database as the production foundation unless a separately approved technical reason requires a change.
+- Preserve existing business records and working capabilities. Do not delete, reset, or replace production data as part of a redesign.
+- Preserve working authentication, authorization, import/export, CRUD, annual-task, and administration behavior unless a specific change is reviewed and approved.
+- Modern Navy is a new visual direction for the existing M101 product. It is not a reason to create a second application or change the product identity.
+- Reorganize navigation and workflows only where it improves real user tasks; do not remove a feature simply because it is absent from a proposed information architecture.
+- Reuse and refactor existing components and data structures where safe. Introduce new structures incrementally, with compatibility and migration plans where needed.
+- Any destructive data migration, production database change, or deployment remains separately gated by backup, verification, rollback, and explicit approval.
+
+### Existing application baseline (confirmed from the current `main` source)
+
+The current M101 codebase already contains:
+- React + TypeScript + Vite application.
+- Cloudflare Pages deployment configuration and a D1 database binding named `DB`.
+- Business registry and business record add/edit/detail/delete flows.
+- Portfolio dashboard and search.
+- Annual task view and fiscal-year management.
+- Excel/CSV import mapping, preview, and duplicate-conflict resolution.
+- Settings, admin control center, authentication (password and PIN), visitor mode, notifications, and AFK/idle screen.
+
+These are existing M101 capabilities to inspect and account for during modernization. Their exact behavior, data dependencies, and current production health must be verified before modifying them.
+
+### Modernization method
+
+1. Audit the current routes, components, API handlers, D1 schema, and production behavior.
+2. Map each existing feature to one of: keep, improve, combine, defer, or remove (removal requires an explicit reason and approval).
+3. Approve the updated navigation and page hierarchy against the actual existing workflows.
+4. Apply the Modern Navy design system to the existing application shell and pages.
+5. Refactor shared components and data access incrementally; avoid a big-bang rewrite.
+6. Add or evolve domain capabilities (relationships, team access, work management) in backward-compatible steps.
+7. Test existing workflows and data integrity before each release.
+
+The domain and UX proposals below are design guidance for improving M101 in place. They are not authorization to build a separate application or discard the current one.
 
 ## 2. Confirmed product direction — Option C (hybrid)
 
