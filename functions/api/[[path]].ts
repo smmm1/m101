@@ -296,13 +296,24 @@ export async function onRequest(context: { request: Request; env: Env }) {
         recordsByYear['69'] = [];
         availableYears.push('69');
       }
-      return json({ recordsByYear, availableYears });
+      const state = await env.DB.prepare('SELECT revision FROM m101_directory_state WHERE id = 1').first() as { revision?: number } | null;
+      return json({ recordsByYear, availableYears, revision: Number(state?.revision || 0) });
     }
 
     if (path === '/api/data' && request.method === 'PUT') {
       const user = await requireUser(request, env);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const body = await request.json() as { availableYears?: string[]; recordsByYear?: Record<string, unknown[]> };
+      const body = await request.json() as {
+        availableYears?: string[];
+        recordsByYear?: Record<string, unknown[]>;
+        baseRevision?: number;
+        writeToken?: string;
+      };
+      const baseRevision = Number(body.baseRevision);
+      const writeToken = String(body.writeToken || '');
+      if (!Number.isSafeInteger(baseRevision) || baseRevision < 0 || !/^[A-Za-z0-9_-]{16,100}$/.test(writeToken)) {
+        return json({ error: 'ข้อมูลการบันทึกไม่ถูกต้อง กรุณาโหลดหน้าเว็บใหม่' }, 400);
+      }
       const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
@@ -311,16 +322,41 @@ export async function onRequest(context: { request: Request; env: Env }) {
         const rows = Array.isArray(records[year]) ? records[year] : [];
         if (rows.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
       }
+
+      const now = new Date().toISOString();
       const existing = await env.DB.prepare('SELECT fiscal_year FROM directory_year_data').all();
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
-      const statements = years.map((year) => env.DB.prepare(
-        'INSERT INTO directory_year_data (fiscal_year, records, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(fiscal_year) DO UPDATE SET records = excluded.records, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
-      ).bind(year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, new Date().toISOString()));
-      for (const removed of existingYears.filter((year) => !years.includes(year))) {
-        statements.push(env.DB.prepare('DELETE FROM directory_year_data WHERE fiscal_year = ?').bind(removed));
+      const statements = [
+        env.DB.prepare('INSERT INTO m101_directory_write_tokens (token, revision, created_at) VALUES (?, NULL, ?)').bind(writeToken, now),
+        env.DB.prepare('UPDATE m101_directory_state SET revision = revision + 1, last_write_token = ? WHERE id = 1 AND revision = ?').bind(writeToken, baseRevision),
+      ];
+      for (const year of years) {
+        statements.push(env.DB.prepare(
+          'INSERT INTO directory_year_data (fiscal_year, records, updated_by, updated_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM m101_directory_state WHERE id = 1 AND revision = ? AND last_write_token = ?) ON CONFLICT(fiscal_year) DO UPDATE SET records = excluded.records, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
+        ).bind(year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, baseRevision + 1, writeToken));
       }
-      await env.DB.batch(statements);
-      return json({ ok: true, savedYears: years.length });
+      for (const removed of existingYears.filter((year) => !years.includes(year))) {
+        statements.push(env.DB.prepare(
+          'DELETE FROM directory_year_data WHERE fiscal_year = ? AND EXISTS (SELECT 1 FROM m101_directory_state WHERE id = 1 AND revision = ? AND last_write_token = ?)'
+        ).bind(removed, baseRevision + 1, writeToken));
+      }
+      statements.push(env.DB.prepare(
+        'UPDATE m101_directory_write_tokens SET revision = (SELECT revision FROM m101_directory_state WHERE id = 1) WHERE token = ? AND EXISTS (SELECT 1 FROM m101_directory_state WHERE id = 1 AND revision = ? AND last_write_token = ?)'
+      ).bind(writeToken, baseRevision + 1, writeToken));
+      try {
+        await env.DB.batch(statements);
+      } catch (error) {
+        // A repeated token is safe to acknowledge only when that exact write committed.
+        const previous = await env.DB.prepare('SELECT revision FROM m101_directory_write_tokens WHERE token = ?').bind(writeToken).first() as { revision?: number | null } | null;
+        if (previous?.revision != null) return json({ ok: true, revision: Number(previous.revision), savedYears: years.length, replayed: true });
+        throw error;
+      }
+      const committed = await env.DB.prepare('SELECT revision FROM m101_directory_write_tokens WHERE token = ?').bind(writeToken).first() as { revision?: number | null } | null;
+      if (committed?.revision == null) {
+        const latest = await env.DB.prepare('SELECT revision FROM m101_directory_state WHERE id = 1').first() as { revision?: number } | null;
+        return json({ error: 'ข้อมูลในระบบมีการเปลี่ยนแปลงแล้ว กรุณาตรวจสอบข้อมูลล่าสุดก่อนบันทึก', latestRevision: Number(latest?.revision || 0) }, 409);
+      }
+      return json({ ok: true, revision: Number(committed.revision), savedYears: years.length });
     }
 
     // Annual work tracking is stored in its own D1 table, separate from directory JSON.
