@@ -251,6 +251,8 @@ function AppContent() {
         lastSavedSnapshotRef.current = JSON.stringify({ availableYears: years.length ? years : ['69'], recordsByYear: nextRecords });
         saveBlockedRef.current = false;
         saveRequestedRef.current = false;
+        setSaveConflict(null);
+        setLoadingLatestAfterConflict(false);
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
