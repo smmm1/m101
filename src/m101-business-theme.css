@@ -1095,3 +1095,129 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-metric-card strong { font-size: 25px !important; }
   .m101-overview-panel { padding: 14px !important; }
 }
+
+
+/* Business registry — retain the existing complete table and detail fields,
+   while tightening controls and making the selected record easier to scan. */
+.m101-directory-shell { gap: 12px !important; }
+.m101-directory-list-panel {
+  min-width: 0 !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-directory-toolbar {
+  gap: 12px !important;
+  padding: 15px 18px !important;
+  border-bottom-color: var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-directory-toolbar h2 {
+  color: var(--ds-color-text) !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+.m101-directory-toolbar p { color: var(--ds-color-text-secondary) !important; }
+.m101-directory-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid var(--m101-border);
+  border-radius: 6px;
+  background: var(--ds-color-surface-subtle);
+  color: var(--ds-color-text-secondary);
+  font-size: 10px;
+}
+.m101-directory-count strong {
+  color: var(--ds-color-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.m101-directory-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px !important; }
+.m101-directory-action.ds-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 9px !important;
+  gap: 5px !important;
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+.m101-directory-action .material-symbols-outlined { font-size: 16px !important; }
+.m101-directory-action--delete { background: var(--ds-color-surface) !important; color: var(--ds-color-danger) !important; border-color: var(--ds-color-border) !important; }
+.m101-directory-action--delete:hover { background: var(--ds-color-danger-soft) !important; }
+.m101-directory-list-panel > .border-b {
+  border-color: var(--m101-border) !important;
+}
+.m101-directory-list-panel .ds-directory-search {
+  min-height: 38px !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-canvas) !important;
+}
+.m101-directory-list-panel .ds-table {
+  min-width: 820px;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-size: 11px !important;
+}
+.m101-directory-list-panel .ds-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 12px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+}
+.m101-directory-list-panel .ds-table tbody td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  color: var(--ds-color-text-secondary) !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-directory-list-panel .ds-table tbody tr:hover td {
+  background: var(--ds-color-canvas) !important;
+}
+.m101-directory-list-panel .ds-table tbody tr[aria-selected="true"] td {
+  background: var(--ds-color-primary-soft) !important;
+}
+.m101-directory-list-panel .ds-table tbody tr[aria-selected="true"] td:first-child {
+  box-shadow: inset 3px 0 var(--ds-color-primary);
+}
+.m101-directory-list-panel .ds-table tbody td .text-sm {
+  font-size: 12px !important;
+}
+.m101-selected-record-card {
+  position: sticky;
+  top: 12px;
+  gap: 13px !important;
+  padding: 17px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-selected-record-card > div {
+  border-color: var(--m101-border) !important;
+  border-radius: 6px !important;
+}
+.m101-selected-record-card h3 { color: var(--ds-color-text) !important; font-size: 14px !important; }
+@media (max-width: 1279px) {
+  .m101-directory-shell { grid-template-columns: minmax(0, 1fr) !important; }
+  .m101-selected-record-card { position: static; }
+}
+@media (max-width: 640px) {
+  .m101-directory-toolbar { padding: 13px 12px !important; }
+  .m101-directory-toolbar > div:last-child { width: 100%; align-items: flex-start; }
+  .m101-directory-actions { width: 100%; }
+  .m101-directory-action.ds-button { flex: 0 0 auto; }
+  .m101-directory-list-panel > .border-b { padding: 12px !important; }
+  .m101-directory-list-panel .ds-table { min-width: 780px; }
+}
