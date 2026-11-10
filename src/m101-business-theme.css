@@ -2478,3 +2478,22 @@ button { -webkit-tap-highlight-color:transparent; }
   .ds-form-modal__body { padding: 12px !important; }
   .ds-form-modal__body .ds-form-section { padding: 12px !important; }
 }
+
+.ds-form-modal .ds-modal-footer {
+  padding: 12px 20px !important;
+  border-top: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.ds-form-modal .ds-modal-footer .ds-button {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+@media (max-width: 640px) {
+  .ds-form-modal .ds-modal-footer { padding: 10px 12px !important; }
+  .ds-form-modal .ds-modal-footer > div { width: 100%; }
+  .ds-form-modal .ds-modal-footer button { flex: 1 1 auto; justify-content: center; }
+}
