@@ -2382,3 +2382,99 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-detail-dialog > div:last-child { padding: 10px 12px !important; }
   .m101-detail-dialog > div:last-child > div { flex-wrap: wrap; }
 }
+
+
+/* Edit business form — match detail view and preserve every existing input. */
+.ds-form-modal {
+  max-width: 760px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 10px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: 0 18px 55px rgba(15, 35, 58, .18) !important;
+}
+.ds-form-modal__header {
+  padding: 17px 20px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.ds-form-modal__header h2 { color: var(--ds-color-text) !important; font-size: 16px !important; font-weight: 750 !important; }
+.ds-form-modal__body {
+  padding: 18px 20px !important;
+  background: var(--ds-color-canvas) !important;
+}
+.ds-form-modal__body .ds-form-status-row,
+.ds-form-modal__body .ds-form-section {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.ds-form-modal__body .ds-form-status-row { padding: 13px 15px !important; }
+.ds-form-modal__body .ds-form-section { padding: 15px !important; }
+.ds-form-modal__body .ds-form-section__title {
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+}
+.ds-form-modal__body .ds-form-section [class*="border-b"] { border-color: var(--m101-border) !important; }
+.ds-form-modal__body .ds-label {
+  display: block;
+  margin-bottom: 6px !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+}
+.ds-form-modal__body .ds-field,
+.ds-form-modal__body input,
+.ds-form-modal__body select,
+.ds-form-modal__body textarea {
+  min-height: 36px !important;
+  border: 1px solid var(--m101-border-strong) !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+.ds-form-modal__body .ds-field:focus,
+.ds-form-modal__body input:focus,
+.ds-form-modal__body select:focus,
+.ds-form-modal__body textarea:focus {
+  border-color: var(--ds-color-primary) !important;
+  box-shadow: var(--ds-focus-ring) !important;
+  outline: 0 !important;
+}
+.ds-form-modal__body .ds-status-option.ds-button {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 9px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.ds-form-modal__body .ds-form-error {
+  border: 1px solid color-mix(in srgb, var(--ds-color-danger) 28%, transparent) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-danger-soft) !important;
+  color: var(--ds-color-danger) !important;
+  font-size: 11px !important;
+}
+.ds-form-modal__footer {
+  padding: 12px 20px !important;
+  border-top: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.ds-form-modal__footer .ds-button {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+@media (max-width: 640px) {
+  .ds-form-modal { max-height: 94dvh !important; }
+  .ds-form-modal__header { padding: 13px !important; }
+  .ds-form-modal__body { padding: 12px !important; }
+  .ds-form-modal__body .ds-form-section { padding: 12px !important; }
+}
