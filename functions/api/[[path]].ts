@@ -515,7 +515,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!user) return json({ error: 'บัญชีนี้ยังไม่มีข้อมูลผู้ใช้ M101 ที่เตรียมไว้ กรุณาติดต่อ Owner ให้ตรวจสอบการเตรียมบัญชีก่อนรับคำเชิญ' }, 403);
       const tokenHash = await digest(inviteToken);
       const invitation = await env.DB.prepare(
-        'SELECT wi.id, wi.workspace_id FROM workspace_invitations wi JOIN workspaces w ON w.id = wi.workspace_id AND w.status = 'active' JOIN workspace_memberships owner_membership ON owner_membership.workspace_id = w.id AND owner_membership.user_id = w.owner_user_id AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' WHERE wi.token_hash = ? AND lower(wi.email) = ? AND wi.accepted_at IS NULL AND wi.revoked_at IS NULL AND wi.expires_at > ?'
+        `SELECT wi.id, wi.workspace_id FROM workspace_invitations wi JOIN workspaces w ON w.id = wi.workspace_id AND w.status = 'active' JOIN workspace_memberships owner_membership ON owner_membership.workspace_id = w.id AND owner_membership.user_id = w.owner_user_id AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' WHERE wi.token_hash = ? AND lower(wi.email) = ? AND wi.accepted_at IS NULL AND wi.revoked_at IS NULL AND wi.expires_at > ?`
       ).bind(tokenHash, email, Math.floor(Date.now() / 1000)).first() as { id?: string; workspace_id?: string } | null;
       if (!invitation?.id || !invitation.workspace_id) return json({ error: 'คำเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' }, 403);
 
