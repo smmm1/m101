@@ -37,7 +37,7 @@ The supplied Team1 dashboard is the reference for the annual-work overview conce
 - **Portfolio layer:** cross-entity overview, relationship context, aggregate metrics, risks, and upcoming work.
 - **Entity layer:** one business profile with its own details, obligations, documents, history, and activity. The initial domain model and UX should fit limited companies and partnerships first, while remaining extensible to other entity types.
 - **Work layer:** an actionable work item with period, category, deadline, assignee, status, evidence, and history.
-- **Administration layer:** workspace configuration, users, permissions, work categories, and deadline rules.
+- **Administration layer:** workspace configuration, users, permissions, work categories, and deadline rules. Support both an owner-only operating mode and a multi-member team mode without changing the underlying business/work records.
 
 ### Core navigation proposal
 
@@ -205,7 +205,7 @@ Possible approaches:
 
 1. **Initial entity coverage:** limited companies and registered partnerships are the primary target; confirm whether sole proprietors/individual merchants are included in the first release or deferred.
 2. **Data transition:** preserve/map, clean start, or selective migration?
-3. **Primary users:** only the owner, an internal team, or multiple organizations with separate workspaces?
+3. **Primary users (confirmed):** support both an owner managing multiple businesses and a team working together. The system must support multiple workspace members, work assignment, and permission-based access; the exact role matrix and workspace-sharing model remain to be designed.
 4. **First-release priority:** which complete workflow should be delivered first across the business-management and annual-work capabilities?
 5. **Relationship types:** fully user-defined, or a small set of defaults plus custom types?
 6. **Permissions:** single owner initially, or role-based access from the first release?
