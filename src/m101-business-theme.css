@@ -3546,3 +3546,30 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-directory-credential-toggle,
   .m101-directory-view-actions > button { flex: 1 1 auto !important; justify-content: center !important; }
 }
+
+
+/* Credential reveal control is shared by add/edit forms and detail views. */
+.m101-credential-toggle {
+  min-height: 29px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 5px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 9px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+}
+.m101-credential-toggle:hover,
+.m101-credential-toggle[aria-pressed="true"] {
+  border-color: var(--ds-color-primary) !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+}
+.m101-credential-toggle .material-symbols-outlined {
+  font-size: 15px !important;
+}
