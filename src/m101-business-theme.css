@@ -2718,3 +2718,167 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-task-row { grid-template-columns: minmax(0, 1fr) !important; }
   .m101-task-row-actions { grid-column: auto !important; }
 }
+
+
+/* Import / export and settings finishing pass — keep the existing workflows intact. */
+.m101-import-home { max-width: 1120px !important; }
+.m101-import-home-card {
+  border-color: var(--m101-border) !important;
+  box-shadow: 0 1px 2px rgb(20 39 62 / 3%) !important;
+}
+.m101-import-home-card > .ds-button {
+  white-space: nowrap !important;
+}
+.m101-import-home-steps > div {
+  transition: border-color .15s ease, background .15s ease !important;
+}
+.m101-import-home-steps > div:hover {
+  border-color: var(--ds-color-border-strong) !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-import-home-safety {
+  padding: 10px 12px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-import-wizard__header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+}
+.m101-import-progress {
+  position: sticky !important;
+  top: 68px !important;
+  z-index: 2 !important;
+}
+.m101-import-step-content {
+  background: var(--ds-color-canvas) !important;
+}
+.m101-import-section {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-import-table-options > button,
+.m101-import-table-options > label {
+  border-color: var(--m101-border) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+.m101-import-mapping-row {
+  border-bottom: 1px solid var(--m101-border) !important;
+}
+.m101-import-mapping-row:last-child { border-bottom: 0 !important; }
+.m101-import-mapping-target select,
+.m101-import-wizard input:not([type="checkbox"]):not([type="file"]),
+.m101-import-wizard select {
+  min-height: 34px !important;
+  border: 1px solid var(--m101-border-strong) !important;
+  border-radius: 5px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+.m101-import-wizard input:focus,
+.m101-import-wizard select:focus {
+  border-color: var(--ds-color-primary) !important;
+  outline: 2px solid var(--ds-color-primary-soft) !important;
+  outline-offset: 0 !important;
+}
+.m101-import-wizard__actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-import-wizard__actions .ds-button {
+  min-height: 34px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.m101-import-pagination {
+  padding-top: 10px !important;
+  border-top: 1px solid var(--m101-border) !important;
+}
+
+/* Settings: calmer section headings, consistent action rows and clearer destructive area. */
+.m101-settings-header h1 {
+  color: var(--ds-color-text) !important;
+  font-size: clamp(21px, 2vw, 26px) !important;
+  font-weight: 750 !important;
+  letter-spacing: -.035em !important;
+}
+.m101-settings-header p:not(.m101-eyebrow) {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+}
+.m101-settings-card > div:first-child h3,
+.m101-settings-card > section:first-child h3 {
+  letter-spacing: -.015em !important;
+}
+.m101-settings-card .ds-settings-action {
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  min-height: 40px !important;
+  font-size: 11px !important;
+  transition: border-color .15s ease, background .15s ease !important;
+}
+.m101-settings-card .ds-settings-action .material-symbols-outlined {
+  flex: 0 0 auto !important;
+  font-size: 17px !important;
+}
+.m101-settings-card .m101-dataset-danger {
+  border-color: color-mix(in srgb, var(--ds-color-danger) 25%, var(--m101-border)) !important;
+  background: color-mix(in srgb, var(--ds-color-danger) 3%, var(--ds-color-surface)) !important;
+}
+.m101-settings-card .m101-dataset-danger h4 { color: var(--ds-color-danger) !important; }
+.m101-settings-confirm > div {
+  width: min(100%, 420px) !important;
+}
+.ds-admin-destination.ds-button {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.ds-admin-destination.ds-button:hover {
+  border-color: var(--ds-color-border-strong) !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.ds-admin-destination .ds-admin-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+}
+@media (max-width: 640px) {
+  .m101-import-home { gap: 12px !important; padding: 0 0 18px !important; }
+  .m101-import-home-card {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 11px !important;
+    padding: 14px !important;
+  }
+  .m101-import-home-icon { width: 36px !important; height: 36px !important; }
+  .m101-import-home-icon .material-symbols-outlined { font-size: 20px !important; }
+  .m101-import-home-card > .ds-button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .m101-import-home-steps > div { padding: 11px !important; }
+  .m101-import-home-safety { align-items: flex-start !important; line-height: 1.5 !important; }
+  .m101-import-progress { top: 57px !important; }
+  .m101-import-wizard__actions { padding: 9px !important; }
+  .m101-settings { gap: 15px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m101-import-home-steps > div,
+  .m101-settings-card .ds-settings-action { transition: none !important; }
+}
