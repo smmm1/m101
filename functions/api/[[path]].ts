@@ -478,6 +478,75 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
 
+
+    if (path === '/api/workspace/invitations/accept' && request.method === 'POST') {
+      const body = await request.json() as { email?: string; password?: string; token?: string };
+      const email = String(body.email || '').trim().toLowerCase();
+      const password = String(body.password || '');
+      const inviteToken = String(body.token || '').trim();
+      if (!email || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !password || password.length > 1024 || !inviteToken || inviteToken.length > 256) {
+        return json({ error: 'กรุณาตรวจสอบอีเมล รหัสผ่าน และรหัสคำเชิญ' }, 400);
+      }
+
+      // Verify the Money102 identity in this request. A normal M101 session cannot
+      // be obtained yet because the invited account has no active workspace membership.
+      let remoteResponse: Response;
+      try {
+        remoteResponse = await env.MONEY102_AUTH.fetch(new Request('https://money102-auth.internal/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }));
+      } catch (error) {
+        console.error('M101 invitation identity verification failed', error);
+        return json({ error: 'เชื่อมต่อระบบบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 503);
+      }
+      if (remoteResponse.status === 401) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      if (!remoteResponse.ok) return json({ error: 'ระบบบัญชี Money102 ยังไม่พร้อม กรุณาลองใหม่' }, remoteResponse.status === 429 ? 429 : 503);
+      let remote: { user?: { id?: string; email?: string }; token?: string };
+      try { remote = await remoteResponse.json() as typeof remote; } catch {
+        return json({ error: 'ระบบบัญชี Money102 ส่งข้อมูลกลับมาไม่ถูกต้อง' }, 502);
+      }
+      if (!remote.token || !remote.user?.id || String(remote.user.email || '').trim().toLowerCase() !== email) {
+        return json({ error: 'ยืนยันบัญชี Money102 ไม่สำเร็จ' }, 502);
+      }
+
+      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
+      if (!user) return json({ error: 'บัญชีนี้ยังไม่มีข้อมูลผู้ใช้ M101 ที่เตรียมไว้ กรุณาติดต่อ Owner ให้ตรวจสอบการเตรียมบัญชีก่อนรับคำเชิญ' }, 403);
+      const tokenHash = await digest(inviteToken);
+      const invitation = await env.DB.prepare(
+        'SELECT id, workspace_id FROM workspace_invitations WHERE token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?'
+      ).bind(tokenHash, email, Math.floor(Date.now() / 1000)).first() as { id?: string; workspace_id?: string } | null;
+      if (!invitation?.id || !invitation.workspace_id) return json({ error: 'คำเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' }, 403);
+
+      const priorMembership = await env.DB.prepare('SELECT status FROM workspace_memberships WHERE workspace_id = ? AND user_id = ?')
+        .bind(invitation.workspace_id, user.id).first() as { status?: string } | null;
+      if (priorMembership && priorMembership.status !== 'revoked') {
+        return json({ error: 'บัญชีนี้มีสถานะสมาชิกใน Workspace อยู่แล้ว กรุณาติดต่อ Owner' }, 409);
+      }
+
+      const now = new Date().toISOString();
+      const sessionToken = randomToken();
+      const sessionHash = await digest(sessionToken);
+      const expiresAt = Math.floor(Date.now() / 1000) + SESSION_SECONDS;
+      const membershipId = randomToken(18);
+      const auditId = randomToken(18);
+      const consumed = await env.DB.batch([
+        env.DB.prepare("UPDATE workspace_invitations SET accepted_by = ?, accepted_at = ? WHERE id = ? AND token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?")
+          .bind(user.id, now, invitation.id, tokenHash, email, Math.floor(Date.now() / 1000)),
+        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, workspace_id, ?, 'collaborator', 'active', ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ? ON CONFLICT(workspace_id, user_id) DO UPDATE SET membership_type = 'collaborator', status = 'active', updated_at = excluded.updated_at WHERE workspace_memberships.status = 'revoked'")
+          .bind(membershipId, user.id, now, now, invitation.id, user.id, now),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, workspace_id, ?, 'invitation.accepted', 'workspace_invitation', id, ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ?")
+          .bind(auditId, user.id, JSON.stringify({ email }), now, invitation.id, user.id, now),
+        env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ?)")
+          .bind(sessionHash, user.id, expiresAt, now, invitation.id, user.id, now),
+      ]);
+      if (!consumed[0]?.meta?.changes || !consumed[1]?.meta?.changes || !consumed[3]?.meta?.changes) {
+        return json({ error: 'คำเชิญถูกใช้หรือเปลี่ยนสถานะไปแล้ว กรุณาขอคำเชิญใหม่' }, 409);
+      }
+      return json({ ok: true, user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(sessionToken) });
+    }
+
     if (path === '/api/workspace/invitations' && request.method === 'GET') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
