@@ -292,7 +292,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/public/data' && request.method === 'GET') {
-      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').all();
+      // Visitor mode is intentionally limited to the explicitly bootstrapped primary workspace.
+      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind('m101-primary-workspace').all();
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) {
         const parsed = JSON.parse(String(row.records || '[]')) as Record<string, unknown>[];
