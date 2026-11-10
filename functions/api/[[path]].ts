@@ -446,12 +446,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       let result;
       try {
         result = await env.DB.prepare(
-          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
-        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id).run();
+          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?'
+        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId).run();
       } catch (error) {
         const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, workspaceAccess.workspaceId).first() as { fiscal_year?: string; business_id?: string } | null;
         if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
-        const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(current.fiscal_year, current.business_id, taskCode, id).first();
+        const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(workspaceAccess.workspaceId, current.fiscal_year, current.business_id, taskCode, id).first();
         if (duplicate) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
         throw error;
       }
