@@ -349,17 +349,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (rows.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
       }
 
-      // The first statement claims the exact snapshot revision. All following
-      // statements are gated on the incremented revision inside the same D1 batch.
-      // A stale client therefore cannot update records or delete fiscal years.
+      // The first statement claims the exact snapshot revision using a unique
+      // write token. Revision alone is insufficient: a stale competing batch could
+      // observe the winner's incremented revision and otherwise pass its own gate.
       const nextRevision = expectedRevision + 1;
+      const writeToken = crypto.randomUUID();
       const now = new Date().toISOString();
       const statements = [
-        env.DB.prepare('UPDATE workspaces SET directory_revision = directory_revision + 1, updated_at = ? WHERE id = ? AND directory_revision = ?')
-          .bind(now, workspaceAccess.workspaceId, expectedRevision),
+        env.DB.prepare('UPDATE workspaces SET directory_revision = directory_revision + 1, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ?')
+          .bind(writeToken, now, workspaceAccess.workspaceId, expectedRevision),
         ...years.map((year: string) => env.DB.prepare(
-          'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
-        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, workspaceAccess.workspaceId, nextRevision)),
+          'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
+        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, workspaceAccess.workspaceId, nextRevision, writeToken)),
       ];
 
       const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?')
@@ -367,8 +368,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
       for (const removed of existingYears.filter((year: string) => !years.includes(year))) {
         statements.push(env.DB.prepare(
-          'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ?)'
-        ).bind(workspaceAccess.workspaceId, removed, workspaceAccess.workspaceId, nextRevision));
+          'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)'
+        ).bind(workspaceAccess.workspaceId, removed, workspaceAccess.workspaceId, nextRevision, writeToken));
       }
 
       const results = await env.DB.batch(statements);
