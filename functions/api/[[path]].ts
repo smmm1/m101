@@ -310,6 +310,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
+      const workspaceState = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(workspaceAccess.workspaceId).first<{ directory_revision: number }>();
+      if (!workspaceState) return json({ error: 'ไม่พบ Workspace ที่ใช้งานอยู่' }, 404);
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) recordsByYear[String(row.fiscal_year)] = JSON.parse(String(row.records || '[]'));
       const availableYears = Object.keys(recordsByYear);
@@ -317,7 +319,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         recordsByYear['69'] = [];
         availableYears.push('69');
       }
-      return json({ recordsByYear, availableYears });
+      return json({ recordsByYear, availableYears, directoryRevision: Number(workspaceState.directory_revision) });
     }
 
     if (path === '/api/data' && request.method === 'PUT') {
@@ -327,25 +329,57 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const body = await request.json() as { availableYears?: string[]; recordsByYear?: Record<string, unknown[]> };
+
+      const body = await request.json() as {
+        availableYears?: string[];
+        recordsByYear?: Record<string, unknown[]>;
+        expectedDirectoryRevision?: number;
+      };
+      const expectedRevision = Number(body.expectedDirectoryRevision);
+      if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+        return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
+      }
+
       const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
-        .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
+        .filter((year) => /^\\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
       const records = body.recordsByYear || {};
       for (const year of years) {
         const rows = Array.isArray(records[year]) ? records[year] : [];
         if (rows.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
       }
-      const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?').bind(workspaceAccess.workspaceId).all();
+
+      // The first statement claims the exact snapshot revision. All following
+      // statements are gated on the incremented revision inside the same D1 batch.
+      // A stale client therefore cannot update records or delete fiscal years.
+      const nextRevision = expectedRevision + 1;
+      const now = new Date().toISOString();
+      const statements = [
+        env.DB.prepare('UPDATE workspaces SET directory_revision = directory_revision + 1, updated_at = ? WHERE id = ? AND directory_revision = ?')
+          .bind(now, workspaceAccess.workspaceId, expectedRevision),
+        ...years.map((year: string) => env.DB.prepare(
+          'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
+        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, workspaceAccess.workspaceId, nextRevision)),
+      ];
+
+      const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?')
+        .bind(workspaceAccess.workspaceId).all();
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
-      const statements = years.map((year: string) => env.DB.prepare(
-        'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, ?, ?, 1, ?, ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
-      ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, new Date().toISOString()));
       for (const removed of existingYears.filter((year: string) => !years.includes(year))) {
-        statements.push(env.DB.prepare('DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?').bind(workspaceAccess.workspaceId, removed));
+        statements.push(env.DB.prepare(
+          'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ?)'
+        ).bind(workspaceAccess.workspaceId, removed, workspaceAccess.workspaceId, nextRevision));
       }
-      await env.DB.batch(statements);
-      return json({ ok: true, savedYears: years.length });
+
+      const results = await env.DB.batch(statements);
+      const claimedRevision = Number(results[0]?.meta?.changes || 0);
+      if (claimedRevision !== 1) {
+        return json({
+          error: 'ข้อมูลถูกบันทึกจากอุปกรณ์อื่นก่อนแล้ว ระบบจึงยังไม่บันทึกข้อมูลชุดเก่านี้ เพื่อป้องกันข้อมูลใหม่สูญหาย กรุณาโหลดข้อมูลล่าสุดก่อนแก้ไขต่อ',
+          conflict: true,
+        }, 409);
+      }
+      return json({ ok: true, savedYears: years.length, directoryRevision: nextRevision });
     }
 
     // Annual work tracking is stored in its own D1 table, separate from directory JSON.
