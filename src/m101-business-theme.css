@@ -2497,3 +2497,224 @@ button { -webkit-tap-highlight-color:transparent; }
   .ds-form-modal .ds-modal-footer > div { width: 100%; }
   .ds-form-modal .ds-modal-footer button { flex: 1 1 auto; justify-content: center; }
 }
+
+
+/* Add business dialog — compact Modern Navy treatment, all current fields retained. */
+.ds-form-modal--compact {
+  width: min(620px, calc(100vw - 32px)) !important;
+  max-height: 90dvh !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 10px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: 0 18px 55px rgba(15, 35, 58, .18) !important;
+}
+.ds-form-modal--compact .ds-modal-header {
+  padding: 15px 18px !important;
+  background: var(--ds-color-surface) !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+}
+.ds-form-modal--compact .ds-modal-title {
+  color: var(--ds-color-text) !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+}
+.ds-form-modal--compact .ds-modal-description {
+  margin-top: 3px !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+}
+.ds-form-modal--compact .ds-modal-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+}
+.ds-form-modal--compact .ds-form-modal__body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 13px !important;
+  padding: 16px 18px !important;
+  background: var(--ds-color-canvas) !important;
+}
+.ds-form-modal--compact .ds-label {
+  display: block !important;
+  margin-bottom: 5px !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+}
+.ds-form-modal--compact .ds-field,
+.ds-form-modal--compact input,
+.ds-form-modal--compact select {
+  min-height: 35px !important;
+  border: 1px solid var(--m101-border-strong) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+.ds-form-modal--compact .ds-field:focus,
+.ds-form-modal--compact input:focus,
+.ds-form-modal--compact select:focus {
+  border-color: var(--ds-color-primary) !important;
+  box-shadow: var(--ds-focus-ring) !important;
+  outline: 0 !important;
+}
+.ds-form-modal--compact .ds-status-option.ds-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.ds-form-modal--compact .ds-modal-footer {
+  padding: 11px 0 0 !important;
+  border-top: 1px solid var(--m101-border) !important;
+}
+.ds-form-modal--compact .ds-modal-footer .ds-button {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.ds-form-modal--compact .ds-form-error {
+  border: 1px solid color-mix(in srgb, var(--ds-color-danger) 28%, transparent) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-danger-soft) !important;
+  color: var(--ds-color-danger) !important;
+  font-size: 11px !important;
+}
+
+/* Annual task register — improve scanability while retaining all task details/actions. */
+.m101-annual-summary {
+  border: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-task-list-panel {
+  overflow: hidden !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 9px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-task-list-panel > .m101-panel-heading {
+  padding: 17px 18px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+}
+.m101-task-list-panel .m101-panel-heading h2 {
+  color: var(--ds-color-text) !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+}
+.m101-task-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 190px !important;
+  gap: 9px !important;
+  padding: 13px 18px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-task-toolbar input,
+.m101-task-toolbar select {
+  min-height: 35px !important;
+  border: 1px solid var(--m101-border-strong) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+.m101-task-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 150px auto !important;
+  align-items: center !important;
+  gap: 15px !important;
+  padding: 14px 18px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-surface) !important;
+  transition: background .15s ease !important;
+}
+.m101-task-row:last-child { border-bottom: 0 !important; }
+.m101-task-row:hover { background: var(--ds-color-surface-subtle) !important; }
+.m101-task-row-title strong {
+  color: var(--ds-color-text) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+.m101-task-row-main > span {
+  display: block !important;
+  margin-top: 4px !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+}
+.m101-task-row-main small {
+  display: block !important;
+  margin-top: 3px !important;
+  color: var(--ds-color-text-muted) !important;
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+}
+.m101-task-row-due span {
+  color: var(--ds-color-text-muted) !important;
+  font-size: 9px !important;
+}
+.m101-task-row-due strong {
+  display: block !important;
+  margin-top: 3px !important;
+  color: var(--ds-color-text) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+}
+.m101-task-row-actions { display: flex !important; align-items: center !important; gap: 4px !important; }
+.m101-task-row-actions .ds-button {
+  min-height: 29px !important;
+  height: 29px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.m101-task-row-actions .is-delete { color: var(--ds-color-danger) !important; }
+.m101-task-metric-grid article {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-task-form {
+  width: min(560px, calc(100vw - 32px)) !important;
+  padding: 19px !important;
+  gap: 12px !important;
+}
+.m101-task-form-header h2 { font-size: 16px !important; }
+.m101-task-form > label,.m101-task-form-grid > label {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+}
+.m101-task-form input,.m101-task-form select,.m101-task-form textarea {
+  min-height: 35px !important;
+  border-color: var(--m101-border-strong) !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+}
+.m101-task-form-actions .ds-button {
+  min-height: 33px !important;
+  height: 33px !important;
+  font-size: 10px !important;
+}
+@media (max-width: 640px) {
+  .ds-form-modal--compact { width: calc(100vw - 20px) !important; max-height: 94dvh !important; }
+  .ds-form-modal--compact .ds-modal-header { padding: 12px !important; }
+  .ds-form-modal--compact .ds-form-modal__body { padding: 12px !important; gap: 11px !important; }
+  .ds-form-modal--compact .ds-form-modal__body > .grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .ds-form-modal--compact .ds-form-modal__body > .grid > .col-span-2 { grid-column: auto !important; }
+  .m101-task-toolbar { grid-template-columns: minmax(0, 1fr) !important; }
+  .m101-task-row { grid-template-columns: minmax(0, 1fr) !important; }
+  .m101-task-row-actions { grid-column: auto !important; }
+}
