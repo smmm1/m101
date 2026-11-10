@@ -85,6 +85,8 @@ These are candidate areas for discussion. They are not a commitment to implement
 
 ## 5. New domain model — proposal
 
+The detailed conceptual model is maintained in [Domain Model v1](./domain-model-v1.md). It prioritizes Thai limited companies and registered partnerships, preserves entity-level independence, and defines work items, periods, assignments, documents, and audit events. This remains a conceptual model; no physical database schema has been approved.
+
 ### Core records
 
 - **Workspace** — the top-level tenant and configuration boundary.
@@ -201,7 +203,7 @@ Possible approaches:
 
 ## 11. Decisions required before implementation
 
-1. **Initial entity coverage:** limited companies and partnerships are the primary target; confirm whether sole proprietors/individual merchants are included in the first release or deferred.
+1. **Initial entity coverage:** limited companies and registered partnerships are the primary target; confirm whether sole proprietors/individual merchants are included in the first release or deferred.
 2. **Data transition:** preserve/map, clean start, or selective migration?
 3. **Primary users:** only the owner, an internal team, or multiple organizations with separate workspaces?
 4. **First-release priority:** which complete workflow should be delivered first across the business-management and annual-work capabilities?
