@@ -1,6 +1,6 @@
 # M101 — Domain Model v1 (Conceptual)
 
-**Status:** Working proposal for review — not a database schema  
+**Status:** Working proposal incorporating confirmed owner + team support — not a database schema  
 **Date:** 2026-11-10  
 **Product direction:** Hybrid business portfolio + annual-work management  
 **Priority entity types:** Thai limited companies and partnerships  
@@ -25,7 +25,7 @@
 
 ### Workspace
 
-The tenant and configuration boundary.
+The tenant and configuration boundary. **Confirmed user requirement:** M101 must support both an owner managing a portfolio alone and a team collaborating on that portfolio. It must not be designed as a single-user-only application.
 
 Key concepts:
 - Stable workspace ID and display name.
@@ -208,12 +208,22 @@ Audit records must be protected from ordinary editing and deletion. Sensitive va
 
 ### User, Membership, Role, Permission
 
-- User: authenticated identity.
-- Membership: a user's membership in a workspace.
-- Role: named permission bundle.
-- Permission: explicit allowed action scoped to workspace, entity, or record.
+- **User:** authenticated identity, independent of any one workspace.
+- **Workspace Membership:** connects a user to a workspace, with membership status, invitation/acceptance lifecycle, and assigned role(s).
+- **Role:** named permission bundle, configurable or selected from safe built-in defaults.
+- **Permission:** explicit allowed action scoped to workspace, entity, or record.
+- **Entity Access Grant:** optional narrower access boundary where a member may access only selected entities within a workspace.
+- **Assignment:** operational responsibility for a work item; assignment does not automatically grant broad access to unrelated entities or workspace administration.
 
-Do not assume every workspace is single-user. The exact first-release roles and sharing model remain a product decision.
+Confirmed operating modes:
+- An owner can manage a portfolio alone without needing to create fake team members.
+- An owner can invite team members and assign work when collaboration is needed.
+- The data model supports multiple members from the beginning, even if the first deployment initially has one owner.
+- Authorization must be enforced server-side for every read and write; hiding a button in the UI is not access control.
+- Workspace-level administration, entity-level access, and work-item assignment are separate concepts.
+- Membership removal or role changes must be auditable and must not erase the member's historical actions or completed work.
+
+Candidate built-in role concepts for review (not yet approved): Owner, Administrator, Manager/Reviewer, Staff, Read-only. Final permissions and whether custom roles are needed remain open.
 
 ## 3. Key relationships (conceptual)
 
@@ -262,7 +272,7 @@ A merge operation, if ever supported, requires a separate audited workflow and e
 
 1. **Entity coverage:** confirm whether the first release includes only limited companies and registered partnerships, or also sole proprietors.
 2. **Workspace model:** one workspace for the user, or multiple workspaces / client portfolios?
-3. **Users and permissions:** owner-only first, or team roles from day one?
+3. **Role matrix:** define exact permissions for Owner, Administrator, Manager/Reviewer, Staff, and Read-only; decide whether custom roles and entity-scoped access are required.
 4. **Relationship defaults:** which relationship types are needed initially, and which are user-defined?
 5. **Work categories:** are the five Team1 reference categories required for the first release, or illustrative examples?
 6. **Work lifecycle:** are waiting/blocked and cancelled required, and who may mark work not applicable?
