@@ -35,6 +35,7 @@ jobs:
 
       - name: Dependency vulnerability report
         run: |
+          npm install --package-lock-only --ignore-scripts --no-audit
           npm audit --json > /tmp/m101-npm-audit.json || true
           node -e "const a=require('/tmp/m101-npm-audit.json'); const v=Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, direct:item.isDirect, range:item.range, fixAvailable:item.fixAvailable})); console.log(JSON.stringify({metadata:a.metadata?.vulnerabilities, vulnerabilities:v}, null, 2));"
       - name: Type-check
