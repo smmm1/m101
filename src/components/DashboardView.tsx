@@ -986,7 +986,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </article>
             </div>
 
-            {isLoggedIn && <ExecutiveAnnualDashboard selectedYear={selectedYear} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} />}
+            {isLoggedIn && <ExecutiveAnnualDashboard selectedYear={selectedYear} onOpenTasks={() => navigateToTab('tasks')} />}
 
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
