@@ -71,6 +71,11 @@ function AppContent() {
   const pendingDatabaseWriteRef = React.useRef(false);
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const directoryRevisionRef = React.useRef<number | null>(null);
+  const saveInFlightRef = React.useRef(false);
+  const saveRequestedRef = React.useRef(false);
+  const saveBlockedRef = React.useRef(false);
+  const [dataSaveCycle, setDataSaveCycle] = useState(0);
   type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
   const undoStackRef = React.useRef<UndoSnapshot[]>([]);
   const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -213,6 +218,9 @@ function AppContent() {
       setUserRole('member');
       setAccessReady(true);
       setDataReady(false);
+      directoryRevisionRef.current = null;
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
       return () => { active = false; };
     }
 
@@ -235,6 +243,9 @@ function AppContent() {
           : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+        saveBlockedRef.current = false;
+        saveRequestedRef.current = false;
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
@@ -270,6 +281,7 @@ function AppContent() {
         const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = null;
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName('ผู้เยี่ยมชม');
@@ -283,21 +295,44 @@ function AppContent() {
     return () => { active = false; };
   }, [isVisitor, sessionUser, dataReloadKey]);
 
-  // Save changes to the isolated M101 D1 database.
+  // Save only against the exact D1 snapshot revision loaded by this client.
+  // Requests are serialized; a stale snapshot is blocked rather than auto-overwritten.
   useEffect(() => {
-    if (!dataReady || !isLoggedIn || !sessionUser) return;
+    if (!dataReady || !isLoggedIn || !sessionUser || saveBlockedRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      if (saveBlockedRef.current) return;
+      if (saveInFlightRef.current) {
+        saveRequestedRef.current = true;
+        return;
+      }
+      const expectedDirectoryRevision = directoryRevisionRef.current;
+      if (expectedDirectoryRevision === null) {
+        saveBlockedRef.current = true;
+        pendingDatabaseWriteRef.current = false;
+        showToast('ไม่พบเวอร์ชันข้อมูลจากเซิร์ฟเวอร์ จึงหยุดบันทึกเพื่อป้องกันข้อมูลสูญหาย กรุณาโหลดข้อมูลใหม่', 'ยังไม่ได้บันทึก', 'error');
+        return;
+      }
+
+      saveInFlightRef.current = true;
       void (async () => {
         try {
           const response = await fetch('/api/data', {
             method: 'PUT',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ availableYears, recordsByYear }),
+            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision }),
           });
           const payload = await response.json();
+          if (response.status === 409 || payload.conflict) {
+            saveBlockedRef.current = true;
+            pendingDatabaseWriteRef.current = false;
+            pendingSuccessToastsRef.current = [];
+            showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
+            return;
+          }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
+          directoryRevisionRef.current = Number(payload.directoryRevision);
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
@@ -309,13 +344,19 @@ function AppContent() {
             'ข้อมูลยังไม่ซิงก์',
             'error'
           );
+        } finally {
+          saveInFlightRef.current = false;
+          if (saveRequestedRef.current && !saveBlockedRef.current) {
+            saveRequestedRef.current = false;
+            setDataSaveCycle((cycle) => cycle + 1);
+          }
         }
       })();
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears]);
+  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears, dataSaveCycle]);
 
   // Modals state
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
