@@ -538,10 +538,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
           .bind(membershipId, user.id, now, now, invitation.id, user.id, now),
         env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, workspace_id, ?, 'invitation.accepted', 'workspace_invitation', id, ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ?")
           .bind(auditId, user.id, JSON.stringify({ email }), now, invitation.id, user.id, now),
-        env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ?)")
+        env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_invitations wi JOIN workspace_memberships wm ON wm.workspace_id = wi.workspace_id AND wm.user_id = wi.accepted_by AND wm.status = 'active' AND wm.membership_type = 'collaborator' WHERE wi.id = ? AND wi.accepted_by = ? AND wi.accepted_at = ?)")
           .bind(sessionHash, user.id, expiresAt, now, invitation.id, user.id, now),
       ]);
-      if (!consumed[0]?.meta?.changes || !consumed[1]?.meta?.changes || !consumed[3]?.meta?.changes) {
+      if (!consumed[0]?.meta?.changes || !consumed[1]?.meta?.changes || !consumed[2]?.meta?.changes || !consumed[3]?.meta?.changes) {
         return json({ error: 'คำเชิญถูกใช้หรือเปลี่ยนสถานะไปแล้ว กรุณาขอคำเชิญใหม่' }, 409);
       }
       return json({ ok: true, user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(sessionToken) });
