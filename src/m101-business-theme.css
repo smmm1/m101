@@ -2882,3 +2882,225 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-import-home-steps > div,
   .m101-settings-card .ds-settings-action { transition: none !important; }
 }
+
+
+/* Login — Modern Navy identity, while keeping the existing password/PIN auth flow. */
+.m101-login-root {
+  min-height: 100dvh !important;
+  background: var(--ds-color-canvas) !important;
+  color: var(--ds-color-text) !important;
+}
+.m101-login-layout {
+  min-height: 100dvh !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-login-brand {
+  background:
+    radial-gradient(ellipse at 82% 18%, rgba(87, 130, 176, .24), transparent 38%),
+    linear-gradient(145deg, #102a45 0%, #183b63 54%, #102b49 100%) !important;
+}
+.m101-login-brand > div:first-of-type > div:first-child {
+  border-color: rgba(255,255,255,.22) !important;
+  border-radius: 9px !important;
+  background: rgba(255,255,255,.1) !important;
+}
+.m101-login-brand h1 {
+  max-width: 540px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.045em !important;
+}
+.m101-login-brand .rounded-full {
+  border-color: rgba(219,232,247,.22) !important;
+  background: rgba(255,255,255,.08) !important;
+}
+.m101-login-brand .bg-white\/\[0\.07\] {
+  border-color: rgba(219,232,247,.18) !important;
+  background: rgba(255,255,255,.065) !important;
+  box-shadow: 0 14px 38px rgba(4,17,31,.12) !important;
+}
+.m101-login-brand .bg-zinc-300\/15 { background: rgba(206,222,240,.16) !important; }
+.m101-login-panel { background: var(--ds-color-canvas) !important; }
+.m101-login-panel > div {
+  max-width: 430px !important;
+  padding: clamp(20px, 3vw, 34px) !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 12px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: 0 10px 34px rgba(19,47,76,.06) !important;
+}
+.m101-login-panel h2 {
+  color: var(--ds-color-text) !important;
+  font-weight: 750 !important;
+  letter-spacing: -.04em !important;
+}
+.m101-login-panel p { color: var(--ds-color-text-secondary) !important; }
+.m101-login-panel form { gap: 17px !important; }
+.m101-login-panel form > div:first-child {
+  border-color: var(--m101-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-login-panel form > div:first-child button {
+  min-height: 37px !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+}
+.m101-login-panel form > div:first-child button[aria-pressed="true"] {
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-primary) !important;
+  box-shadow: 0 1px 3px rgba(15,35,58,.1) !important;
+}
+.m101-login-panel label {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+}
+.m101-login-panel input[type="email"],
+.m101-login-panel input[type="password"] {
+  height: 42px !important;
+  border-color: var(--m101-border-strong) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  font-size: 12px !important;
+}
+.m101-login-panel input:focus {
+  border-color: var(--ds-color-primary) !important;
+  box-shadow: var(--ds-focus-ring) !important;
+}
+.m101-login-panel form > div:nth-child(2):has(.grid-cols-3) {
+  border-color: var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-login-panel form > div:nth-child(2) button {
+  border-color: var(--m101-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  box-shadow: none !important;
+}
+.m101-login-panel form > div:nth-child(2) button:hover {
+  border-color: var(--ds-color-primary) !important;
+  background: var(--ds-color-primary-soft) !important;
+}
+.m101-login-panel form > button[type="submit"] {
+  min-height: 42px !important;
+  height: 42px !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-primary) !important;
+  font-size: 12px !important;
+  box-shadow: none !important;
+}
+.m101-login-panel form > button[type="submit"]:hover {
+  background: var(--ds-color-primary-hover) !important;
+}
+.m101-login-panel [role="alert"] {
+  border-color: color-mix(in srgb, var(--ds-color-danger) 25%, transparent) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-danger-soft) !important;
+  color: var(--ds-color-danger) !important;
+}
+.m101-login-panel form + div { color: var(--ds-color-text-muted) !important; }
+.m101-login-panel form + div button {
+  color: var(--ds-color-primary) !important;
+}
+@media (max-width: 1023px) {
+  .m101-login-layout { grid-template-columns: minmax(0, .9fr) minmax(380px, 1.1fr) !important; }
+  .m101-login-brand { padding-inline: clamp(24px, 4vw, 48px) !important; }
+  .m101-login-panel { padding-inline: 22px !important; }
+}
+@media (max-width: 767px) {
+  .m101-login-layout { display: flex !important; flex-direction: column !important; }
+  .m101-login-brand {
+    min-height: 190px !important;
+    padding: 22px 22px 18px !important;
+  }
+  .m101-login-brand > div:nth-of-type(2) { margin-top: 22px !important; padding: 0 !important; }
+  .m101-login-brand h1 { font-size: 25px !important; }
+  .m101-login-brand > div:nth-of-type(2) > div { display: none !important; }
+  .m101-login-brand > div:last-child { margin-top: 22px !important; padding-top: 12px !important; }
+  .m101-login-panel { flex: 1 0 auto !important; padding: 22px 14px 30px !important; }
+  .m101-login-panel > div {
+    max-width: 460px !important;
+    padding: 19px !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+  }
+}
+@media (max-width: 380px) {
+  .m101-login-brand h1 { font-size: 22px !important; }
+  .m101-login-panel > div { padding: 15px !important; }
+  .m101-login-panel form > div:first-child button { padding-inline: 7px !important; font-size: 10px !important; }
+}
+
+/* Sidebar and utility bar — consistent density at desktop and narrow widths. */
+.m101-sidebar {
+  width: 224px !important;
+  padding: 18px 12px 14px !important;
+  background: var(--ds-color-surface) !important;
+  border-right: 1px solid var(--m101-border) !important;
+}
+.m101-sidebar-brand { padding: 2px 7px 17px !important; margin-bottom: 9px !important; }
+.m101-side-link {
+  min-height: 39px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  transition: color .14s ease, background .14s ease, border-color .14s ease !important;
+}
+.m101-side-link.is-active {
+  border-color: var(--ds-color-border) !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+  font-weight: 700 !important;
+}
+.m101-side-link:focus-visible {
+  outline: 2px solid var(--ds-color-primary) !important;
+  outline-offset: 2px !important;
+}
+.mobile-app-nav {
+  background: var(--ds-color-surface) !important;
+}
+.m101-page-context strong {
+  color: var(--ds-color-text) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+.m101-page-context span {
+  color: var(--ds-color-text-muted) !important;
+}
+.m101-global-search {
+  border: 1px solid var(--m101-border) !important;
+  background: var(--ds-color-canvas) !important;
+}
+.m101-global-search:focus-within {
+  border-color: var(--ds-color-primary) !important;
+  box-shadow: var(--ds-focus-ring) !important;
+}
+.m101-global-search input {
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+}
+@media (max-width: 760px) {
+  .m101-sidebar {
+    width: 100% !important;
+    min-height: 50px !important;
+    padding: 6px 9px !important;
+    background: var(--ds-color-surface) !important;
+  }
+  .m101-side-link {
+    min-height: 35px !important;
+    border-radius: 5px !important;
+  }
+  .m101-side-link.is-active {
+    border-color: var(--ds-color-border) !important;
+    background: var(--ds-color-primary-soft) !important;
+  }
+  .mobile-app-nav {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "context utilities" "search search" !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m101-side-link { transition: none !important; }
+}
