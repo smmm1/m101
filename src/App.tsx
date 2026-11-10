@@ -382,6 +382,16 @@ function AppContent() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  useEffect(() => {
+    if (!conflictLocalSnapshot) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = 'ยังมีข้อมูลที่ไม่ได้บันทึก';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [conflictLocalSnapshot]);
+
   const handleLoadLatestAfterConflict = async () => {
     if (!conflictLocalSnapshot) return;
     // Preserve the unsaved local version as a downloadable recovery file before replacing it.
