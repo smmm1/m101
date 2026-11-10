@@ -470,7 +470,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
         <div className="m101-global-search" role="search">
           <Search size={17} aria-hidden="true" />
-          <input type="search" aria-label="ค้นหาทะเบียนกิจการ" placeholder="ค้นหากิจการ…" value={searchQuery} onChange={(event) => onSearchChange?.(event.target.value)} />
+          <input type="search" aria-label="ค้นหาทะเบียนกิจการ" placeholder="ค้นหากิจการ…" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
           <kbd>⌘ K</kbd>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
