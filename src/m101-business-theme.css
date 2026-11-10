@@ -3494,3 +3494,55 @@ button { -webkit-tap-highlight-color:transparent; }
 .m101-detail-dialog .m101-credential-toggle .material-symbols-outlined {
   font-size: 15px !important;
 }
+
+
+/* Directory toolbar — compact actions and a clear credential visibility control. */
+.m101-directory-view-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  flex: 0 0 auto !important;
+}
+.m101-directory-credential-toggle {
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+}
+.m101-directory-credential-toggle:hover,
+.m101-directory-credential-toggle[aria-pressed="true"] {
+  border-color: var(--ds-color-primary) !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+}
+.m101-directory-credential-toggle .material-symbols-outlined {
+  font-size: 17px !important;
+}
+.m101-record-list .ds-table td:nth-child(3),
+.m101-record-list .ds-table td:nth-child(4) {
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+@media (max-width: 760px) {
+  .m101-directory-view-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  .m101-directory-credential-toggle {
+    min-height: 32px !important;
+  }
+}
+@media (max-width: 420px) {
+  .m101-directory-view-actions { flex-wrap: wrap !important; }
+  .m101-directory-credential-toggle,
+  .m101-directory-view-actions > button { flex: 1 1 auto !important; justify-content: center !important; }
+}
