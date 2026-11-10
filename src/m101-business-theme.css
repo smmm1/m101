@@ -2257,3 +2257,128 @@ button { -webkit-tap-highlight-color:transparent; }
 @media (prefers-reduced-motion: reduce) {
   .m101-overview *, .m101-overview *::before, .m101-overview *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Business detail dialog — structured information hierarchy without removing fields. */
+.m101-detail-dialog {
+  max-width: 760px !important;
+  border-radius: 10px !important;
+}
+.m101-detail-dialog .m101-dialog-header {
+  padding: 17px 20px !important;
+  background: var(--ds-color-surface) !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+}
+.m101-detail-dialog .m101-dialog-header h2 {
+  color: var(--ds-color-text) !important;
+  font-size: 16px !important;
+  font-weight: 750 !important;
+  letter-spacing: -.025em;
+}
+.m101-detail-dialog .m101-dialog-header > div > div > span {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 5px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 9px !important;
+}
+.m101-detail-dialog .m101-dialog-header > div > div > span.material-symbols-outlined {
+  color: #fff !important;
+}
+.m101-detail-dialog > .overflow-y-auto {
+  padding: 18px 20px !important;
+  background: var(--ds-color-canvas) !important;
+}
+.m101-detail-dialog > .overflow-y-auto > div {
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  padding: 15px !important;
+  gap: 13px !important;
+}
+.m101-detail-dialog > .overflow-y-auto > div > div:first-child {
+  padding-bottom: 10px !important;
+  border-bottom-color: var(--m101-border) !important;
+}
+.m101-detail-dialog > .overflow-y-auto h3 {
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  letter-spacing: .01em !important;
+}
+.m101-detail-dialog > .overflow-y-auto h3 + span,
+.m101-detail-dialog > .overflow-y-auto [class*="material-symbols-outlined"] {
+  color: var(--ds-color-primary) !important;
+}
+.m101-detail-dialog > .overflow-y-auto [class*="bg-slate-50"],
+.m101-detail-dialog > .overflow-y-auto [class*="bg-slate-900/"] {
+  background: var(--ds-color-surface) !important;
+}
+.m101-detail-dialog > .overflow-y-auto [class*="rounded-xl"][class*="border"] {
+  border-color: var(--m101-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  box-shadow: none !important;
+}
+.m101-detail-dialog > .overflow-y-auto [class*="text-slate-900"],
+.m101-detail-dialog > .overflow-y-auto [class*="text-slate-800"],
+.m101-detail-dialog > .overflow-y-auto [class*="text-white"] {
+  color: var(--ds-color-text) !important;
+}
+.m101-detail-dialog > .overflow-y-auto [class*="text-slate-500"],
+.m101-detail-dialog > .overflow-y-auto [class*="text-slate-400"] {
+  color: var(--ds-color-text-secondary) !important;
+}
+.m101-detail-dialog .ds-status-option.ds-button {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 9px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.m101-detail-dialog .ds-copy-action,
+.m101-detail-dialog .ds-copy-icon {
+  min-height: 27px !important;
+  height: 27px !important;
+  padding: 0 7px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 5px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+.m101-detail-dialog .ds-copy-action:hover,
+.m101-detail-dialog .ds-copy-icon:hover {
+  background: var(--ds-color-primary-soft) !important;
+}
+.m101-detail-dialog > div:last-child {
+  padding: 12px 20px !important;
+  background: var(--ds-color-surface) !important;
+  border-top: 1px solid var(--m101-border) !important;
+}
+.m101-detail-dialog .ds-delete-action {
+  color: var(--ds-color-danger) !important;
+}
+.m101-detail-dialog > div:last-child .ds-button {
+  min-height: 33px !important;
+  height: 33px !important;
+  padding: 0 11px !important;
+  border-radius: 5px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+@media (max-width: 640px) {
+  .m101-detail-dialog { max-height: 94dvh !important; }
+  .m101-detail-dialog .m101-dialog-header { padding: 13px !important; }
+  .m101-detail-dialog > .overflow-y-auto { padding: 12px !important; }
+  .m101-detail-dialog > .overflow-y-auto > div { padding: 12px !important; }
+  .m101-detail-dialog > .overflow-y-auto > div:first-child > div:last-child {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .m101-detail-dialog > div:last-child { padding: 10px 12px !important; }
+  .m101-detail-dialog > div:last-child > div { flex-wrap: wrap; }
+}
