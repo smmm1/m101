@@ -342,7 +342,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
 
       const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
-        .filter((year) => /^\\d{2,4}$/.test(year)).slice(0, 100);
+        .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
       const records = body.recordsByYear || {};
       for (const year of years) {
