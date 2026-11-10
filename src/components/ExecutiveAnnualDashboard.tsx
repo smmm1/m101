@@ -23,7 +23,7 @@ interface ExecutiveAnnualDashboardProps {
 const TASK_CATEGORIES = [
   { code: 'PND51', label: 'ภ.ง.ด.51', description: 'ภาษีเงินได้นิติบุคคลครึ่งปี' },
   { code: 'AGM', label: 'ประชุมใหญ่', description: 'ประชุมสามัญผู้ถือหุ้นประจำปี' },
-  { code: 'SBCH3', label: 'บอจ.5', description: 'บัญชีรายชื่อผู้ถือหุ้น' },
+  { code: 'SBCH3', label: 'บอจ.5', description: 'นำส่งบัญชีรายชื่อผู้ถือหุ้น' },
   { code: 'PND50', label: 'ภ.ง.ด.50', description: 'ภาษีเงินได้นิติบุคคลประจำปี' },
   { code: 'DBD_FS', label: 'ส.บช.3', description: 'นำส่งงบการเงินต่อกรมพัฒนาธุรกิจการค้า' },
 ] as const;
