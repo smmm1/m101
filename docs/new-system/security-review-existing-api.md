@@ -100,3 +100,23 @@ No encryption implementation or credential migration is included in this branch 
 
 
 Collaboration architecture is specified in `docs/new-system/team-access-model.md`. It separates workspace security boundaries, business relationship groups, and business assignments. It uses one owner and equal collaborators without member ranks. The design is additive and is not yet implemented.
+
+
+## Workspace authorization implementation on the feature branch
+
+The feature branch now contains an initial runtime authorization cutover in `functions/api/[[path]].ts`:
+
+- Money102 authentication verifies identity only. An authenticated email that has no existing M101 user row is no longer auto-provisioned into M101; it receives an invitation-required response.
+- Existing M101 users must have an active membership in an active workspace before password login or PIN login can issue a session.
+- PIN setup/status also require active workspace membership; PIN is not an alternate membership grant.
+- Directory reads/writes are scoped to the active workspace's `workspace_directory_year_data` table. Until the collaborator record-filter/merge workflow is implemented, directory APIs deliberately allow only the Owner rather than returning the whole workspace directory to collaborators.
+- Annual-task reads are scoped to the workspace and, for collaborators, to explicitly assigned business IDs. Create/update/delete checks enforce the same business assignment boundary.
+- Annual-task writes now populate `workspace_id`; legacy rows are associated by migration `0005`.
+- Legacy `directory_year_data` remains untouched by the new API path so the migration's copied workspace snapshots are the new path while rollback data remains available.
+
+### Not yet implemented / rollout blockers
+
+- Owner-issued invitation creation, acceptance, revocation, and UI are not yet implemented. New M101 users therefore cannot join yet.
+- Collaborator directory read/write with safe assigned-record filtering and merge is not yet enabled; collaborators receive a deliberate denial for directory APIs.
+- Owner business assignment UI/API, credential reveal grants, encryption of existing plaintext business credentials, and persistent audit-event writes are not yet implemented.
+- No Production D1 migration, data write, deployment, or browser runtime test was performed. These changes are only on the feature branch pending CI and review.
