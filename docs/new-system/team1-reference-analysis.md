@@ -6,7 +6,11 @@
 **Reference material:** User-provided full-page HTML/Tailwind source in the conversation  
 **Target:** M101 — https://m101-directory.pages.dev/
 
-## 1. How to use this reference
+## 1. Confirmed role in M101 (Option C)
+
+The user selected the hybrid direction for M101: business management is the foundation, with annual-work and obligation management integrated into the same system. This Team1 reference therefore informs the work-management and executive-dashboard side of M101; it does not define the whole product. Business portfolio, entity profiles, and entity relationships remain equally important parts of the product.
+
+## 2. How to use this reference
 
 Use the supplied Team1 page as a reference for the **information architecture, dashboard content, density, and work-management concepts**.
 
@@ -14,7 +18,7 @@ Do not copy its visual design, branding, colors, spacing, component styling, or 
 
 This source is a reference sample with hard-coded demonstration values. It is not evidence of live Team1 data, validated business rules, or an implementation specification for M101.
 
-## 2. Structure observed in the supplied page
+## 3. Structure observed in the supplied page
 
 ### Application shell
 
@@ -72,7 +76,7 @@ The main dashboard is organized into:
    - Upcoming due work within a defined time window.
    - Clear invitation to open the underlying records.
 
-## 3. Product concepts M101 should evaluate
+## 4. Product concepts M101 should evaluate
 
 ### A. Work is a first-class object
 
@@ -114,7 +118,7 @@ Every KPI, chart, and alert should open the exact set of underlying records used
 
 Overdue and upcoming-work summaries should lead to a filtered work queue, not be decorative banners. Users should be able to identify the entity, work category, due date, responsible person, and next action.
 
-## 4. Important ambiguities in the supplied HTML
+## 5. Important ambiguities in the supplied HTML
 
 The values are illustrative and contain inconsistencies that must not be copied as business logic:
 
@@ -128,7 +132,7 @@ The values are illustrative and contain inconsistencies that must not be copied 
 
 Therefore, treat the page as a UX/content reference only. Do not import its sample numbers or assume its formulas are correct.
 
-## 5. M101 UX translation — Modern Navy, not a clone
+## 6. M101 UX translation — Modern Navy, not a clone
 
 The new M101 design should preserve the useful conceptual hierarchy while creating its own design language:
 
@@ -143,13 +147,13 @@ The new M101 design should preserve the useful conceptual hierarchy while creati
 
 Do not copy the Team1 blue/white styling or its emoji-based icon treatment. Do not reproduce the page's exact card styling.
 
-## 6. Proposed first product workflow to validate
+## 7. Proposed first product workflow to validate
 
 **Executive overview → identify risk → open work queue → update a work item → attach evidence → review history**
 
 This may be the first vertical slice if the user confirms that annual obligations and work tracking are the primary purpose of M101.
 
-## 7. Questions still requiring user decisions
+## 8. Questions still requiring user decisions
 
 1. Is M101 primarily for tracking annual statutory/accounting work, or should it cover broader day-to-day business operations as well?
 2. Are the five categories shown in the reference the initial required work categories, or examples only?
@@ -157,7 +161,7 @@ This may be the first vertical slice if the user confirms that annual obligation
 4. Should tasks support multiple responsible people, or one primary assignee with optional collaborators?
 5. Should users configure deadline rules and reporting periods, or should M101 provide centrally maintained rules?
 
-## 8. Explicit non-decisions
+## 9. Explicit non-decisions
 
 - No decision to copy Team1's visual design.
 - No decision to preserve all existing M101 functions.
