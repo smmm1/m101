@@ -56,6 +56,13 @@ Recommended remediation:
 - Prefer targeted year-level writes or transactional revision checks.
 - Add a backup/recovery test before changing the write contract.
 
+### S4 — Visitor directory query omitted its workspace binding (fixed on this branch)
+
+- The anonymous `GET /api/public/data` query filtered on `workspace_id = ?` but called `.all()` without binding the placeholder.
+- The primary workspace is explicitly bootstrapped by migration `0005_bootstrap_primary_owner_workspace.sql` with the stable ID `m101-primary-workspace`.
+- Fixed on the feature branch by binding that exact primary workspace ID. The visitor response still passes every record through `cleanRecordForVisitor`, which uses an explicit allowlist and blanks tax ID, password, e-Filing code, SSO code, and remarks.
+- This was a query correctness issue; the unbound placeholder did not establish a cross-workspace data disclosure. Runtime behavior has not yet been verified against production D1.
+
 ## Existing protections observed
 
 - Mutating API requests apply same-origin checks.
