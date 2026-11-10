@@ -2124,3 +2124,136 @@ button { -webkit-tap-highlight-color:transparent; }
   .ds-admin-destination.ds-button { min-height: 62px !important; }
   .ds-admin-footer { padding: 9px 14px !important; }
 }
+
+
+/* Dashboard refinement — clearer hierarchy, calmer density, and reliable small-screen layout. */
+.m101-overview {
+  max-width: 1480px !important;
+  gap: 18px !important;
+}
+.m101-overview-header {
+  align-items: center !important;
+  padding: 2px 0 4px !important;
+}
+.m101-overview-header h1 {
+  font-size: clamp(21px, 2vw, 26px) !important;
+  font-weight: 750 !important;
+  letter-spacing: -.04em !important;
+}
+.m101-overview-actions { display: flex; align-items: center; gap: 8px; }
+.m101-overview-actions button {
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+}
+.m101-overview-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+.m101-metric-card {
+  position: relative;
+  min-width: 0;
+  min-height: 116px !important;
+  padding: 17px 18px !important;
+  overflow: hidden;
+  border-radius: 9px !important;
+}
+.m101-metric-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--ds-color-border-strong);
+  content: "";
+}
+.m101-metric-total::before { background: var(--ds-color-primary); }
+.m101-metric-card strong {
+  display: block;
+  margin-top: 9px;
+  font-size: clamp(25px, 2.4vw, 32px) !important;
+  line-height: 1.05;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.04em;
+}
+.m101-metric-foot { display: flex; align-items: center; gap: 6px; margin-top: 9px; font-size: 10px !important; }
+.m101-overview-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, .85fr) !important;
+  gap: 12px !important;
+  align-items: start;
+}
+.m101-overview-panel { min-width: 0; padding: 19px !important; border-radius: 9px !important; }
+.m101-panel-heading { gap: 12px !important; align-items: flex-start !important; }
+.m101-panel-heading h2 { margin-top: 3px !important; font-size: 15px !important; font-weight: 700 !important; letter-spacing: -.015em; }
+.m101-panel-subtitle { margin-top: 4px !important; font-size: 11px !important; }
+.m101-status-total-line { margin-top: 17px !important; font-size: 11px !important; }
+.m101-progress-stack-large { height: 9px !important; margin-top: 9px !important; border-radius: 99px !important; overflow: hidden; }
+.m101-progress-stack-large span { min-width: 0; }
+.m101-status-legend-counts { display: grid !important; gap: 9px !important; margin-top: 14px !important; }
+.m101-status-legend-counts > span { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 10px !important; }
+.m101-status-legend-counts b { color: var(--ds-color-text) !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.m101-category-breakdown { margin-top: 20px !important; padding-top: 16px !important; border-top: 1px solid var(--m101-border); }
+.m101-category-row { margin-top: 13px !important; }
+.m101-category-row-head { font-size: 11px !important; }
+.m101-category-bar { height: 7px !important; border-radius: 99px !important; overflow: hidden; }
+.m101-quick-panel { display: flex; flex-direction: column; }
+.m101-quick-action {
+  min-height: 62px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  border-radius: 0 !important;
+  text-align: left;
+}
+.m101-quick-action:last-child { border-bottom: 0 !important; }
+.m101-quick-action b { color: var(--ds-color-text) !important; font-size: 11px !important; font-weight: 650 !important; }
+.m101-quick-action small { color: var(--ds-color-text-secondary) !important; font-size: 10px !important; }
+.m101-quick-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-primary) !important;
+}
+.m101-quick-arrow { color: var(--ds-color-text-muted) !important; }
+.m101-recent-list { display: flex; flex-direction: column; }
+.m101-recent-row {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) auto 18px !important;
+  align-items: center;
+  gap: 12px !important;
+  min-height: 60px !important;
+  padding: 9px 4px !important;
+  border-bottom: 1px solid var(--m101-border) !important;
+  border-radius: 0 !important;
+  text-align: left;
+}
+.m101-recent-row:last-child { border-bottom: 0 !important; }
+.m101-recent-row:hover { background: var(--ds-color-surface-subtle) !important; }
+.m101-recent-sequence { color: var(--ds-color-text-muted) !important; font-size: 11px !important; font-variant-numeric: tabular-nums; }
+.m101-recent-main { min-width: 0; }
+.m101-recent-main b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px !important; }
+.m101-recent-main small { display: block; margin-top: 3px; color: var(--ds-color-text-secondary) !important; font-size: 10px !important; }
+.m101-recent-status { white-space: nowrap; font-size: 10px !important; }
+.m101-recent-chevron { color: var(--ds-color-text-muted) !important; }
+@media (max-width: 1050px) {
+  .m101-overview-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .m101-quick-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+  .m101-quick-panel > .m101-panel-heading { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .m101-overview { gap: 13px !important; }
+  .m101-overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .m101-metric-card { min-height: 100px !important; padding: 13px 12px 13px 15px !important; }
+  .m101-metric-card strong { font-size: 25px !important; }
+  .m101-overview-panel { padding: 14px !important; }
+  .m101-quick-panel { display: flex; }
+  .m101-recent-row { grid-template-columns: 30px minmax(0, 1fr) auto !important; gap: 8px !important; }
+  .m101-recent-chevron { display: none; }
+  .m101-recent-status { font-size: 9px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m101-overview *, .m101-overview *::before, .m101-overview *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
