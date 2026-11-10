@@ -102,7 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const setSearchQuery = externalOnSearchChange || setLocalSearchQuery;
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
-  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks' | 'annual-summary'>('dashboard');
   const [showNavigationProgress, setShowNavigationProgress] = useState(false);
   const navigationProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -127,7 +127,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
   const commandItems = [
     { id: 'directory', label: 'ทะเบียนกิจการ', hint: 'เปิดรายการกิจการ', icon: 'folder_open', action: () => navigateToTab('directory') },
-    { id: 'dashboard', label: 'ภาพรวม', hint: 'ดูสถิติและสถานะงาน', icon: 'space_dashboard', action: () => navigateToTab('dashboard') },
+    { id: 'dashboard', label: 'ภาพรวม', hint: 'ดูสถิติทะเบียนกิจการ', icon: 'space_dashboard', action: () => navigateToTab('dashboard') },
+    ...(isLoggedIn ? [{ id: 'annual-summary', label: 'สรุปผู้บริหาร · งานประจำปี', hint: 'ติดตามภาษีและกำหนดส่งรายปี', icon: 'assessment', action: () => navigateToTab('annual-summary') }] : []),
     ...(isLoggedIn ? [{ id: 'tasks', label: 'งานประจำปี', hint: 'จัดการงานประจำปี', icon: 'task_alt', action: () => navigateToTab('tasks') }] : []),
     ...(isLoggedIn ? [{ id: 'import', label: 'นำเข้าข้อมูล', hint: 'นำเข้า Excel หรือ CSV', icon: 'file_upload', action: () => navigateToTab('import') }] : []),
     ...(isLoggedIn ? [{ id: 'settings', label: 'ตั้งค่าระบบ', hint: 'การตั้งค่าและสำรองข้อมูล', icon: 'settings', action: () => navigateToTab('settings') }] : []),
@@ -210,7 +211,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const handleOwnerNavigate = (event: Event) => {
       if (!isAdmin) return;
       const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
-      if (tab === 'directory' || tab === 'dashboard' || tab === 'tasks' || tab === 'import' || tab === 'settings') navigateToTab(tab);
+      if (tab === 'directory' || tab === 'dashboard' || tab === 'annual-summary' || tab === 'tasks' || tab === 'import' || tab === 'settings') navigateToTab(tab);
     };
     window.addEventListener('m101:owner-navigate', handleOwnerNavigate);
     return () => window.removeEventListener('m101:owner-navigate', handleOwnerNavigate);
@@ -434,7 +435,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <nav className="m101-sidebar-navigation" aria-label="เมนูหลัก">
           <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-side-link ${activeTab === "dashboard" ? "is-active" : ""}`}><LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span></button>
           <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-side-link ${activeTab === "directory" ? "is-active" : ""}`}><Building2 aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-side-link ${activeTab === "tasks" ? "is-active" : ""}`}><ClipboardList aria-hidden="true" /><span>งานประจำปี</span></button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "annual-summary"} onClick={() => navigateToTab("annual-summary")} className={`m101-side-link ${activeTab === "annual-summary" ? "is-active" : ""}`}><CalendarDays aria-hidden="true" /><span>สรุปงานประจำปี</span></button>}
+          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-side-link ${activeTab === "tasks" ? "is-active" : ""}`}><ClipboardList aria-hidden="true" /><span>จัดการงานประจำปี</span></button>}
           {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-side-link ${activeTab === "import" ? "is-active" : ""}`}><FileSpreadsheet aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
           {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-side-link ${activeTab === "settings" ? "is-active" : ""}`}><Settings aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
         </nav>
@@ -466,7 +468,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือหลัก">
         <div className="m101-page-context">
-          <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
+          <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "annual-summary" ? "สรุปผู้บริหาร · งานประจำปี" : activeTab === "tasks" ? "จัดการงานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
         </div>
         <div className="m101-global-search" role="search">
@@ -986,7 +988,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </article>
             </div>
 
-            {isLoggedIn && <ExecutiveAnnualDashboard selectedYear={selectedYear} onOpenTasks={() => navigateToTab('tasks')} />}
+            
 
             <div className="m101-overview-grid">
               <section className="m101-overview-panel m101-status-panel">
@@ -1050,6 +1052,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </section>
           </section>
+        )}
+
+        {activeTab === 'annual-summary' && isLoggedIn && (
+          <ExecutiveAnnualDashboard selectedYear={selectedYear} onOpenTasks={() => navigateToTab('tasks')} />
         )}
 
         {activeTab === 'tasks' && isLoggedIn && (
