@@ -310,8 +310,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
-      const workspaceState = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(workspaceAccess.workspaceId).first<{ directory_revision: number }>();
+      const workspaceState = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(workspaceAccess.workspaceId).first();
       if (!workspaceState) return json({ error: 'ไม่พบ Workspace ที่ใช้งานอยู่' }, 404);
+      const directoryRevision = Number((workspaceState as { directory_revision?: number }).directory_revision || 1);
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) recordsByYear[String(row.fiscal_year)] = JSON.parse(String(row.records || '[]'));
       const availableYears = Object.keys(recordsByYear);
@@ -319,7 +320,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         recordsByYear['69'] = [];
         availableYears.push('69');
       }
-      return json({ recordsByYear, availableYears, directoryRevision: Number(workspaceState.directory_revision) });
+      return json({ recordsByYear, availableYears, directoryRevision });
     }
 
     if (path === '/api/data' && request.method === 'PUT') {
