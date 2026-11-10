@@ -60,7 +60,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ระบบทะเบียนกิจการ_Backup_Year${selectedYear}_${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = `BusinessRegistry_Backup_Year${selectedYear}_${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -137,7 +137,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, `รอบปี_${selectedYear}`);
-      XLSX.writeFile(wb, `ระบบทะเบียนกิจการ_Data_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `BusinessRegistry_Data_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
       onShowToast(`ส่งออก Excel จำนวน ${records.length} รายการเรียบร้อย`, 'ส่งออกสำเร็จ');
     } catch {
       onShowToast('เกิดข้อผิดพลาดในการส่งออก Excel', 'ข้อผิดพลาด', 'error');
