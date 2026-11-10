@@ -25,7 +25,7 @@ M101 is being redesigned as a new business-management system. This is not a visu
 
 M101 combines two connected capabilities:
 
-1. **Business management foundation:** maintain business entities, their profiles, their relationships, and their own records.
+1. **Business management foundation:** prioritize limited companies and partnerships (ห้างหุ้นส่วน) as the primary supported entity types. Maintain each entity's profile, relationships, and separate records. Other entity types, such as sole proprietors/individual merchants, may be supported where appropriate, but are not equal first-priority targets.
 2. **Work and annual-obligation operations:** plan, assign, monitor, complete, and review recurring and one-off work for those entities, including an executive dashboard similar in information purpose to the supplied Team1 reference.
 
 The two capabilities are parts of one system, not separate products. Business/entity records provide the context for work; work records link back to the relevant entity; portfolio dashboards summarize progress across entities without merging their underlying records.
@@ -35,7 +35,7 @@ The supplied Team1 dashboard is the reference for the annual-work overview conce
 ### Product hierarchy
 
 - **Portfolio layer:** cross-entity overview, relationship context, aggregate metrics, risks, and upcoming work.
-- **Entity layer:** one business profile with its own details, obligations, documents, history, and activity.
+- **Entity layer:** one business profile with its own details, obligations, documents, history, and activity. The initial domain model and UX should fit limited companies and partnerships first, while remaining extensible to other entity types.
 - **Work layer:** an actionable work item with period, category, deadline, assignee, status, evidence, and history.
 - **Administration layer:** workspace configuration, users, permissions, work categories, and deadline rules.
 
@@ -201,11 +201,12 @@ Possible approaches:
 
 ## 11. Decisions required before implementation
 
-1. **Data transition:** preserve/map, clean start, or selective migration?
-2. **Primary users:** only the owner, an internal team, or multiple organizations with separate workspaces?
-3. **First-release priority:** which complete workflow should be delivered first across the business-management and annual-work capabilities?
-4. **Relationship types:** fully user-defined, or a small set of defaults plus custom types?
-5. **Permissions:** single owner initially, or role-based access from the first release?
-6. **Work taxonomy:** are the five Team1 reference categories the initial required categories, or examples only?
+1. **Initial entity coverage:** limited companies and partnerships are the primary target; confirm whether sole proprietors/individual merchants are included in the first release or deferred.
+2. **Data transition:** preserve/map, clean start, or selective migration?
+3. **Primary users:** only the owner, an internal team, or multiple organizations with separate workspaces?
+4. **First-release priority:** which complete workflow should be delivered first across the business-management and annual-work capabilities?
+5. **Relationship types:** fully user-defined, or a small set of defaults plus custom types?
+6. **Permissions:** single owner initially, or role-based access from the first release?
+7. **Work taxonomy:** are the five Team1 reference categories the initial required categories, or examples only?
 
 No old feature is assumed to be carried forward merely because it exists in the current app.
