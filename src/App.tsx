@@ -693,9 +693,9 @@ function AppContent() {
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
-      <main className="min-h-screen bg-[#f8f8f8] text-slate-900">
-        <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
-          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
+      <main className="m101-login-root min-h-screen bg-[#f8f8f8] text-slate-900">
+        <div className="m101-login-layout grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
+          <section className="m101-login-brand relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
             <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
             <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
@@ -745,7 +745,7 @@ function AppContent() {
             </div>
           </section>
 
-          <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
+          <section className="m101-login-panel flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
             <div className="w-full max-w-[420px]">
               <div className="mb-8">
                 <p className="text-xs font-semibold tracking-[0.16em] text-[#686868]">ยินดีต้อนรับกลับ</p>
@@ -753,7 +753,7 @@ function AppContent() {
                 <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
               </div>
 
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
+              <form onSubmit={handleLoginSubmit} className="m101-login-form space-y-5">
                 <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
                   <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
                   <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
