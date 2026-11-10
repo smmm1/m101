@@ -13,10 +13,6 @@ CREATE TABLE IF NOT EXISTS workspaces (
   updated_at TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_owner
-  ON workspaces(owner_user_id)
-  WHERE owner_user_id IS NOT NULL;
-
 CREATE TABLE IF NOT EXISTS workspace_memberships (
   id TEXT PRIMARY KEY,
   workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
