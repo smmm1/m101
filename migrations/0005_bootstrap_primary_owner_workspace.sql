@@ -46,7 +46,7 @@ SELECT
   fiscal_year,
   records,
   1,
-  updated_by,
+  CASE WHEN EXISTS (SELECT 1 FROM users u WHERE u.id = directory_year_data.updated_by) THEN updated_by ELSE NULL END,
   updated_at
 FROM directory_year_data
 WHERE EXISTS (
