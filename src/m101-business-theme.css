@@ -3117,3 +3117,185 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-login-brand > div.relative.z-10 { margin-top: 22px !important; padding: 0 !important; }
   .m101-login-brand > div:last-child { margin-top: 22px !important; }
 }
+
+
+/* System settings — align controls, backup actions and destructive states with Modern Navy. */
+.m101-settings {
+  gap: 17px !important;
+  padding: 4px 2px 28px !important;
+  color: var(--ds-color-text) !important;
+}
+.m101-settings-header {
+  padding: 12px 2px 2px !important;
+}
+.m101-settings-header h1 {
+  color: var(--ds-color-text) !important;
+  font-size: clamp(22px, 2.2vw, 29px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -.035em !important;
+}
+.m101-settings-header p {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 11px !important;
+}
+.m101-settings-grid {
+  width: 100% !important;
+  max-width: 1120px !important;
+  gap: 12px !important;
+}
+.m101-settings-card {
+  min-width: 0 !important;
+  gap: 15px !important;
+  padding: 18px !important;
+  border: 1px solid var(--m101-border) !important;
+  border-radius: 8px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: none !important;
+}
+.m101-settings-card > div:first-child {
+  gap: 11px !important;
+  padding-bottom: 12px !important;
+  border-color: var(--m101-border) !important;
+}
+.m101-settings-card > div:first-child > div:first-child {
+  width: 36px !important;
+  height: 36px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-primary-soft) !important;
+  color: var(--ds-color-primary) !important;
+}
+.m101-settings-card > div:first-child h3 {
+  color: var(--ds-color-text) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+.m101-settings-card > div:first-child p {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+}
+.m101-settings-card label {
+  color: var(--ds-color-text) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+}
+.m101-settings-card input:not([type="range"]):not([type="file"]) {
+  min-height: 37px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+.m101-settings-card input:focus-visible {
+  outline: 2px solid var(--ds-color-primary) !important;
+  outline-offset: 1px !important;
+}
+.m101-settings-card button:not(.ds-button) {
+  font-size: 11px !important;
+}
+.m101-settings-card .ds-button {
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+}
+.m101-settings-card .ds-settings-action {
+  justify-content: space-between !important;
+  min-height: 42px !important;
+  padding: 7px 11px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface) !important;
+  color: var(--ds-color-text) !important;
+}
+.m101-settings-card .ds-settings-action:hover {
+  border-color: var(--ds-color-primary) !important;
+  background: var(--ds-color-primary-soft) !important;
+}
+.m101-settings-card .ds-settings-action > div { gap: 9px !important; }
+.m101-settings-card .ds-settings-action .material-symbols-outlined {
+  color: var(--ds-color-primary) !important;
+  font-size: 17px !important;
+}
+.m101-settings-security-note {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  padding: 10px 11px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 6px !important;
+  background: var(--ds-color-surface-subtle) !important;
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  line-height: 1.6 !important;
+}
+.m101-settings-security-note .material-symbols-outlined {
+  flex: 0 0 auto !important;
+  color: var(--ds-color-primary) !important;
+  font-size: 16px !important;
+}
+.m101-settings-dataset .m101-dataset-option {
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 7px !important;
+  background: var(--ds-color-surface) !important;
+}
+.m101-settings-dataset .m101-dataset-option h4 {
+  color: var(--ds-color-text) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+.m101-settings-dataset .m101-dataset-option p {
+  color: var(--ds-color-text-secondary) !important;
+  font-size: 10px !important;
+  line-height: 1.55 !important;
+}
+.m101-settings-dataset .m101-dataset-danger {
+  border-color: color-mix(in srgb, var(--ds-color-danger) 28%, var(--ds-color-border)) !important;
+  background: color-mix(in srgb, var(--ds-color-danger-soft) 24%, var(--ds-color-surface)) !important;
+}
+.m101-settings-dataset .m101-dataset-danger h4 { color: var(--ds-color-danger) !important; }
+.m101-auth-status {
+  background: var(--ds-color-surface-subtle) !important;
+}
+.m101-auth-status h4 { color: var(--ds-color-text) !important; }
+.m101-auth-status p { color: var(--ds-color-text-secondary) !important; }
+.m101-settings-confirm {
+  padding: 16px !important;
+  background: rgba(10, 24, 40, .58) !important;
+  backdrop-filter: blur(3px) !important;
+}
+.m101-settings-confirm > div {
+  max-width: 420px !important;
+  gap: 15px !important;
+  padding: 20px !important;
+  border: 1px solid var(--ds-color-border) !important;
+  border-radius: 9px !important;
+  background: var(--ds-color-surface) !important;
+  box-shadow: var(--ds-shadow-dialog) !important;
+}
+.m101-settings-confirm h4 { color: var(--ds-color-text) !important; font-size: 15px !important; }
+.m101-settings-confirm p { color: var(--ds-color-text-secondary) !important; font-size: 11px !important; line-height: 1.65 !important; }
+.m101-settings-confirm .ds-button {
+  min-height: 35px !important;
+  padding: 0 11px !important;
+  border-radius: 6px !important;
+  font-size: 10px !important;
+  box-shadow: none !important;
+}
+@media (max-width: 760px) {
+  .m101-settings { gap: 13px !important; padding: 0 0 22px !important; }
+  .m101-settings-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  .m101-settings-card { padding: 14px !important; gap: 13px !important; }
+  .m101-settings-dataset { grid-column: auto !important; }
+  .m101-settings-dataset > div:last-child { grid-template-columns: minmax(0, 1fr) !important; }
+  .m101-settings-dataset .m101-auth-status { grid-column: auto !important; }
+  .m101-settings-security-note { font-size: 9px !important; }
+  .m101-settings-confirm > div { padding: 16px !important; }
+}
