@@ -73,7 +73,8 @@ function AppContent() {
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const directoryRevisionRef = React.useRef(0);
   const skipNextAutosaveRef = React.useRef(false);
-  const [conflictLocalSnapshot, setConflictLocalSnapshot] = useState<{ recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; revision: number } | null>(null);
+  const savedSnapshotRef = React.useRef<{ recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[] }>({ recordsByYear: { '69': [] }, availableYears: ['69'] });
+  const [conflictLocalSnapshot, setConflictLocalSnapshot] = useState<{ recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; changedYears: string[]; revision: number } | null>(null);
   type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
   const undoStackRef = React.useRef<UndoSnapshot[]>([]);
   const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -238,6 +239,7 @@ function AppContent() {
         const years = Array.isArray(payload.availableYears) && payload.availableYears.length
           ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
           : Object.keys(nextRecords);
+        savedSnapshotRef.current = { recordsByYear: JSON.parse(JSON.stringify(nextRecords)) as Record<string, BusinessRecord[]>, availableYears: [...(years.length ? years : ['69'])] };
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
         undoStackRef.current = [];
@@ -309,9 +311,16 @@ function AppContent() {
           });
           const payload = await response.json();
           if (response.status === 409) {
+            const changedYears = Array.from(new Set([
+              ...Object.keys(savedSnapshotRef.current.recordsByYear),
+              ...Object.keys(recordsByYear),
+              ...savedSnapshotRef.current.availableYears,
+              ...availableYears,
+            ])).filter((year) => JSON.stringify(savedSnapshotRef.current.recordsByYear[year] || []) !== JSON.stringify(recordsByYear[year] || []) || savedSnapshotRef.current.availableYears.includes(year) !== availableYears.includes(year));
             setConflictLocalSnapshot({
               recordsByYear: JSON.parse(JSON.stringify(recordsByYear)) as Record<string, BusinessRecord[]>,
               availableYears: [...availableYears],
+              changedYears,
               revision: directoryRevisionRef.current,
             });
             pendingDatabaseWriteRef.current = false;
@@ -320,6 +329,7 @@ function AppContent() {
           }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
           if (Number.isInteger(payload.revision)) directoryRevisionRef.current = payload.revision;
+          savedSnapshotRef.current = { recordsByYear: JSON.parse(JSON.stringify(recordsByYear)) as Record<string, BusinessRecord[]>, availableYears: [...availableYears] };
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
@@ -402,6 +412,7 @@ function AppContent() {
         : Object.keys(latestRecords);
       directoryRevisionRef.current = Number.isInteger(payload.revision) ? payload.revision : 0;
       skipNextAutosaveRef.current = true;
+      savedSnapshotRef.current = { recordsByYear: JSON.parse(JSON.stringify(latestRecords)) as Record<string, BusinessRecord[]>, availableYears: [...(latestYears.length ? latestYears : ['69'])] };
       setRecordsByYear(latestRecords);
       setAvailableYears(latestYears.length ? latestYears : ['69']);
       setSelectedYear((current) => latestYears.includes(current) ? current : (latestYears[0] || '69'));
@@ -942,9 +953,7 @@ function AppContent() {
             <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
               <p className="text-xs font-semibold text-amber-900">ชุดข้อมูลที่ยังไม่ได้บันทึก</p>
               <ul className="mt-2 space-y-1.5 text-sm text-slate-800">
-                {Array.from(new Set([...Object.keys(conflictLocalSnapshot.recordsByYear), ...Object.keys(recordsByYear), ...conflictLocalSnapshot.availableYears, ...availableYears]))
-                  .filter((year) => JSON.stringify(conflictLocalSnapshot.recordsByYear[year] || []) !== JSON.stringify(recordsByYear[year] || []) || conflictLocalSnapshot.availableYears.includes(year) !== availableYears.includes(year))
-                  .map((year) => (
+                {(conflictLocalSnapshot.changedYears.length ? conflictLocalSnapshot.changedYears : conflictLocalSnapshot.availableYears).map((year) => (
                     <li key={year} className="flex items-center justify-between gap-3">
                       <span>รอบปีบัญชี {year}</span>
                       <span className="text-xs text-amber-800">{(conflictLocalSnapshot.recordsByYear[year] || []).length} รายการในฉบับของคุณ</span>
