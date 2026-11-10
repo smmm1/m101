@@ -31,6 +31,7 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
   const [topic, setTopic] = useState('');
   const [status, setStatus] = useState<BusinessStatus>('pending');
   const [formError, setFormError] = useState<string>('');
+  const [showCredentialFields, setShowCredentialFields] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,20 +177,36 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
           {/* Password & Auditor Date */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label className="ds-label">
                   รหัสผ่าน / e-Filing <span className="text-zinc-500">*</span>
                 </label>
-                <DSButton
-                  type="button"
-                  onClick={() => setPassword(generateRandomPassword(8))}
-                  variant="ghost" className="text-xs"
-                >
-                  สุ่มรหัส
-                </DSButton>
+                <div className="flex items-center gap-1">
+                  <DSButton
+                    type="button"
+                    onClick={() => setShowCredentialFields((visible) => !visible)}
+                    variant="ghost"
+                    className="text-xs"
+                    aria-label={showCredentialFields ? 'ซ่อนรหัสลับ' : 'แสดงรหัสลับ'}
+                    aria-pressed={showCredentialFields}
+                  >
+                    <span className="material-symbols-outlined text-[15px] mr-1">
+                      {showCredentialFields ? 'visibility_off' : 'visibility'}
+                    </span>
+                    {showCredentialFields ? 'ซ่อน' : 'แสดง'}
+                  </DSButton>
+                  <DSButton
+                    type="button"
+                    onClick={() => setPassword(generateRandomPassword(8))}
+                    variant="ghost" className="text-xs"
+                  >
+                    สุ่มรหัส
+                  </DSButton>
+                </div>
               </div>
               <DSInput
-                type="text"
+                type={showCredentialFields ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 ds-field ds-field--mono"
@@ -213,7 +230,8 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             <div>
               <label className="ds-label">รหัสยื่น e-Filing</label>
               <DSInput
-                type="text"
+                type={showCredentialFields ? 'text' : 'password'}
+                autoComplete="off"
                 value={eFilingCode}
                 onChange={(e) => setEFilingCode(e.target.value)}
                 placeholder="DBD-EF-xxxx"
@@ -223,7 +241,8 @@ export const AddBusinessModal: React.FC<AddBusinessModalProps> = ({
             <div>
               <label className="ds-label">รหัสประกันสังคม</label>
               <DSInput
-                type="text"
+                type={showCredentialFields ? 'text' : 'password'}
+                autoComplete="off"
                 value={ssoCode}
                 onChange={(e) => setSsoCode(e.target.value)}
                 placeholder="1055xxxx"
