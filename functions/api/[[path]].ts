@@ -1,4 +1,4 @@
-type Env = { DB: any; MONEY102_AUTH: Fetcher };
+type Env = { DB: any; MONEY102_AUTH: { fetch(request: Request): Promise<Response> } };
 type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
 
 const COOKIE_NAME = 'm101_session';
@@ -313,7 +313,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       const existing = await env.DB.prepare('SELECT fiscal_year FROM directory_year_data').all();
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
-      const statements = years.map((year) => env.DB.prepare(
+      const statements = years.map((year: string) => env.DB.prepare(
         'INSERT INTO directory_year_data (fiscal_year, records, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(fiscal_year) DO UPDATE SET records = excluded.records, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
       ).bind(year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, new Date().toISOString()));
       for (const removed of existingYears.filter((year) => !years.includes(year))) {
