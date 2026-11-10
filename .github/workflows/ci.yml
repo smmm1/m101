@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - staging/m101-pr25-foundation
   push:
     branches:
       - main
@@ -40,6 +41,9 @@ jobs:
         run: |
           npm install --package-lock-only --ignore-scripts --no-audit
           npm audit --audit-level=high
+      - name: Verify directory conflict compare-and-swap behavior
+        run: python3 tests/conflict-guard.test.py
+
       - name: Type-check
         run: npm run lint
 
