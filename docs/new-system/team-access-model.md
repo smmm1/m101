@@ -156,3 +156,16 @@ Rollback: disable the new workspace-scoped API path and restore the verified D1 
 - Owner-only actions (invites, removals, assignments, workspace settings and workspace-wide destructive operations) reject collaborator requests server-side.
 - Removing or suspending a membership immediately blocks subsequent requests, including existing sessions.
 - Cross-workspace identifiers cannot be used to read or mutate another workspace's data.
+
+
+## Confirmed initial Owner mapping
+
+The workspace owner supplied `s2mtha16@gmail.com` as the existing M101 account to use for the first Owner. A read-only query against the configured M101 D1 database found exactly one matching row:
+
+- M101 user ID: `x8wLRj5Iw1zqsyWnMrF65w`
+- Email: `s2mtha16@gmail.com`
+- Legacy role label: `admin` (legacy technical value only; not used as the new authorization model)
+
+Migration `0005_bootstrap_primary_owner_workspace.sql` now seeds `m101-primary-workspace` and its Owner membership only when both the exact user ID and email match. It copies legacy directory snapshots into the new workspace table and associates annual tasks with that workspace, while preserving all legacy directory/task rows. It also guards legacy `updated_by` values against missing user references.
+
+**Important:** this migration exists only on the feature branch and has not been applied to Production. No Production rows have been inserted or modified. API enforcement, invitation workflows, assignment-scoped access, and credential encryption remain separate implementation steps.
