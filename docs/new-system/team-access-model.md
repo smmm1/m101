@@ -127,3 +127,32 @@ This must be closed as part of the authorization rollout. Do not hot-change logi
 - CI runs `wrangler d1 migrations apply m101_db --local` to validate the full migration chain against a temporary local D1 database.
 - No production migration has been applied. No workspace or owner has been seeded. Existing directory and annual-task data remain on the legacy API/storage paths.
 - Runtime authorization, invitations, member assignment UI, credential encryption, and legacy data backfill are not implemented yet.
+
+
+## Owner bootstrap and legacy-account cutover
+
+The first Owner must be the existing M101 account explicitly confirmed by the workspace owner. Do not infer ownership from the legacy `users.role = 'admin'` value: that value predates the product's Owner/Collaborator model and is not proof of identity or authority.
+
+Before creating the first workspace:
+
+1. Confirm the exact email address of the existing M101 account with the human workspace owner. Never ask for or store their Money102 password as part of this process.
+2. Verify that the email resolves to exactly one existing M101 `users` row. If it does not, stop and investigate; do not create a duplicate account.
+3. Take and verify a D1 backup. Record the current row counts and fiscal years in `directory_year_data` and `annual_tasks`.
+4. Create the workspace and its single active Owner membership in one D1 batch/transaction, referencing that exact existing user ID.
+5. Associate the existing directory and annual-task data with the new workspace using a reviewed, reversible backfill. Preserve source rows until verification is complete.
+6. Verify that the Owner can still log in and see every legacy business and annual task before enabling collaborator access.
+7. Only then enable invitation acceptance and assignment-scoped reads/writes. A valid Money102 login alone must never grant M101 membership.
+
+Rollback: disable the new workspace-scoped API path and restore the verified D1 backup if validation fails. Do not delete the legacy directory table or legacy task rows during initial rollout.
+
+## Access-control acceptance checks before enabling collaborators
+
+- A valid Money102 identity with no active M101 membership and no valid invitation is denied.
+- An invitation is single-use, expires, is stored only as a token hash, and is bound to the invited email.
+- PIN login authenticates the same M101 user but never creates or expands workspace membership.
+- A collaborator can read and mutate only assigned business records and annual tasks belonging to those businesses.
+- Relationship-group membership does not grant access to a business.
+- A credential grant is required for credential reveal and every reveal is audited.
+- Owner-only actions (invites, removals, assignments, workspace settings and workspace-wide destructive operations) reject collaborator requests server-side.
+- Removing or suspending a membership immediately blocks subsequent requests, including existing sessions.
+- Cross-workspace identifiers cannot be used to read or mutate another workspace's data.
