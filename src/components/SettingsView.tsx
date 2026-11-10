@@ -41,12 +41,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // System form state
-  const [appName, setAppName] = useState(config.appName || 'SchoolHub');
+  const [appName, setAppName] = useState(config.appName || 'ระบบทะเบียนกิจการ');
   const [appTagline, setAppTagline] = useState(config.appTagline || 'ระบบบริหารจัดการทะเบียนข้อมูลและสถานประกอบการ');
 
   const handleSaveConfig = () => {
     updateConfig({
-      appName: appName.trim() || 'SchoolHub',
+      appName: appName.trim() || 'ระบบทะเบียนกิจการ',
       appTagline: appTagline.trim() || 'ระบบบริหารจัดการทะเบียนข้อมูลและสถานประกอบการ',
     });
     onShowToast('บันทึกการตั้งค่าเรียบร้อยแล้ว', 'บันทึกสำเร็จ');
@@ -60,7 +60,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `SchoolHub_Backup_Year${selectedYear}_${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = `ระบบทะเบียนกิจการ_Backup_Year${selectedYear}_${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -137,7 +137,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, `รอบปี_${selectedYear}`);
-      XLSX.writeFile(wb, `SchoolHub_Data_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `ระบบทะเบียนกิจการ_Data_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
       onShowToast(`ส่งออก Excel จำนวน ${records.length} รายการเรียบร้อย`, 'ส่งออกสำเร็จ');
     } catch {
       onShowToast('เกิดข้อผิดพลาดในการส่งออก Excel', 'ข้อผิดพลาด', 'error');
@@ -179,7 +179,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
-                placeholder="SchoolHub"
+                placeholder="ระบบทะเบียนกิจการ"
                 disabled={!isLoggedIn || !isAdmin}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50"
               />
