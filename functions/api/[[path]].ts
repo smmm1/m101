@@ -562,7 +562,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const body = await request.json() as { email?: string; expiresInHours?: number };
       const email = String(body.email || '').trim().toLowerCase();
       const expiresInHours = Number(body.expiresInHours ?? 72);
-      if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json({ error: 'อีเมลไม่ถูกต้อง' }, 400);
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'อีเมลไม่ถูกต้อง' }, 400);
       if (!Number.isInteger(expiresInHours) || expiresInHours < 1 || expiresInHours > 168) return json({ error: 'อายุคำเชิญต้องอยู่ระหว่าง 1–168 ชั่วโมง' }, 400);
       const existing = await env.DB.prepare("SELECT wm.id FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND lower(u.email) = ? AND wm.status = 'active'").bind(access.workspaceId, email).first();
       if (existing) return json({ error: 'อีเมลนี้เป็นสมาชิก Workspace อยู่แล้ว' }, 409);
