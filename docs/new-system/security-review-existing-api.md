@@ -34,13 +34,14 @@ Do not deploy an encryption change until the secret/key provisioning and migrati
 - The inspected directory and annual-task routes call `requireUser`, but do not enforce an admin/owner role or per-resource permissions.
 - The directory is stored as shared D1 data, not partitioned by user or group.
 
-Impact: a later valid Money102 account that is provisioned as an M101 member can reach the same shared directory data and write endpoints. The role value alone does not restrict access in these routes.
+Impact: every previously unseen, valid Money102 email is automatically provisioned as an M101 member. That account can then reach the same shared directory data and write endpoints because the routes only check session presence. This is effectively open enrollment for anyone with a valid Money102 account, not invitation-based team access.
 
 Recommended remediation (before enabling team collaboration):
 1. Define explicit owner-only and team modes, including who can read, create, edit, delete, import, export, and reveal sensitive fields.
 2. Enforce authorization server-side on every API route; hiding UI controls is not authorization.
-3. Add automated tests for anonymous, owner, member, and unauthorized cross-group requests.
-4. Preserve current owner access and existing D1 records during rollout.
+3. Use workspace tenancy, invitation-only membership, explicit group-scoped access grants, and separate credential-reveal permission.
+4. Add automated tests for anonymous, uninvited, owner, admin, editor, viewer, out-of-scope, and cross-workspace requests.
+5. Preserve current owner access and existing D1 records during rollout.
 
 ### S3 — Directory writes replace the full submitted year set
 
@@ -100,3 +101,6 @@ Because business credentials must be recoverable for legitimate use, password ha
 6. Test export/import, backup restore, key rotation, and rollback before production rollout.
 
 No encryption implementation or credential migration is included in this branch yet.
+
+
+Team-mode architecture is specified in `docs/new-system/team-access-model.md`. It separates workspace security boundaries from user-defined business relationship groups and access groups. The design is additive and is not yet implemented.
