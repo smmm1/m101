@@ -76,19 +76,15 @@ Recommended remediation:
 
 The current `admin` and `member` roles do not encode a confirmed product policy. Do not silently assume that every member should be read-only, or that every M101 user should see all businesses.
 
-Proposed policy for owner-only mode:
-- Admin/owner: read and write all directory and annual-task data; manage users/settings; reveal sensitive credentials only through a separately protected action.
-- Member: no access until explicitly invited and assigned a scope.
-- Visitor: public allowlist only, with all tax identifiers and credentials redacted.
-
-Proposed policy for team mode (requires user confirmation):
-- Team owner: manage membership and permissions.
-- Team editor: create/update records and annual tasks within assigned groups.
-- Team viewer: read only within assigned groups.
-- Sensitive credential reveal: separate permission from ordinary record read.
-- Cross-group access: deny by default; relationships between businesses do not automatically grant access to each other's records.
-
-Before implementation, decide whether M101 should launch in owner-only mode first, or support team mode immediately. Also define whether the existing first `admin` is the permanent owner or merely the initial account administrator.
+Confirmed collaboration direction:
+- M101 has one accountable workspace owner.
+- Future users join only by owner-issued invitation; there are no Admin, Editor, or Viewer ranks.
+- All invited collaborators have equal baseline read/write permissions for businesses and annual tasks assigned to them.
+- The owner alone manages invitations, membership, business assignments, workspace settings, and ownership transfer.
+- Collaborators cannot access unassigned businesses. Business relationship groups do not grant access by themselves.
+- Sensitive credential reveal requires a separate business-specific grant and is audited. Workspace-wide destructive actions remain owner-only.
+- The existing first `admin` role is only a legacy technical label; do not assume it identifies the intended owner until the current owner account is explicitly confirmed.
+- PIN login authenticates an identity but never bypasses membership or business assignment checks.
 
 ## Credential protection design
 
@@ -103,4 +99,4 @@ Because business credentials must be recoverable for legitimate use, password ha
 No encryption implementation or credential migration is included in this branch yet.
 
 
-Team-mode architecture is specified in `docs/new-system/team-access-model.md`. It separates workspace security boundaries from user-defined business relationship groups and access groups. The design is additive and is not yet implemented.
+Collaboration architecture is specified in `docs/new-system/team-access-model.md`. It separates workspace security boundaries, business relationship groups, and business assignments. It uses one owner and equal collaborators without member ranks. The design is additive and is not yet implemented.
