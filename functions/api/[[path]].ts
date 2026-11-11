@@ -141,6 +141,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
   try {
     if (path === '/api/health' && request.method === 'GET') {
+      await env.DB.prepare('SELECT 1 AS ok').first();
       return json({ ok: true, database: 'connected' });
     }
 
