@@ -147,7 +147,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const now = new Date().toISOString();
       const encoded = await hashPassword(password);
       const statements = await env.DB.batch([
-        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, 'Owner', 'admin', ?, ?, ?, ?, 'active')").bind(ownerId, 's2mtha16@gmail.com', encoded.hash, encoded.salt, now, username),
+        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, 'Owner', 'admin', ?, ?, ?, ?, 'active')").bind(ownerId, `${username.toLowerCase()}@m101.local`, encoded.hash, encoded.salt, now, username),
         env.DB.prepare("INSERT INTO workspaces (id, name, owner_user_id, status, created_at, updated_at) VALUES (?, 'M101 Workspace', ?, 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
         env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES ('m101-primary-owner-membership', ?, ?, 'owner', 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
         env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, '69', '[]', 1, ?, ?)").bind(workspaceId, ownerId, now),
