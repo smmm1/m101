@@ -136,7 +136,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
-      const body = await request.json() as { username?: string; password?: string; bootstrapKey?: string };
+      const body = await request.json() as { username?: string; password?: string; passwordConfirm?: string; bootstrapKey?: string };
       if (!env.M101_BOOTSTRAP_KEY) return json({ error: 'ระบบยังไม่ได้เปิดการตั้งค่า Owner ครั้งแรก' }, 503);
       const nowSeconds = Math.floor(Date.now() / 1000);
       await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempted_at <= ?').bind(nowSeconds - 15 * 60).run();
@@ -152,6 +152,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const password = String(body.password || '');
       if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
       if (password.length < 14 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 14 ตัวอักษร' }, 400);
+      if (password !== String(body.passwordConfirm || '')) return json({ error: 'รหัสผ่านทั้งสองช่องไม่ตรงกัน' }, 400);
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
       const userCount = Number(existing?.count || 0);
       const now = new Date().toISOString();
