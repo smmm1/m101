@@ -528,9 +528,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const id = randomToken(18);
       const now = new Date().toISOString();
       try {
-        await env.DB.prepare(
-          'INSERT INTO annual_tasks (id, workspace_id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, workspaceAccess.workspaceId, fiscalYear, businessId, business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now).run();
+        const inserted = await env.DB.prepare(
+          "INSERT INTO annual_tasks (id, workspace_id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.business_id = ? AND ba.user_id = ?))"
+        ).bind(id, workspaceAccess.workspaceId, fiscalYear, businessId, business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now, user.id, workspaceAccess.workspaceId, workspaceAccess.membershipType, workspaceAccess.membershipType, workspaceAccess.workspaceId, businessId, user.id).run();
+        if (Number(inserted.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Workspace หรือการมอบหมายกิจการเปลี่ยนแปลงระหว่างดำเนินการ กรุณารีเฟรชแล้วลองใหม่' }, 403);
       } catch (error) {
         const existing = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ?').bind(fiscalYear, businessId, taskCode).first();
         if (existing) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
@@ -575,8 +576,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       let result;
       try {
         result = await env.DB.prepare(
-          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?'
-        ).bind(business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId).run();
+          "UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?))"
+        ).bind(business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId, user.id, workspaceAccess.workspaceId, workspaceAccess.membershipType, workspaceAccess.membershipType, workspaceAccess.workspaceId, user.id).run();
       } catch (error) {
         const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, workspaceAccess.workspaceId).first() as { fiscal_year?: string; business_id?: string } | null;
         if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
@@ -602,8 +603,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
           .bind(workspaceAccess.workspaceId, String(task.business_id || ''), user.id).first();
         if (!assigned) return json({ error: 'คุณไม่มีสิทธิ์ลบงานของกิจการนี้' }, 403);
       }
-      const result = await env.DB.prepare('DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], workspaceAccess.workspaceId).run();
-      if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      const result = await env.DB.prepare(
+        "DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?))"
+      ).bind(annualTaskMatch[1], workspaceAccess.workspaceId, user.id, workspaceAccess.workspaceId, workspaceAccess.membershipType, workspaceAccess.membershipType, workspaceAccess.workspaceId, user.id).run();
+      if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้ หรือสิทธิ์ Workspace/การมอบหมายเปลี่ยนแปลงระหว่างดำเนินการ' }, 404);
       return json({ ok: true });
     }
 
@@ -633,10 +636,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const existing = await env.DB.prepare('SELECT id FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?').bind(access.workspaceId, businessId, userId).first();
       if (existing) return json({ ok: true, alreadyAssigned: true });
       const id = randomToken(18), now = new Date().toISOString();
-      await env.DB.batch([
-        env.DB.prepare('INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, access.workspaceId, businessId, userId, access.user.id, now),
-        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.created', 'business_assignment', id, JSON.stringify({ businessId, collaboratorUserId: userId }), now)
+      const results = await env.DB.batch([
+        env.DB.prepare("INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active') AND EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces owner_workspace ON owner_workspace.id = owner_membership.workspace_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND owner_workspace.status = 'active')").bind(id, access.workspaceId, businessId, userId, access.user.id, now, access.workspaceId, userId, access.workspaceId, access.user.id),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM business_assignments WHERE id = ?)").bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.created', 'business_assignment', id, JSON.stringify({ businessId, collaboratorUserId: userId }), now, id)
       ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สมาชิกหรือสิทธิ์ Owner เปลี่ยนแปลงระหว่างดำเนินการ กรุณารีเฟรชแล้วลองใหม่' }, 409);
       return json({ ok: true, id }, 201);
     }
 
@@ -649,10 +653,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const assignment = await env.DB.prepare('SELECT business_id, user_id FROM business_assignments WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string; user_id?: string } | null;
       if (!assignment) return json({ error: 'ไม่พบรายการมอบหมายนี้' }, 404);
       const now = new Date().toISOString();
-      await env.DB.batch([
-        env.DB.prepare('DELETE FROM business_assignments WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId),
-        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.revoked', 'business_assignment', id, JSON.stringify({ businessId: assignment.business_id || '', collaboratorUserId: assignment.user_id || '' }), now)
+      const results = await env.DB.batch([
+        env.DB.prepare("DELETE FROM business_assignments WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')").bind(id, access.workspaceId, access.user.id, access.workspaceId),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1").bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.revoked', 'business_assignment', id, JSON.stringify({ businessId: assignment.business_id || '', collaboratorUserId: assignment.user_id || '' }), now)
       ]);
+      if (!results[0]?.meta?.changes) return json({ error: 'ไม่พบรายการมอบหมายนี้ หรือสิทธิ์ Owner เปลี่ยนแปลงแล้ว' }, 404);
       return json({ ok: true });
     }
 
