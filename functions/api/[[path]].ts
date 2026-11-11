@@ -1,5 +1,5 @@
 type Env = { DB: any; M101_BOOTSTRAP_KEY?: string };
-type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
+type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -98,26 +98,6 @@ async function requireUser(request: Request, env: Env) {
   return user;
 }
 
-function cleanRecordForVisitor(record: Record<string, unknown>) {
-  // Public/visitor mode is an explicit allowlist. Never spread private record fields.
-  return {
-    id: String(record.id || ''),
-    sequenceNo: String(record.sequenceNo || ''),
-    taxId: '',
-    companyName: String(record.companyName || ''),
-    type: record.type,
-    auditorDate: String(record.auditorDate || ''),
-    password: '',
-    remark: '',
-    eFilingCode: '',
-    ssoCode: '',
-    status: record.status,
-    isVerifiedDbd: Boolean(record.isVerifiedDbd),
-    createdAt: String(record.createdAt || ''),
-    updatedAt: String(record.updatedAt || ''),
-  };
-}
-
 function isSameOriginMutation(request: Request, url: URL) {
   const origin = request.headers.get('Origin');
   if (origin && origin !== url.origin) return false;
@@ -187,6 +167,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!username || username.length > 32 || !password || password.length > 1024) return json({ error: 'กรุณากรอก ID และรหัสผ่าน' }, 400);
 
       const now = Math.floor(Date.now() / 1000);
+      // Keep the rate-limit table bounded by removing expired attempts as requests arrive.
+      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempted_at <= ?').bind(now - 15 * 60).run();
       const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
       const attemptKey = await digest(`${clientIp}:${username.toLowerCase()}`);
       const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM password_login_attempts WHERE attempt_key = ? AND attempted_at > ?')
