@@ -20,7 +20,7 @@ import { initCuteClickSound } from './utils/cuteAudio';
 import { SmartIdleScreen } from './components/SmartIdleScreen';
 import { AdminControlCenter } from './components/AdminControlCenter';
 
-interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
+interface SessionUser { id: string; username: string; role: 'admin' | 'member' }
 
 function WorkspaceLoadingSkeleton({ label = 'กำลังโหลดข้อมูล…' }: { label?: string }) {
   return (
@@ -51,10 +51,17 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [bootstrapRequired, setBootstrapRequired] = useState(false);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [bootstrapKey, setBootstrapKey] = useState('');
+  const [bootstrapUsername, setBootstrapUsername] = useState('owner');
+  const [bootstrapPassword, setBootstrapPassword] = useState('');
+  const [bootstrapError, setBootstrapError] = useState('');
+  const [bootstrapBusy, setBootstrapBusy] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [authEmail, setAuthEmail] = useState('');
+  const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [authMode, setAuthMode] = useState<'password' | 'pin'>('password');
@@ -177,6 +184,12 @@ function AppContent() {
     let active = true;
     const initialize = async () => {
       try {
+        const bootstrapResponse = await fetch('/api/auth/bootstrap-status', { credentials: 'same-origin' });
+        if (!bootstrapResponse.ok) throw new Error('Cloudflare API is unavailable');
+        const bootstrapStatus = await bootstrapResponse.json();
+        if (!active) return;
+        setBootstrapRequired(Boolean(bootstrapStatus.needsBootstrap));
+        setBootstrapReady(Boolean(bootstrapStatus.bootstrapReady));
         const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
@@ -255,7 +268,7 @@ function AppContent() {
         setLoadingLatestAfterConflict(false);
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
-        setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
+        setUserName(sessionUser.username || 'ผู้ดูแลระบบ');
         setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
         setIsLoggedIn(true);
         setAccessReady(true);
@@ -744,6 +757,30 @@ function AppContent() {
     }
   };
 
+  const handleBootstrapSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBootstrapError('');
+    setBootstrapBusy(true);
+    try {
+      const response = await fetch('/api/auth/bootstrap', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: bootstrapUsername.trim(), password: bootstrapPassword, bootstrapKey }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'ตั้งค่า Owner ไม่สำเร็จ');
+      setBootstrapRequired(false);
+      setBootstrapPassword('');
+      setBootstrapKey('');
+      setSessionUser(payload.user as SessionUser);
+    } catch (error) {
+      setBootstrapError(error instanceof Error ? error.message : 'ตั้งค่า Owner ไม่สำเร็จ');
+    } finally {
+      setBootstrapBusy(false);
+    }
+  };
+
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsVisitor(false);
@@ -756,12 +793,12 @@ function AppContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
           ? { pin: authPin }
-          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
+          : { username: authUsername.trim(), password: authPassword }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      if (!response.ok) throw new Error(payload.error || 'ID หรือรหัสผ่านไม่ถูกต้อง');
       setSessionUser(payload.user as SessionUser);
-      setUserName(payload.user?.email || 'ผู้ดูแลระบบ');
+      setUserName(payload.user?.username || 'ผู้ดูแลระบบ');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
       setAuthPassword('');
       setAuthPin('');
@@ -818,6 +855,33 @@ function AppContent() {
     return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
   }
 
+  if (bootstrapRequired && !sessionUser && !isVisitor) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
+        <section className="w-full max-w-[380px] rounded-2xl bg-white px-6 py-8 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.28)] sm:px-8">
+          <div className="mb-6 text-center">
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">M101 · FIRST SETUP</p>
+            <h1 className="mt-3 text-xl font-semibold tracking-tight">ตั้งค่าบัญชี Owner</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500">สร้างบัญชีเจ้าของระบบเพียงบัญชีเดียว ก่อนเริ่มใช้งาน M101</p>
+          </div>
+          {bootstrapReady ? (
+            <form onSubmit={handleBootstrapSubmit} className="space-y-3">
+              <input value={bootstrapUsername} onChange={(event) => setBootstrapUsername(event.target.value)} autoComplete="username" required minLength={3} maxLength={32} placeholder="Owner ID" aria-label="Owner ID" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapPassword} onChange={(event) => setBootstrapPassword(event.target.value)} type="password" autoComplete="new-password" required minLength={14} placeholder="รหัสผ่าน Owner (อย่างน้อย 14 ตัว)" aria-label="รหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapKey} onChange={(event) => setBootstrapKey(event.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" aria-label="รหัสตั้งค่าครั้งแรก" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              {bootstrapError && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{bootstrapError}</p>}
+              <button type="submit" disabled={bootstrapBusy} className="h-12 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white disabled:opacity-60">{bootstrapBusy ? 'กำลังตั้งค่า…' : 'สร้างบัญชี Owner'}</button>
+            </form>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              ฐานข้อมูลยังไม่มีบัญชี Owner แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้สร้าง Owner เพื่อป้องกันบุคคลภายนอกยึดบัญชีแรก
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
+
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
@@ -825,13 +889,13 @@ function AppContent() {
           <h1 id="m101-login-title" className="mb-7 text-center text-xl font-semibold tracking-tight text-slate-900">เข้าสู่ระบบ</h1>
           <form onSubmit={handleLoginSubmit} className="space-y-5">
             <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1">
-              <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-md px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมล</button>
+              <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-md px-3 py-2 text-sm font-medium transition ${authMode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>ID / Password</button>
               <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-md px-3 py-2 text-sm font-medium transition ${authMode === 'pin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN</button>
             </div>
 
             {authMode === 'password' ? (
               <div className="space-y-3">
-                <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="อีเมล" aria-label="อีเมล" className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5" />
+                <input id="m101-login-username" type="text" autoComplete="username" required value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} placeholder="ID ผู้ใช้" aria-label="ID ผู้ใช้" className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5" />
                 <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="รหัสผ่าน" aria-label="รหัสผ่าน" className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5" />
               </div>
             ) : (
