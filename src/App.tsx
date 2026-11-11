@@ -97,7 +97,6 @@ function AppContent() {
   // Cloudflare D1 is the source of truth. Browser storage is never imported.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
-  const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
     return initCuteClickSound();
@@ -285,38 +284,6 @@ function AppContent() {
       });
     return () => { active = false; };
   }, [sessionUser, dataReloadKey]);
-
-  useEffect(() => {
-    let active = true;
-    if (!isVisitor || sessionUser) return () => { active = false; };
-    setDataReady(false);
-    setDataError('');
-    fetch('/api/public/data', { credentials: 'same-origin' })
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
-        return payload;
-      })
-      .then((payload) => {
-        if (!active) return;
-        const nextRecords = payload.recordsByYear || {};
-        const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
-        setRecordsByYear(nextRecords);
-        setAvailableYears(years.length ? years : ['69']);
-        directoryRevisionRef.current = null;
-        lastSavedSnapshotRef.current = null;
-        undoStackRef.current = [];
-        setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
-        setUserName('ผู้เยี่ยมชม');
-        setDataReady(true);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
-        setDataReady(false);
-      });
-    return () => { active = false; };
-  }, [isVisitor, sessionUser, dataReloadKey]);
 
   // Save only against the exact D1 snapshot revision loaded by this client.
   // Requests are serialized; a stale snapshot is blocked rather than auto-overwritten.
@@ -785,7 +752,6 @@ function AppContent() {
 
   const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsVisitor(false);
     setAuthBusy(true);
     setAuthError('');
     try {
@@ -820,7 +786,7 @@ function AppContent() {
 
   // PIN login accepts physical keyboard input without requiring the keypad to be focused.
   useEffect(() => {
-    if (authMode !== 'pin' || isVisitor || isLoggedIn) return;
+    if (authMode !== 'pin' || isLoggedIn) return;
 
     const handlePinKeyDown = (event: KeyboardEvent) => {
       if (authBusy) return;
@@ -843,7 +809,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handlePinKeyDown);
     return () => window.removeEventListener('keydown', handlePinKeyDown);
-  }, [authMode, authBusy, isVisitor, isLoggedIn]);
+  }, [authMode, authBusy, isLoggedIn]);
 
   if (!authReady) {
     return <div className="min-h-screen grid place-items-center bg-[#f5f5f5] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
@@ -853,11 +819,7 @@ function AppContent() {
     return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
   }
 
-  if (isVisitor && !dataReady) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
-  }
-
-  if (bootstrapRequired && !sessionUser && !isVisitor) {
+  if (bootstrapRequired && !sessionUser) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
         <section className="w-full max-w-[380px] rounded-2xl bg-white px-6 py-8 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.28)] sm:px-8">
@@ -884,7 +846,7 @@ function AppContent() {
     );
   }
 
-  if ((!sessionUser || !isLoggedIn) && !isVisitor) {
+  if (!sessionUser || !isLoggedIn) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
         <section aria-labelledby="m101-login-title" className="w-full max-w-[380px] rounded-2xl border border-slate-200/80 bg-white px-6 py-8 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.28)] sm:px-8 sm:py-9">
@@ -1050,8 +1012,6 @@ function AppContent() {
         }}
         isLoggedIn={isLoggedIn}
         isAdmin={userRole === 'admin'}
-        isVisitor={isVisitor}
-        onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
           void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
             .finally(() => {
