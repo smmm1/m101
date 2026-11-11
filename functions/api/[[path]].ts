@@ -178,12 +178,16 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
         ownerId = String(existingOwner.id);
         workspaceId = String(existingOwner.workspace_id);
-        const updated = await env.DB.batch([
-          env.DB.prepare("UPDATE users SET username = ?, password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND role = 'admin' AND local_password_set = 0 AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = users.id AND wm.workspace_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')").bind(username, encoded.hash, encoded.salt, ownerId, workspaceId),
+        // Claim the legacy Owner with a compare-and-set update before touching sessions.
+        // A concurrent second bootstrap must not revoke the first request's new session.
+        const updated = await env.DB.prepare(
+          "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND role = 'admin' AND local_password_set = 0 AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = users.id AND wm.workspace_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')"
+        ).bind(username, encoded.hash, encoded.salt, ownerId, workspaceId).run();
+        if (Number(updated.meta?.changes || 0) !== 1) return json({ error: 'บัญชี Owner เดิมถูกเปลี่ยนแปลงระหว่างตั้งค่า กรุณาโหลดหน้าใหม่' }, 409);
+        await env.DB.batch([
           env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(ownerId),
           env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'owner.password_initialized', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, ownerId, ownerId, JSON.stringify({ username, setup: 'bootstrap' }), now),
         ]);
-        if (Number(updated[0]?.meta?.changes || 0) !== 1) return json({ error: 'บัญชี Owner เดิมถูกเปลี่ยนแปลงระหว่างตั้งค่า กรุณาโหลดหน้าใหม่' }, 409);
         status = 200;
       }
       const token = randomToken();
