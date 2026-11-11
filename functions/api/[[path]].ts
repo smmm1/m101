@@ -421,7 +421,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     // Annual work tracking is stored in its own D1 table, separate from directory JSON.
     if (path === '/api/annual-tasks' && request.method === 'GET') {
-      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      const authenticatedUser = await requireUser(request, env);
+      if (!authenticatedUser) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
@@ -446,7 +448,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/annual-tasks' && request.method === 'POST') {
-      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      const authenticatedUser = await requireUser(request, env);
+      if (!authenticatedUser) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
@@ -489,7 +493,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
     if (annualTaskMatch && request.method === 'PUT') {
-      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      const authenticatedUser = await requireUser(request, env);
+      if (!authenticatedUser) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
@@ -533,7 +539,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (annualTaskMatch && request.method === 'DELETE') {
-      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      const authenticatedUser = await requireUser(request, env);
+      if (!authenticatedUser) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
