@@ -353,7 +353,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', createdAt: now } }, 201);
     }
 
-    const adminUserMatch = path.match(new RegExp('^/api/admin/users/([A-Za-z0-9_-]+)
+    const adminUserMatch = path.match(new RegExp("^/api/admin/users/([A-Za-z0-9_-]+)$"));
     if (adminUserMatch && request.method === 'PATCH') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
