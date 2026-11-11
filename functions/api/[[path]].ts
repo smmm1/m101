@@ -134,7 +134,15 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
       const body = await request.json() as { username?: string; password?: string; bootstrapKey?: string };
       if (!env.M101_BOOTSTRAP_KEY) return json({ error: 'ระบบยังไม่ได้เปิดการตั้งค่า Owner ครั้งแรก' }, 503);
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const bootstrapIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
+      const bootstrapAttemptKey = await digest(`bootstrap:${bootstrapIp}`);
+      const bootstrapReservation = await env.DB.prepare(
+        'INSERT INTO auth_rate_limit_attempts (attempt_key, attempted_at) SELECT ?, ? WHERE (SELECT COUNT(*) FROM auth_rate_limit_attempts WHERE attempt_key = ? AND attempted_at > ?) < 5'
+      ).bind(bootstrapAttemptKey, nowSeconds, bootstrapAttemptKey, nowSeconds - 15 * 60).run();
+      if (Number(bootstrapReservation.meta?.changes || 0) !== 1) return json({ error: 'มีการลองตั้งค่าหลายครั้งเกินไป กรุณารอ 15 นาที' }, 429);
       if (!constantTimeEqual(String(body.bootstrapKey || ''), env.M101_BOOTSTRAP_KEY)) return json({ error: 'รหัสตั้งค่าครั้งแรกไม่ถูกต้อง' }, 403);
+      await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempt_key = ?').bind(bootstrapAttemptKey).run();
       const username = String(body.username || '').trim();
       const password = String(body.password || '');
       if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
@@ -168,13 +176,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
       const now = Math.floor(Date.now() / 1000);
       // Keep the rate-limit table bounded by removing expired attempts as requests arrive.
-      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempted_at <= ?').bind(now - 15 * 60).run();
+      await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempted_at <= ?').bind(now - 15 * 60).run();
       const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
       const attemptKey = await digest(`${clientIp}:${username.toLowerCase()}`);
       // Reserve one of five attempts atomically. A separate COUNT followed by
       // INSERT lets concurrent requests all pass the limit before any insert lands.
       const reservation = await env.DB.prepare(
-        'INSERT INTO password_login_attempts (attempt_key, attempted_at) SELECT ?, ? WHERE (SELECT COUNT(*) FROM password_login_attempts WHERE attempt_key = ? AND attempted_at > ?) < 5'
+        'INSERT INTO auth_rate_limit_attempts (attempt_key, attempted_at) SELECT ?, ? WHERE (SELECT COUNT(*) FROM auth_rate_limit_attempts WHERE attempt_key = ? AND attempted_at > ?) < 5'
       ).bind(attemptKey, now, attemptKey, now - 15 * 60).run();
       if (Number(reservation.meta?.changes || 0) !== 1) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
 
@@ -186,7 +194,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
       }
       // Valid credentials clear this IP+username window before workspace checks.
-      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempt_key = ?').bind(attemptKey).run();
+      await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempt_key = ?').bind(attemptKey).run();
       const workspaceAccess = await getWorkspaceAccess(user, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
       const token = randomToken();
