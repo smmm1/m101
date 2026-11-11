@@ -58,6 +58,7 @@ function AppContent() {
   const [bootstrapKey, setBootstrapKey] = useState('');
   const [bootstrapUsername, setBootstrapUsername] = useState('owner');
   const [bootstrapPassword, setBootstrapPassword] = useState('');
+  const [bootstrapPasswordConfirm, setBootstrapPasswordConfirm] = useState('');
   const [bootstrapError, setBootstrapError] = useState('');
   const [bootstrapBusy, setBootstrapBusy] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
@@ -707,12 +708,13 @@ function AppContent() {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: bootstrapUsername.trim(), password: bootstrapPassword, bootstrapKey }),
+        body: JSON.stringify({ username: bootstrapUsername.trim(), password: bootstrapPassword, passwordConfirm: bootstrapPasswordConfirm, bootstrapKey }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'ตั้งค่า Owner ไม่สำเร็จ');
       setBootstrapRequired(false);
       setBootstrapPassword('');
+      setBootstrapPasswordConfirm('');
       setBootstrapKey('');
       setSessionUser(payload.user as SessionUser);
     } catch (error) {
@@ -767,6 +769,7 @@ function AppContent() {
             <form onSubmit={handleBootstrapSubmit} className="space-y-3">
               <input value={bootstrapUsername} onChange={(event) => setBootstrapUsername(event.target.value)} autoComplete="username" required minLength={3} maxLength={32} placeholder="Owner ID" aria-label="Owner ID" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
               <input value={bootstrapPassword} onChange={(event) => setBootstrapPassword(event.target.value)} type="password" autoComplete="new-password" required minLength={14} placeholder="รหัสผ่าน Owner (อย่างน้อย 14 ตัว)" aria-label="รหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapPasswordConfirm} onChange={(event) => setBootstrapPasswordConfirm(event.target.value)} type="password" autoComplete="new-password" required minLength={14} placeholder="ยืนยันรหัสผ่าน Owner" aria-label="ยืนยันรหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
               <input value={bootstrapKey} onChange={(event) => setBootstrapKey(event.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" aria-label="รหัสตั้งค่าครั้งแรก" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
               {bootstrapError && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{bootstrapError}</p>}
               <button type="submit" disabled={bootstrapBusy} className="h-12 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white disabled:opacity-60">{bootstrapBusy ? 'กำลังตั้งค่า…' : bootstrapMode === 'claim-existing-owner' ? 'ตั้งรหัสผ่าน Owner' : 'สร้างบัญชี Owner'}</button>
