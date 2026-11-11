@@ -365,7 +365,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       if (Number(updated.meta?.changes || 0) !== 1) return json({ error: 'บัญชีสมาชิกนี้ไม่มีสิทธิ์อยู่ใน Workspace แล้ว กรุณารีเฟรชรายการ' }, 404);
       const statements = [];
-      if (newPassword || accountStatus === 'suspended') statements.push(env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(targetId));
+      if (newPassword || accountStatus === 'suspended') {
+        // Revoke sessions only if the new credential/state is the value this
+        // request just wrote. Batch keeps revocation and audit atomic.
+        statements.push(env.DB.prepare(
+          "DELETE FROM sessions WHERE user_id = ? AND ((? = 1 AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND local_password_set = 1)) OR (? = 'suspended' AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = 'suspended')))"
+        ).bind(targetId, newPassword ? 1 : 0, targetId, encoded?.hash || '', accountStatus, targetId));
+      }
       statements.push(env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.updated', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, targetId, JSON.stringify({ username, accountStatus, passwordReset: Boolean(newPassword) }), now));
       await env.DB.batch(statements);
       return json({ ok: true });
