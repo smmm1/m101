@@ -266,10 +266,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const token = getCookie(request, COOKIE_NAME);
       const tokenHash = token ? await digest(token) : '';
       const now = new Date().toISOString();
-      await env.DB.batch([
-        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ?').bind(encoded.hash, encoded.salt, user.id),
-        env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').bind(user.id, tokenHash),
+      const changed = await env.DB.batch([
+        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND password_hash = ? AND password_salt = ? AND account_status = \'active\'')
+          .bind(encoded.hash, encoded.salt, user.id, user.password_hash, user.password_salt),
+        env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ? AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)')
+          .bind(user.id, tokenHash, user.id, encoded.hash, encoded.salt),
       ]);
+      if (Number(changed[0]?.meta?.changes || 0) !== 1) return json({ error: 'รหัสผ่านบัญชีนี้ถูกเปลี่ยนระหว่างดำเนินการ กรุณาเข้าสู่ระบบใหม่' }, 409);
       return json({ ok: true, message: 'เปลี่ยนรหัสผ่านแล้ว' });
     }
 
