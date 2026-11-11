@@ -269,7 +269,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการบัญชีได้' }, 403);
       const result = await env.DB.prepare(
-        "SELECT u.id, u.username, u.display_name, u.role, u.account_status, u.created_at FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE wm.workspace_id = ? AND wm.status = 'active' ORDER BY CASE u.role WHEN 'admin' THEN 0 ELSE 1 END, u.created_at ASC"
+        "SELECT u.id, u.username, u.display_name, u.role, u.account_status, u.local_password_set, u.created_at FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE wm.workspace_id = ? AND wm.status = 'active' ORDER BY CASE u.role WHEN 'admin' THEN 0 ELSE 1 END, u.created_at ASC"
       ).bind(access.workspaceId).all();
       return json({ users: result.results || [] });
     }
