@@ -171,22 +171,24 @@ export async function onRequest(context: { request: Request; env: Env }) {
       await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempted_at <= ?').bind(now - 15 * 60).run();
       const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
       const attemptKey = await digest(`${clientIp}:${username.toLowerCase()}`);
-      const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM password_login_attempts WHERE attempt_key = ? AND attempted_at > ?')
-        .bind(attemptKey, now - 15 * 60).first() as { count?: number } | null;
-      if (Number(attempts?.count || 0) >= 5) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
+      // Reserve one of five attempts atomically. A separate COUNT followed by
+      // INSERT lets concurrent requests all pass the limit before any insert lands.
+      const reservation = await env.DB.prepare(
+        'INSERT INTO password_login_attempts (attempt_key, attempted_at) SELECT ?, ? WHERE (SELECT COUNT(*) FROM password_login_attempts WHERE attempt_key = ? AND attempted_at > ?) < 5'
+      ).bind(attemptKey, now, attemptKey, now - 15 * 60).run();
+      if (Number(reservation.meta?.changes || 0) !== 1) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
 
       const user = await env.DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
       // Perform the same PBKDF2 work for unknown, suspended, and active accounts
       // so login timing does not reveal whether a username exists or is enabled.
       const candidate = await hashPassword(password, user?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
       if (!user || user.account_status !== 'active' || !constantTimeEqual(candidate.hash, user.password_hash)) {
-        await env.DB.prepare('INSERT INTO password_login_attempts (attempt_key, attempted_at) VALUES (?, ?)').bind(attemptKey, now).run();
         return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
       }
+      // Valid credentials clear this IP+username window before workspace checks.
+      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempt_key = ?').bind(attemptKey).run();
       const workspaceAccess = await getWorkspaceAccess(user, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
-
-      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempt_key = ?').bind(attemptKey).run();
       const token = randomToken();
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
