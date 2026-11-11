@@ -18,7 +18,7 @@ const destinations: Array<{ id: AdminTab; title: string; detail: string; icon: s
   { id: 'settings', title: 'ตั้งค่าระบบ', detail: 'การตั้งค่า เสียง และสำรองข้อมูล', icon: 'settings' },
 ];
 
-export function AdminControlCenter({ onClose, onNavigate, onPreviewAfk }: AdminControlCenterProps) {
+export function AdminControlCenter({ onClose, onNavigate, onPreviewAfk, onManageUsers }: AdminControlCenterProps) {
   return (
     <div className="m101-dialog-overlay fixed inset-0 z-[260] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-labelledby="m101-admin-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="ds-admin-dialog m101-dialog-panel w-full max-w-2xl overflow-hidden">
