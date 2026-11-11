@@ -117,7 +117,7 @@ updated = db.execute(
 )
 assert updated.rowcount == 1, "active member in Owner workspace should be updateable"
 db.execute(
-    "UPDATE workspace_memberships SET status = 'inactive' WHERE user_id = ? AND workspace_id = ?",
+    "UPDATE workspace_memberships SET status = 'revoked' WHERE user_id = ? AND workspace_id = ?",
     (member_id, workspace[0]),
 )
 revoked = db.execute(
