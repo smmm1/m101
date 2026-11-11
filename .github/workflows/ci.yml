@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - product/m101-new-system-blueprint
+      - feature/m101-local-owner-auth
 
 permissions:
   contents: read
