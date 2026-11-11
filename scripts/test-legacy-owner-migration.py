@@ -83,5 +83,52 @@ for attempt in range(5):
 blocked = db.execute(reservation_sql, (attempt_key, 1005, attempt_key, 0))
 assert blocked.rowcount == 0, "sixth attempt should be blocked"
 
+# Owner-managed account guards: case-insensitive uniqueness and workspace-scoped updates.
+member_id = "test-member-1"
+db.execute(
+    "INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) "
+    "VALUES (?, ?, 'Test Member', 'member', 'hash', 'salt', '2026-01-02T00:00:00Z', 'member01', 'active', 1)",
+    (member_id, "member01@m101.local"),
+)
+db.execute(
+    "INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) "
+    "VALUES ('test-member-membership', ?, ?, 'collaborator', 'active', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z')",
+    (workspace[0], member_id),
+)
+try:
+    db.execute(
+        "INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) "
+        "VALUES ('test-member-duplicate', 'duplicate@m101.local', 'Duplicate', 'member', 'hash', 'salt', '2026-01-02T00:00:00Z', 'MEMBER01', 'active', 1)"
+    )
+    raise AssertionError("case-insensitive duplicate username should be rejected")
+except sqlite3.IntegrityError:
+    pass
+
+guarded_member_update = (
+    "UPDATE users SET username = ?, display_name = ?, account_status = ? "
+    "WHERE id = ? AND role = 'member' AND EXISTS ("
+    "SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id "
+    "WHERE wm.user_id = users.id AND wm.workspace_id = ? "
+    "AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active')"
+)
+updated = db.execute(
+    guarded_member_update,
+    ("member02", "Updated Member", "active", member_id, workspace[0]),
+)
+assert updated.rowcount == 1, "active member in Owner workspace should be updateable"
+db.execute(
+    "UPDATE workspace_memberships SET status = 'inactive' WHERE user_id = ? AND workspace_id = ?",
+    (member_id, workspace[0]),
+)
+revoked = db.execute(
+    guarded_member_update,
+    ("member03", "Should Not Update", "active", member_id, workspace[0]),
+)
+assert revoked.rowcount == 0, "member removed from workspace must not be updateable"
+current_member = db.execute(
+    "SELECT username, display_name FROM users WHERE id = ?", (member_id,)
+).fetchone()
+assert current_member == ("member02", "Updated Member"), current_member
+
 db.close()
-print("Legacy Owner migration and atomic auth rate-limit checks passed.")
+print("Legacy Owner migration, atomic auth rate limiting, and Owner account guard checks passed.")
