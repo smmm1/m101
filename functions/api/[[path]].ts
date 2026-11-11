@@ -322,7 +322,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการบัญชีได้' }, 403);
-      const result = await env.DB.prepare("SELECT id, username, display_name, role, account_status, created_at FROM users ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END, created_at ASC").all();
+      const result = await env.DB.prepare(
+        "SELECT u.id, u.username, u.display_name, u.role, u.account_status, u.created_at FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE wm.workspace_id = ? AND wm.status = 'active' ORDER BY CASE u.role WHEN 'admin' THEN 0 ELSE 1 END, u.created_at ASC"
+      ).bind(access.workspaceId).all();
       return json({ users: result.results || [] });
     }
 
@@ -357,7 +359,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขบัญชีได้' }, 403);
       const targetId = adminUserMatch[1];
-      const target = await env.DB.prepare('SELECT id, username, role FROM users WHERE id = ?').bind(targetId).first() as { id?: string; username?: string; role?: string } | null;
+      const target = await env.DB.prepare(
+        "SELECT u.id, u.username, u.role FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.status = 'active' LIMIT 1"
+      ).bind(targetId, access.workspaceId).first() as { id?: string; username?: string; role?: string } | null;
       if (!target) return json({ error: 'ไม่พบบัญชีนี้' }, 404);
       if (target.role === 'admin' || target.id === access.user.id) return json({ error: 'ไม่อนุญาตให้แก้ไขบัญชี Owner ผ่านรายการสมาชิก' }, 403);
       const body = await request.json() as { username?: string; displayName?: string; accountStatus?: string; newPassword?: string };
