@@ -1,5 +1,5 @@
 type Env = { DB: any; M101_BOOTSTRAP_KEY?: string };
-type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; password_hash: string; password_salt: string };
+type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; local_password_set: number; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -67,7 +67,7 @@ async function getUser(request: Request, env: Env): Promise<UserRow | null> {
   if (!token) return null;
   const tokenHash = await digest(token);
   const row = await env.DB.prepare(
-    "SELECT u.id, u.email, u.username, u.display_name, u.role, u.account_status, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status = 'active'"
+    "SELECT u.id, u.email, u.username, u.display_name, u.role, u.account_status, u.local_password_set, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status = 'active' AND u.local_password_set = 1"
   ).bind(tokenHash, Math.floor(Date.now() / 1000)).first();
   return row || null;
 }
@@ -127,8 +127,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (path === '/api/auth/bootstrap-status' && request.method === 'GET') {
       const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
-      const needsBootstrap = Number(row?.count || 0) === 0;
-      return json({ needsBootstrap, bootstrapReady: Boolean(env.M101_BOOTSTRAP_KEY) });
+      const userCount = Number(row?.count || 0);
+      const existingOwner = userCount > 0 ? await env.DB.prepare(
+        "SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id JOIN workspaces w ON w.id = wm.workspace_id WHERE u.role = 'admin' AND u.local_password_set = 0 AND u.account_status = 'active' AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).first() : null;
+      const needsBootstrap = userCount === 0 || Boolean(existingOwner);
+      return json({ needsBootstrap, bootstrapReady: Boolean(env.M101_BOOTSTRAP_KEY), bootstrapMode: userCount === 0 ? 'create' : existingOwner ? 'claim-existing-owner' : 'unavailable' });
     }
 
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
@@ -149,24 +153,44 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
       if (password.length < 14 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 14 ตัวอักษร' }, 400);
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
-      if (Number(existing?.count || 0) !== 0) return json({ error: 'ระบบมีบัญชีอยู่แล้ว ไม่สามารถตั้ง Owner ซ้ำได้' }, 409);
-
-      const ownerId = 'x8wLRj5Iw1zqsyWnMrF65w';
-      const workspaceId = 'm101-primary-workspace';
+      const userCount = Number(existing?.count || 0);
       const now = new Date().toISOString();
       const encoded = await hashPassword(password);
-      const statements = await env.DB.batch([
-        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, 'Owner', 'admin', ?, ?, ?, ?, 'active')").bind(ownerId, `${username.toLowerCase()}@m101.local`, encoded.hash, encoded.salt, now, username),
-        env.DB.prepare("INSERT INTO workspaces (id, name, owner_user_id, status, created_at, updated_at) VALUES (?, 'M101 Workspace', ?, 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
-        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES ('m101-primary-owner-membership', ?, ?, 'owner', 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
-        env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, '69', '[]', 1, ?, ?)").bind(workspaceId, ownerId, now),
-      ]);
-      if (!statements.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
+      let ownerId: string;
+      let workspaceId: string;
+      let status = 201;
+      if (userCount === 0) {
+        ownerId = 'x8wLRj5Iw1zqsyWnMrF65w';
+        workspaceId = 'm101-primary-workspace';
+        const statements = await env.DB.batch([
+          env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, 'Owner', 'admin', ?, ?, ?, ?, 'active', 1)").bind(ownerId, `${username.toLowerCase()}@m101.local`, encoded.hash, encoded.salt, now, username),
+          env.DB.prepare("INSERT INTO workspaces (id, name, owner_user_id, status, created_at, updated_at) VALUES (?, 'M101 Workspace', ?, 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
+          env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES ('m101-primary-owner-membership', ?, ?, 'owner', 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
+          env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, '69', '[]', 1, ?, ?)").bind(workspaceId, ownerId, now),
+        ]);
+        if (!statements.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
+      } else {
+        const existingOwner = await env.DB.prepare(
+          "SELECT u.id, wm.workspace_id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id JOIN workspaces w ON w.id = wm.workspace_id WHERE u.role = 'admin' AND u.local_password_set = 0 AND u.account_status = 'active' AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+        ).first() as { id?: string; workspace_id?: string } | null;
+        if (!existingOwner?.id || !existingOwner.workspace_id) return json({ error: 'ไม่พบบัญชี Owner เดิมที่รอตั้งรหัสผ่าน หรือบัญชีนี้ถูกตั้งค่าไปแล้ว' }, 409);
+        const duplicate = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE AND id != ?').bind(username, existingOwner.id).first();
+        if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
+        ownerId = String(existingOwner.id);
+        workspaceId = String(existingOwner.workspace_id);
+        const updated = await env.DB.batch([
+          env.DB.prepare("UPDATE users SET username = ?, password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND role = 'admin' AND local_password_set = 0 AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = users.id AND wm.workspace_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')").bind(username, encoded.hash, encoded.salt, ownerId, workspaceId),
+          env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(ownerId),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'owner.password_initialized', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, ownerId, ownerId, JSON.stringify({ username, setup: 'bootstrap' }), now),
+        ]);
+        if (Number(updated[0]?.meta?.changes || 0) !== 1) return json({ error: 'บัญชี Owner เดิมถูกเปลี่ยนแปลงระหว่างตั้งค่า กรุณาโหลดหน้าใหม่' }, 409);
+        status = 200;
+      }
       const token = randomToken();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
         .bind(await digest(token), ownerId, Math.floor(Date.now() / 1000) + SESSION_SECONDS, now).run();
       const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(ownerId).first() as UserRow;
-      return json({ user: publicUser(user) }, 201, { 'Set-Cookie': sessionCookie(token) });
+      return json({ user: publicUser(user) }, status, { 'Set-Cookie': sessionCookie(token) });
     }
 
     if (path === '/api/auth/login' && request.method === 'POST') {
@@ -191,7 +215,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       // Perform the same PBKDF2 work for unknown, suspended, and active accounts
       // so login timing does not reveal whether a username exists or is enabled.
       const candidate = await hashPassword(password, user?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
-      if (!user || user.account_status !== 'active' || !constantTimeEqual(candidate.hash, user.password_hash)) {
+      if (!user || user.account_status !== 'active' || Number(user.local_password_set) !== 1 || !constantTimeEqual(candidate.hash, user.password_hash)) {
         return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
       }
       // Valid credentials clear this IP+username window before workspace checks.
@@ -219,7 +243,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const tokenHash = token ? await digest(token) : '';
       const now = new Date().toISOString();
       await env.DB.batch([
-        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?').bind(encoded.hash, encoded.salt, user.id),
+        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ?').bind(encoded.hash, encoded.salt, user.id),
         env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').bind(user.id, tokenHash),
       ]);
       return json({ ok: true, message: 'เปลี่ยนรหัสผ่านแล้ว' });
@@ -263,7 +287,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const email = `${username.toLowerCase()}@m101.local`;
       const workspaceId = access.workspaceId;
       const result = await env.DB.batch([
-        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active')").bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
+        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1)").bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
         env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(randomToken(18), workspaceId, id, now, now),
         env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.created', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, access.user.id, id, JSON.stringify({ username }), now)
       ]);
@@ -296,8 +320,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const encoded = newPassword ? await hashPassword(newPassword) : null;
       const now = new Date().toISOString();
       const statements = [
-        env.DB.prepare("UPDATE users SET username = ?, email = ?, display_name = CASE WHEN ? = '' THEN display_name ELSE ? END, account_status = ?, password_hash = COALESCE(?, password_hash), password_salt = COALESCE(?, password_salt) WHERE id = ? AND role = 'member'")
-          .bind(username, `${username.toLowerCase()}@m101.local`, displayName, displayName, accountStatus, encoded?.hash || null, encoded?.salt || null, targetId),
+        env.DB.prepare("UPDATE users SET username = ?, email = ?, display_name = CASE WHEN ? = '' THEN display_name ELSE ? END, account_status = ?, password_hash = COALESCE(?, password_hash), password_salt = COALESCE(?, password_salt), local_password_set = CASE WHEN ? IS NULL THEN local_password_set ELSE 1 END WHERE id = ? AND role = 'member'")
+          .bind(username, `${username.toLowerCase()}@m101.local`, displayName, displayName, accountStatus, encoded?.hash || null, encoded?.salt || null, encoded?.hash || null, targetId),
       ];
       if (newPassword || accountStatus === 'suspended') statements.push(env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(targetId));
       statements.push(env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.updated', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, targetId, JSON.stringify({ username, accountStatus, passwordReset: Boolean(newPassword) }), now));
