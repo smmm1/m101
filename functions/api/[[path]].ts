@@ -172,7 +172,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES ('m101-primary-owner-membership', ?, ?, 'owner', 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
         env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, '69', '[]', 1, ?, ?)").bind(workspaceId, ownerId, now),
       ]);
-      if (!statements.every((item) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
+      if (!statements.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
       const token = randomToken();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
         .bind(await digest(token), ownerId, Math.floor(Date.now() / 1000) + SESSION_SECONDS, now).run();
@@ -349,7 +349,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(randomToken(18), workspaceId, id, now, now),
         env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.created', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, access.user.id, id, JSON.stringify({ username }), now)
       ]);
-      if (!result.every((item) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชีไม่สำเร็จ' }, 500);
+      if (!result.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชีไม่สำเร็จ' }, 500);
       return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', createdAt: now } }, 201);
     }
 
