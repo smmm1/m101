@@ -323,7 +323,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/admin/users' && request.method === 'GET') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการบัญชีได้' }, 403);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการบัญชีได้' }, 403);
       const result = await env.DB.prepare("SELECT id, username, display_name, role, account_status, created_at FROM users ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END, created_at ASC").all();
       return json({ users: result.results || [] });
     }
@@ -331,7 +331,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/admin/users' && request.method === 'POST') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่สร้างบัญชีได้' }, 403);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่สร้างบัญชีได้' }, 403);
       const body = await request.json() as { username?: string; displayName?: string; password?: string };
       const username = String(body.username || '').trim();
       const displayName = String(body.displayName || '').trim();
@@ -357,7 +357,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (adminUserMatch && request.method === 'PATCH') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขบัญชีได้' }, 403);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขบัญชีได้' }, 403);
       const targetId = adminUserMatch[1];
       const target = await env.DB.prepare('SELECT id, username, role FROM users WHERE id = ?').bind(targetId).first() as { id?: string; username?: string; role?: string } | null;
       if (!target) return json({ error: 'ไม่พบบัญชีนี้' }, 404);
