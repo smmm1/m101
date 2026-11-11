@@ -1,5 +1,5 @@
-type Env = { DB: any; MONEY102_AUTH: { fetch(request: Request): Promise<Response> } };
-type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
+type Env = { DB: any; M101_BOOTSTRAP_KEY?: string };
+type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -67,13 +67,13 @@ async function getUser(request: Request, env: Env): Promise<UserRow | null> {
   if (!token) return null;
   const tokenHash = await digest(token);
   const row = await env.DB.prepare(
-    'SELECT u.id, u.email, u.display_name, u.role, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?'
+    'SELECT u.id, u.email, u.username, u.display_name, u.role, u.account_status, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status = 'active''
   ).bind(tokenHash, Math.floor(Date.now() / 1000)).first();
   return row || null;
 }
 
 function publicUser(user: UserRow) {
-  return { id: user.id, email: user.email, displayName: user.display_name, role: user.role };
+  return { id: user.id, username: user.username, displayName: user.display_name, role: user.role };
 }
 
 
@@ -157,52 +157,93 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
     }
 
-    if (path === '/api/auth/login' && request.method === 'POST') {
-      const body = await request.json() as { email?: string; password?: string };
-      const email = String(body.email || '').trim().toLowerCase();
+    if (path === '/api/auth/bootstrap-status' && request.method === 'GET') {
+      const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
+      const needsBootstrap = Number(row?.count || 0) === 0;
+      return json({ needsBootstrap, bootstrapReady: Boolean(env.M101_BOOTSTRAP_KEY) });
+    }
+
+    if (path === '/api/auth/bootstrap' && request.method === 'POST') {
+      const body = await request.json() as { username?: string; password?: string; bootstrapKey?: string };
+      if (!env.M101_BOOTSTRAP_KEY) return json({ error: 'ระบบยังไม่ได้เปิดการตั้งค่า Owner ครั้งแรก' }, 503);
+      if (!constantTimeEqual(String(body.bootstrapKey || ''), env.M101_BOOTSTRAP_KEY)) return json({ error: 'รหัสตั้งค่าครั้งแรกไม่ถูกต้อง' }, 403);
+      const username = String(body.username || '').trim();
       const password = String(body.password || '');
-      if (!email || !password || password.length > 1024) return json({ error: 'กรุณากรอกอีเมลและรหัสผ่าน' }, 400);
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
+      if (password.length < 14 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 14 ตัวอักษร' }, 400);
+      const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
+      if (Number(existing?.count || 0) !== 0) return json({ error: 'ระบบมีบัญชีอยู่แล้ว ไม่สามารถตั้ง Owner ซ้ำได้' }, 409);
 
-      // Money102 is the source of truth for credentials. M101 keeps its own
-      // users, sessions and directory data in the separate M101 D1 database.
-      let remoteResponse: Response;
-      try {
-        remoteResponse = await env.MONEY102_AUTH.fetch(new Request('https://money102-auth.internal/api/auth/signin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }));
-      } catch (error) {
-        console.error('M101 Money102 service binding failed', error);
-        return json({ error: 'เชื่อมต่อระบบบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 503);
-      }
+      const ownerId = 'x8wLRj5Iw1zqsyWnMrF65w';
+      const workspaceId = 'm101-primary-workspace';
+      const now = new Date().toISOString();
+      const encoded = await hashPassword(password);
+      const statements = await env.DB.batch([
+        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, 'Owner', 'admin', ?, ?, ?, ?, 'active')").bind(ownerId, 's2mtha16@gmail.com', encoded.hash, encoded.salt, now, username),
+        env.DB.prepare("INSERT INTO workspaces (id, name, owner_user_id, status, created_at, updated_at) VALUES (?, 'M101 Workspace', ?, 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
+        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES ('m101-primary-owner-membership', ?, ?, 'owner', 'active', ?, ?)").bind(workspaceId, ownerId, now, now),
+        env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, '69', '[]', 1, ?, ?)").bind(workspaceId, ownerId, now),
+      ]);
+      if (!statements.every((item) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
+      const token = randomToken();
+      await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
+        .bind(await digest(token), ownerId, Math.floor(Date.now() / 1000) + SESSION_SECONDS, now).run();
+      const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(ownerId).first() as UserRow;
+      return json({ user: publicUser(user) }, 201, { 'Set-Cookie': sessionCookie(token) });
+    }
 
-      if (remoteResponse.status === 401) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
-      if (!remoteResponse.ok) {
-        return json({ error: remoteResponse.status === 429 ? 'ลองเข้าสู่ระบบอีกครั้งในภายหลัง' : 'ระบบบัญชี Money102 ยังไม่พร้อม กรุณาลองใหม่' }, remoteResponse.status === 429 ? 429 : 503);
-      }
+    if (path === '/api/auth/login' && request.method === 'POST') {
+      const body = await request.json() as { username?: string; password?: string };
+      const username = String(body.username || '').trim();
+      const password = String(body.password || '');
+      if (!username || username.length > 32 || !password || password.length > 1024) return json({ error: 'กรุณากรอก ID และรหัสผ่าน' }, 400);
 
-      let remote: { user?: { id?: string; email?: string }; token?: string };
-      try { remote = await remoteResponse.json() as typeof remote; } catch {
-        return json({ error: 'ระบบบัญชี Money102 ส่งข้อมูลกลับมาไม่ถูกต้อง' }, 502);
-      }
-      const verifiedEmail = String(remote.user?.email || '').trim().toLowerCase();
-      if (!remote.token || !remote.user?.id || verifiedEmail !== email) {
-        return json({ error: 'ยืนยันบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 502);
-      }
+      const now = Math.floor(Date.now() / 1000);
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
+      const attemptKey = await digest(`${clientIp}:${username.toLowerCase()}`);
+      const attempts = await env.DB.prepare('SELECT COUNT(*) AS count FROM password_login_attempts WHERE attempt_key = ? AND attempted_at > ?')
+        .bind(attemptKey, now - 15 * 60).first() as { count?: number } | null;
+      if (Number(attempts?.count || 0) >= 5) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
 
-      // Money102 proves identity, but it does not grant M101 workspace access.
-      // New accounts must be admitted through an owner-issued M101 invitation.
-      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
-      if (!user) return json({ error: 'บัญชีนี้ยังไม่ได้รับคำเชิญเข้า M101 กรุณาติดต่อ Owner' }, 403);
+      const user = await env.DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
+      if (!user || user.account_status !== 'active') {
+        await env.DB.prepare('INSERT INTO password_login_attempts (attempt_key, attempted_at) VALUES (?, ?)').bind(attemptKey, now).run();
+        return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      }
+      const candidate = await hashPassword(password, user.password_salt);
+      if (!constantTimeEqual(candidate.hash, user.password_hash)) {
+        await env.DB.prepare('INSERT INTO password_login_attempts (attempt_key, attempted_at) VALUES (?, ?)').bind(attemptKey, now).run();
+        return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      }
       const workspaceAccess = await getWorkspaceAccess(user, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
 
+      await env.DB.prepare('DELETE FROM password_login_attempts WHERE attempt_key = ?').bind(attemptKey).run();
       const token = randomToken();
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
-        .bind(await digest(token), user.id, Math.floor(Date.now() / 1000) + SESSION_SECONDS, createdAt).run();
+        .bind(await digest(token), user.id, now + SESSION_SECONDS, createdAt).run();
       return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
+    }
+
+    if (path === '/api/auth/change-password' && request.method === 'POST') {
+      const user = await requireUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { currentPassword?: string; newPassword?: string };
+      const currentPassword = String(body.currentPassword || '');
+      const newPassword = String(body.newPassword || '');
+      if (newPassword.length < 12 || newPassword.length > 1024) return json({ error: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const currentHash = await hashPassword(currentPassword, user.password_salt);
+      if (!constantTimeEqual(currentHash.hash, user.password_hash)) return json({ error: 'รหัสผ่านปัจจุบันไม่ถูกต้อง' }, 401);
+      const encoded = await hashPassword(newPassword);
+      const token = getCookie(request, COOKIE_NAME);
+      const tokenHash = token ? await digest(token) : '';
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?').bind(encoded.hash, encoded.salt, user.id),
+        env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').bind(user.id, tokenHash),
+      ]);
+      return json({ ok: true, message: 'เปลี่ยนรหัสผ่านแล้ว' });
     }
 
     if (path === '/api/auth/pin/status' && request.method === 'GET') {
@@ -289,6 +330,71 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const token = getCookie(request, COOKIE_NAME);
       if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await digest(token)).run();
       return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
+    }
+
+    if (path === '/api/admin/users' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการบัญชีได้' }, 403);
+      const result = await env.DB.prepare("SELECT id, username, display_name, role, account_status, created_at FROM users ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END, created_at ASC").all();
+      return json({ users: result.results || [] });
+    }
+
+    if (path === '/api/admin/users' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่สร้างบัญชีได้' }, 403);
+      const body = await request.json() as { username?: string; displayName?: string; password?: string };
+      const username = String(body.username || '').trim();
+      const displayName = String(body.displayName || '').trim();
+      const password = String(body.password || '');
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
+      if (!displayName || displayName.length > 80) return json({ error: 'กรุณากรอกชื่อผู้ใช้ไม่เกิน 80 ตัวอักษร' }, 400);
+      if (password.length < 12 || password.length > 1024) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const duplicate = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE').bind(username).first();
+      if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
+      const id = randomToken(18), now = new Date().toISOString(), encoded = await hashPassword(password);
+      const email = `${username.toLowerCase()}@m101.local`;
+      const workspaceId = access.workspaceId;
+      const result = await env.DB.batch([
+        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active')").bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
+        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(randomToken(18), workspaceId, id, now, now),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.created', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, access.user.id, id, JSON.stringify({ username }), now)
+      ]);
+      if (!result.every((item) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชีไม่สำเร็จ' }, 500);
+      return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', createdAt: now } }, 201);
+    }
+
+    const adminUserMatch = path.match(/^\\/api\\/admin\\/users\\/([A-Za-z0-9_-]+)$/);
+    if (adminUserMatch && request.method === 'PATCH') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขบัญชีได้' }, 403);
+      const targetId = adminUserMatch[1];
+      const target = await env.DB.prepare('SELECT id, username, role FROM users WHERE id = ?').bind(targetId).first() as { id?: string; username?: string; role?: string } | null;
+      if (!target) return json({ error: 'ไม่พบบัญชีนี้' }, 404);
+      if (target.role === 'admin' || target.id === access.user.id) return json({ error: 'ไม่อนุญาตให้แก้ไขบัญชี Owner ผ่านรายการสมาชิก' }, 403);
+      const body = await request.json() as { username?: string; displayName?: string; accountStatus?: string; newPassword?: string };
+      const username = String(body.username ?? target.username).trim();
+      const displayName = String(body.displayName ?? '').trim();
+      const accountStatus = String(body.accountStatus ?? 'active');
+      const newPassword = String(body.newPassword || '');
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ไม่ถูกต้อง' }, 400);
+      if (displayName.length > 80) return json({ error: 'ชื่อผู้ใช้ยาวเกินไป' }, 400);
+      if (!['active', 'suspended'].includes(accountStatus)) return json({ error: 'สถานะบัญชีไม่ถูกต้อง' }, 400);
+      if (newPassword && (newPassword.length < 12 || newPassword.length > 1024)) return json({ error: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const duplicate = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE AND id != ?').bind(username, targetId).first();
+      if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว' }, 409);
+      const encoded = newPassword ? await hashPassword(newPassword) : null;
+      const now = new Date().toISOString();
+      const statements = [
+        env.DB.prepare("UPDATE users SET username = ?, email = ?, display_name = CASE WHEN ? = '' THEN display_name ELSE ? END, account_status = ?, password_hash = COALESCE(?, password_hash), password_salt = COALESCE(?, password_salt) WHERE id = ? AND role = 'member'")
+          .bind(username, `${username.toLowerCase()}@m101.local`, displayName, displayName, accountStatus, encoded?.hash || null, encoded?.salt || null, targetId),
+      ];
+      if (newPassword || accountStatus === 'suspended') statements.push(env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(targetId));
+      statements.push(env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.updated', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, targetId, JSON.stringify({ username, accountStatus, passwordReset: Boolean(newPassword) }), now));
+      await env.DB.batch(statements);
+      return json({ ok: true });
     }
 
     if (path === '/api/public/data' && request.method === 'GET') {
