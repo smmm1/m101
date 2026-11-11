@@ -3,6 +3,8 @@
 ALTER TABLE users ADD COLUMN username TEXT;
 ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active'
   CHECK (account_status IN ('active', 'suspended'));
+ALTER TABLE users ADD COLUMN local_password_set INTEGER NOT NULL DEFAULT 0
+  CHECK (local_password_set IN (0, 1));
 
 UPDATE users
 SET username = CASE
