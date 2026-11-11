@@ -776,9 +776,17 @@ function AppContent() {
             </form>
           ) : (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-              {bootstrapMode === 'claim-existing-owner' ? <>พบบัญชี Owner เดิมที่ยังไม่ได้ตั้งรหัสผ่าน M101 แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้ตั้งรหัสผ่าน</> : <>ฐานข้อมูลยังไม่มีบัญชี Owner แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้สร้าง Owner เพื่อป้องกันบุคคลภายนอกยึดบัญชีแรก</>}
+              <p className="font-semibold">{bootstrapMode === 'claim-existing-owner' ? 'พบ Owner เดิม แต่ยังไม่ได้เปิดการตั้งค่ารหัสผ่าน' : 'ยังไม่ได้เปิดการสร้าง Owner ครั้งแรก'}</p>
+              <p className="mt-1">{bootstrapMode === 'claim-existing-owner' ? 'ระบบพบ Owner เดิมและจะเก็บ Workspace กับข้อมูลกิจการไว้ แต่ต้องเปิดการตั้งค่าครั้งแรกก่อน' : 'ฐานข้อมูลยังไม่มี Owner ระบบจึงล็อกการสร้างบัญชีไว้เพื่อป้องกันบุคคลภายนอกยึดสิทธิ์เจ้าของระบบ'}</p>
+              <ol className="mt-3 list-decimal space-y-1 pl-5">
+                <li>เปิด Cloudflare Dashboard แล้วเลือก Workers &amp; Pages → m101-directory</li>
+                <li>ไปที่ Settings → Variables and Secrets → Preview</li>
+                <li>เพิ่ม <code className="rounded bg-amber-100 px-1">M101_BOOTSTRAP_KEY</code> เป็น Secret และบันทึก</li>
+                <li>สั่ง Redeploy Preview ล่าสุด แล้วกลับมาโหลดหน้านี้ใหม่</li>
+              </ol>
+              <p className="mt-3 text-xs">ตั้งค่าใน Preview เท่านั้น ห้ามใส่ Secret ใน Production หรือส่งรหัสลับผ่านแชต</p>
             </div>
-          )}
+          ) : (}
         </section>
       </main>
     );
