@@ -382,18 +382,6 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true });
     }
 
-    if (path === '/api/public/data' && request.method === 'GET') {
-      // Visitor mode is intentionally limited to the explicitly bootstrapped primary workspace.
-      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind('m101-primary-workspace').all();
-      const recordsByYear: Record<string, unknown[]> = {};
-      for (const row of result.results || []) {
-        const parsed = JSON.parse(String(row.records || '[]')) as Record<string, unknown>[];
-        recordsByYear[String(row.fiscal_year)] = parsed.map(cleanRecordForVisitor);
-      }
-      const availableYears = Object.keys(recordsByYear);
-      return json({ recordsByYear, availableYears });
-    }
-
     if (path === '/api/data' && request.method === 'GET') {
 
       const workspaceAccess = await requireWorkspaceAccess(request, env);
