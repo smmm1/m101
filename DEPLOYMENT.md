@@ -10,10 +10,23 @@
 
 ## Preview setup
 
-- Preview deployments must bind `DB` to the isolated `m101-preview-isolated` database.
-- Before the first Owner can be created, configure `M101_BOOTSTRAP_KEY` as a **secret** in the Cloudflare Pages Preview environment. Do not commit the value to this repository or expose it in browser code.
+- Preview deployments must bind `DB` to the isolated `m101-preview-isolated` database (ID: `f945e064-a72f-403a-aaf4-557ebef99f46`).
+- The Wrangler configuration defines the isolated database under `env.preview`. Use the Preview environment explicitly for every migration command; never omit `--env preview`.
+- First inspect unapplied migrations:
+
+  ```sh
+  npx wrangler d1 migrations list DB --remote --env preview
+  ```
+
+- Apply the pending migrations only after confirming the command resolves to the Preview database ID above:
+
+  ```sh
+  npx wrangler d1 migrations apply DB --remote --env preview
+  ```
+
+- Before the first Owner can be created, configure `M101_BOOTSTRAP_KEY` as a **secret** in the Cloudflare Pages **Preview** environment only. Do not put it in Production, commit it to this repository, or expose it in browser code.
 - The first-setup screen accepts the Owner's chosen ID, a password of at least 14 characters, and the bootstrap key. The API only permits this operation while the M101 users table is empty.
-- Apply D1 migrations to the isolated Preview database before testing the new authentication flow.
+- After applying migrations, verify that the Preview `users` table has `username` and `account_status`, and that `password_login_attempts` exists before testing the first Owner setup.
 
 Do not switch the production branch to a preview branch. Changes are released by committing to `main`, then verifying that the latest Cloudflare deployment is marked `production`, references the same commit, and succeeds.
 
