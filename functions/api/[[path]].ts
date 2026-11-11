@@ -170,7 +170,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const username = String(body.username || '').trim();
       const password = String(body.password || '');
       if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
-      if (password.length < 14 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 14 ตัวอักษร' }, 400);
+      if (password.length < 11 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 11 ตัวอักษร' }, 400);
       if (password !== String(body.passwordConfirm || '')) return json({ error: 'รหัสผ่านทั้งสองช่องไม่ตรงกัน' }, 400);
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
       const userCount = Number(existing?.count || 0);
