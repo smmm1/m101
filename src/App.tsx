@@ -786,7 +786,7 @@ function AppContent() {
               </ol>
               <p className="mt-3 text-xs">ตั้งค่าใน Preview เท่านั้น ห้ามใส่ Secret ใน Production หรือส่งรหัสลับผ่านแชต</p>
             </div>
-          ) : (}
+          )}
         </section>
       </main>
     );
