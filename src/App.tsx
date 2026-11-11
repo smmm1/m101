@@ -54,6 +54,7 @@ function AppContent() {
   const [authReady, setAuthReady] = useState(false);
   const [bootstrapRequired, setBootstrapRequired] = useState(false);
   const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [bootstrapMode, setBootstrapMode] = useState<'create' | 'claim-existing-owner' | 'unavailable'>('create');
   const [bootstrapKey, setBootstrapKey] = useState('');
   const [bootstrapUsername, setBootstrapUsername] = useState('owner');
   const [bootstrapPassword, setBootstrapPassword] = useState('');
@@ -183,6 +184,7 @@ function AppContent() {
         if (!active) return;
         setBootstrapRequired(Boolean(bootstrapStatus.needsBootstrap));
         setBootstrapReady(Boolean(bootstrapStatus.bootstrapReady));
+        setBootstrapMode(bootstrapStatus.bootstrapMode === 'claim-existing-owner' ? 'claim-existing-owner' : bootstrapStatus.bootstrapMode === 'create' ? 'create' : 'unavailable');
         const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
@@ -759,7 +761,7 @@ function AppContent() {
           <div className="mb-6 text-center">
             <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">M101 · FIRST SETUP</p>
             <h1 className="mt-3 text-xl font-semibold tracking-tight">ตั้งค่าบัญชี Owner</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">สร้างบัญชีเจ้าของระบบเพียงบัญชีเดียว ก่อนเริ่มใช้งาน M101</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{bootstrapMode === 'claim-existing-owner' ? 'ตั้งรหัสผ่าน M101 ให้บัญชี Owner เดิม โดยเก็บ Workspace และข้อมูลกิจการไว้เหมือนเดิม' : 'สร้างบัญชีเจ้าของระบบเพียงบัญชีเดียว ก่อนเริ่มใช้งาน M101'}</p>
           </div>
           {bootstrapReady ? (
             <form onSubmit={handleBootstrapSubmit} className="space-y-3">
@@ -767,11 +769,11 @@ function AppContent() {
               <input value={bootstrapPassword} onChange={(event) => setBootstrapPassword(event.target.value)} type="password" autoComplete="new-password" required minLength={14} placeholder="รหัสผ่าน Owner (อย่างน้อย 14 ตัว)" aria-label="รหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
               <input value={bootstrapKey} onChange={(event) => setBootstrapKey(event.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" aria-label="รหัสตั้งค่าครั้งแรก" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
               {bootstrapError && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{bootstrapError}</p>}
-              <button type="submit" disabled={bootstrapBusy} className="h-12 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white disabled:opacity-60">{bootstrapBusy ? 'กำลังตั้งค่า…' : 'สร้างบัญชี Owner'}</button>
+              <button type="submit" disabled={bootstrapBusy} className="h-12 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white disabled:opacity-60">{bootstrapBusy ? 'กำลังตั้งค่า…' : bootstrapMode === 'claim-existing-owner' ? 'ตั้งรหัสผ่าน Owner' : 'สร้างบัญชี Owner'}</button>
             </form>
           ) : (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-              ฐานข้อมูลยังไม่มีบัญชี Owner แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้สร้าง Owner เพื่อป้องกันบุคคลภายนอกยึดบัญชีแรก
+              {bootstrapMode === 'claim-existing-owner' ? <>พบบัญชี Owner เดิมที่ยังไม่ได้ตั้งรหัสผ่าน M101 แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้ตั้งรหัสผ่าน</> : <>ฐานข้อมูลยังไม่มีบัญชี Owner แต่ยังไม่ได้ตั้งค่า <code>M101_BOOTSTRAP_KEY</code> ใน Cloudflare Pages Preview จึงยังไม่เปิดให้สร้าง Owner เพื่อป้องกันบุคคลภายนอกยึดบัญชีแรก</>}
             </div>
           )}
         </section>
