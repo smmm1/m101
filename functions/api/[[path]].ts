@@ -310,12 +310,21 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const id = randomToken(18), now = new Date().toISOString(), encoded = await hashPassword(password);
       const email = `${username.toLowerCase()}@m101.local`;
       const workspaceId = access.workspaceId;
-      const result = await env.DB.batch([
-        env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1)").bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
-        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(randomToken(18), workspaceId, id, now, now),
-        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.created', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, access.user.id, id, JSON.stringify({ username }), now)
-      ]);
-      if (!result.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชีไม่สำเร็จ' }, 500);
+      let result: Array<{ meta?: { changes?: number } }>;
+      try {
+        result = await env.DB.batch([
+          env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1)").bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
+          env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(randomToken(18), workspaceId, id, now, now),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.created', 'user', ?, ?, ?)").bind(randomToken(18), workspaceId, access.user.id, id, JSON.stringify({ username }), now)
+        ]);
+      } catch (error) {
+        // The unique username index is the concurrency-safe authority; translate
+        // a competing create with the same ID into a conflict instead of a 500.
+        const duplicateAfterRace = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE').bind(username).first();
+        if (duplicateAfterRace) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
+        throw error;
+      }
+      if (!result.every((item) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชีไม่สำเร็จ' }, 500);
       return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', createdAt: now } }, 201);
     }
 
@@ -343,10 +352,19 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว' }, 409);
       const encoded = newPassword ? await hashPassword(newPassword) : null;
       const now = new Date().toISOString();
-      const statements = [
-        env.DB.prepare("UPDATE users SET username = ?, email = ?, display_name = CASE WHEN ? = '' THEN display_name ELSE ? END, account_status = ?, password_hash = COALESCE(?, password_hash), password_salt = COALESCE(?, password_salt), local_password_set = CASE WHEN ? IS NULL THEN local_password_set ELSE 1 END WHERE id = ? AND role = 'member'")
-          .bind(username, `${username.toLowerCase()}@m101.local`, displayName, displayName, accountStatus, encoded?.hash || null, encoded?.salt || null, encoded?.hash || null, targetId),
-      ];
+      let updated: { meta?: { changes?: number } };
+      try {
+        updated = await env.DB.prepare("UPDATE users SET username = ?, email = ?, display_name = CASE WHEN ? = '' THEN display_name ELSE ? END, account_status = ?, password_hash = COALESCE(?, password_hash), password_salt = COALESCE(?, password_salt), local_password_set = CASE WHEN ? IS NULL THEN local_password_set ELSE 1 END WHERE id = ? AND role = 'member' AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = users.id AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active')")
+          .bind(username, `${username.toLowerCase()}@m101.local`, displayName, displayName, accountStatus, encoded?.hash || null, encoded?.salt || null, encoded?.hash || null, targetId, access.workspaceId).run();
+      } catch (error) {
+        // A concurrent username change can win after the preflight duplicate
+        // query. Keep the database unique index authoritative and return 409.
+        const duplicateAfterRace = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE AND id != ?').bind(username, targetId).first();
+        if (duplicateAfterRace) return json({ error: 'ID นี้ถูกใช้งานแล้ว' }, 409);
+        throw error;
+      }
+      if (Number(updated.meta?.changes || 0) !== 1) return json({ error: 'บัญชีสมาชิกนี้ไม่มีสิทธิ์อยู่ใน Workspace แล้ว กรุณารีเฟรชรายการ' }, 404);
+      const statements = [];
       if (newPassword || accountStatus === 'suspended') statements.push(env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(targetId));
       statements.push(env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'user.updated', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, targetId, JSON.stringify({ username, accountStatus, passwordReset: Boolean(newPassword) }), now));
       await env.DB.batch(statements);
