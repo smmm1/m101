@@ -87,6 +87,25 @@ async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAcc
   return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
 }
 
+async function findWorkspaceBusiness(workspaceId: string, businessId: string, env: Env): Promise<{ id: string; companyName: string } | null> {
+  const result = await env.DB.prepare(
+    'SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?'
+  ).bind(workspaceId).all();
+  for (const row of result.results || []) {
+    let records: unknown;
+    try { records = JSON.parse(String((row as { records?: string }).records || '[]')); }
+    catch { continue; }
+    if (!Array.isArray(records)) continue;
+    const match = records.find((record: unknown) => record && typeof record === 'object'
+      && String((record as { id?: unknown }).id || '') === businessId);
+    if (match) {
+      const companyName = String((match as { companyName?: unknown }).companyName || '').trim();
+      if (companyName) return { id: businessId, companyName };
+    }
+  }
+  return null;
+}
+
 async function requireWorkspaceAccess(request: Request, env: Env): Promise<WorkspaceAccess | null> {
   const user = await getUser(request, env);
   if (!user) return null;
@@ -462,6 +481,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const businessId = String(body.businessId || '').trim();
       const businessName = String(body.businessName || '').trim();
       const taskCode = String(body.taskCode || '').trim().toUpperCase();
+      const business = await findWorkspaceBusiness(workspaceAccess.workspaceId, String(currentTask.business_id || ''), env);
+      if (!business) return json({ error: 'ไม่พบกิจการต้นทางในทะเบียน Workspace จึงไม่สามารถแก้ไขงานนี้ได้' }, 409);
       const taskName = String(body.taskName || '').trim();
       const status = String(body.status || 'pending');
       const dueDate = String(body.dueDate || '').trim();
@@ -472,6 +493,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
       if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
+      const business = await findWorkspaceBusiness(workspaceAccess.workspaceId, businessId, env);
+      if (!business) return json({ error: 'ไม่พบกิจการนี้ในทะเบียนของ Workspace' }, 404);
       if (workspaceAccess.membershipType !== 'owner') {
         const assigned = await env.DB.prepare('SELECT 1 AS allowed FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?')
           .bind(workspaceAccess.workspaceId, businessId, user.id).first();
@@ -482,7 +505,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       try {
         await env.DB.prepare(
           'INSERT INTO annual_tasks (id, workspace_id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, workspaceAccess.workspaceId, fiscalYear, businessId, businessName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now).run();
+        ).bind(id, workspaceAccess.workspaceId, fiscalYear, businessId, business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now).run();
       } catch (error) {
         const existing = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ?').bind(fiscalYear, businessId, taskCode).first();
         if (existing) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
@@ -526,7 +549,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       try {
         result = await env.DB.prepare(
           'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?'
-        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId).run();
+        ).bind(business.companyName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId).run();
       } catch (error) {
         const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, workspaceAccess.workspaceId).first() as { fiscal_year?: string; business_id?: string } | null;
         if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
@@ -576,6 +599,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const body = await request.json() as { businessId?: string; userId?: string };
       const businessId = String(body.businessId || '').trim(), userId = String(body.userId || '').trim();
       if (!businessId || businessId.length > 160 || !userId || userId.length > 160) return json({ error: 'รหัสกิจการหรือสมาชิกไม่ถูกต้อง' }, 400);
+      const business = await findWorkspaceBusiness(access.workspaceId, businessId, env);
+      if (!business) return json({ error: 'ไม่พบกิจการนี้ในทะเบียนของ Workspace' }, 404);
       const collaborator = await env.DB.prepare("SELECT user_id FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active'").bind(access.workspaceId, userId).first();
       if (!collaborator) return json({ error: 'ไม่พบสมาชิกที่มีสถานะ Collaborator ใน Workspace นี้' }, 404);
       const existing = await env.DB.prepare('SELECT id FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?').bind(access.workspaceId, businessId, userId).first();
