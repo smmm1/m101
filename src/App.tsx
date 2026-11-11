@@ -198,8 +198,6 @@ function AppContent() {
     return () => { active = false; };
   }, []);
 
-  }, [sessionUser]);
-
   useEffect(() => {
     let active = true;
     if (!sessionUser) {
