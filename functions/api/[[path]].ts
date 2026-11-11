@@ -141,8 +141,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
   try {
     if (path === '/api/health' && request.method === 'GET') {
-      const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first();
-      return json({ ok: true, database: 'connected', users: Number(row?.count || 0) });
+      return json({ ok: true, database: 'connected' });
     }
 
     if (path === '/api/auth/bootstrap-status' && request.method === 'GET') {
@@ -194,12 +193,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (Number(attempts?.count || 0) >= 5) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
 
       const user = await env.DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
-      if (!user || user.account_status !== 'active') {
-        await env.DB.prepare('INSERT INTO password_login_attempts (attempt_key, attempted_at) VALUES (?, ?)').bind(attemptKey, now).run();
-        return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
-      }
-      const candidate = await hashPassword(password, user.password_salt);
-      if (!constantTimeEqual(candidate.hash, user.password_hash)) {
+      // Perform the same PBKDF2 work for unknown, suspended, and active accounts
+      // so login timing does not reveal whether a username exists or is enabled.
+      const candidate = await hashPassword(password, user?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
+      if (!user || user.account_status !== 'active' || !constantTimeEqual(candidate.hash, user.password_hash)) {
         await env.DB.prepare('INSERT INTO password_login_attempts (attempt_key, attempted_at) VALUES (?, ?)').bind(attemptKey, now).run();
         return json({ error: 'ID หรือรหัสผ่านไม่ถูกต้อง' }, 401);
       }
