@@ -19,6 +19,7 @@ import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
 import { SmartIdleScreen } from './components/SmartIdleScreen';
 import { AdminControlCenter } from './components/AdminControlCenter';
+import { UserManagementPanel } from './components/UserManagementPanel';
 
 interface SessionUser { id: string; username: string; role: 'admin' | 'member' }
 
@@ -59,6 +60,7 @@ function AppContent() {
   const [bootstrapError, setBootstrapError] = useState('');
   const [bootstrapBusy, setBootstrapBusy] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authUsername, setAuthUsername] = useState('');
@@ -936,8 +938,10 @@ function AppContent() {
           onClose={() => setAdminPanelOpen(false)}
           onNavigate={(tab) => { window.dispatchEvent(new CustomEvent('m101:owner-navigate', { detail: { tab } })); setAdminPanelOpen(false); }}
           onPreviewAfk={() => { setAdminPanelOpen(false); window.dispatchEvent(new Event('m101:owner-preview-afk')); }}
+          onManageUsers={() => { setAdminPanelOpen(false); setUserManagementOpen(true); }}
         />
       )}
+      {userManagementOpen && isLoggedIn && userRole === 'admin' && <UserManagementPanel onClose={() => setUserManagementOpen(false)} />}
       {pinSetupOpen && sessionUser && (
         <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
           <form onSubmit={async (event) => {
