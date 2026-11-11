@@ -25,8 +25,9 @@
   ```
 
 - Before the first Owner can be created, configure `M101_BOOTSTRAP_KEY` as a **secret** in the Cloudflare Pages **Preview** environment only. Do not put it in Production, commit it to this repository, or expose it in browser code.
-- The first-setup screen accepts the Owner's chosen ID, a password of at least 14 characters, and the bootstrap key. The API only permits this operation while the M101 users table is empty.
-- After applying migrations, verify that the Preview `users` table has `username` and `account_status`, and that `auth_rate_limit_attempts` exists before testing the first Owner setup.
+- The first-setup screen accepts the Owner's chosen ID, a password of at least 14 characters, and the bootstrap key. On an empty database it creates the first Owner and workspace. If the legacy M101 Owner already exists, it initializes that Owner's local password in place, preserving the existing user ID, workspace, memberships, and directory records.
+- Legacy member accounts receive `local_password_set = 0` and cannot use old sessions or log in until the Owner assigns a new local password from account management. New accounts are created with local credentials enabled.
+- After applying migrations, verify that the Preview `users` table has `username`, `account_status`, and `local_password_set`, and that `auth_rate_limit_attempts` exists before testing Owner setup.
 
 Do not switch the production branch to a preview branch. Changes are released by committing to `main`, then verifying that the latest Cloudflare deployment is marked `production`, references the same commit, and succeeds.
 
