@@ -130,5 +130,33 @@ current_member = db.execute(
 ).fetchone()
 assert current_member == ("member02", "Updated Member"), current_member
 
+# Owner password reset revokes sessions only when the newly written hash matches.
+db.execute(
+    "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES ('member-session-reset', ?, 9999999999, '2026-01-02T00:00:00Z')",
+    (member_id,),
+)
+db.execute("UPDATE users SET password_hash = 'new-member-hash', local_password_set = 1 WHERE id = ?", (member_id,))
+revoke_after_password_reset = db.execute(
+    "DELETE FROM sessions WHERE user_id = ? AND ((? = 1 AND EXISTS "
+    "(SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND local_password_set = 1)) "
+    "OR (? = 'suspended' AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = 'suspended')))",
+    (member_id, 1, member_id, "new-member-hash", "active", member_id),
+)
+assert revoke_after_password_reset.rowcount == 1, "password reset must revoke all member sessions"
+
+# Suspension uses the same conditional revocation predicate.
+db.execute(
+    "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES ('member-session-suspend', ?, 9999999999, '2026-01-02T00:00:00Z')",
+    (member_id,),
+)
+db.execute("UPDATE users SET account_status = 'suspended' WHERE id = ?", (member_id,))
+revoke_after_suspension = db.execute(
+    "DELETE FROM sessions WHERE user_id = ? AND ((? = 1 AND EXISTS "
+    "(SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND local_password_set = 1)) "
+    "OR (? = 'suspended' AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = 'suspended')))",
+    (member_id, 0, member_id, "", "suspended", member_id),
+)
+assert revoke_after_suspension.rowcount == 1, "suspension must revoke all member sessions"
+
 db.close()
 print("Legacy Owner migration, atomic auth rate limiting, and Owner account guard checks passed.")
