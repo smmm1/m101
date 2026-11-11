@@ -294,7 +294,7 @@ function AppContent() {
               {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : 'เข้าสู่ระบบ'}
             </button>
           </form>
-
+        </section>
       </main>
     );
   }
