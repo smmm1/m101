@@ -158,5 +158,78 @@ revoke_after_suspension = db.execute(
 )
 assert revoke_after_suspension.rowcount == 1, "suspension must revoke all member sessions"
 
+
+# Workspace assignment and annual-task writes re-check authorization in the
+# mutating SQL statement, so a concurrent assignment revocation cannot race
+# between an application-level permission check and the write.
+assignment_id = "test-assignment-1"
+assignment_insert = (
+    "INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) "
+    "SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm "
+    "JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? "
+    "AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active') "
+    "AND EXISTS (SELECT 1 FROM workspace_memberships owner_membership "
+    "JOIN workspaces owner_workspace ON owner_workspace.id = owner_membership.workspace_id "
+    "WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? "
+    "AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' "
+    "AND owner_workspace.status = 'active')"
+)
+assigned = db.execute(
+    assignment_insert,
+    (assignment_id, workspace[0], "legacy-business-1", member_id, owner_id,
+     "2026-01-03T00:00:00Z", workspace[0], member_id, workspace[0], owner_id),
+)
+assert assigned.rowcount == 1, "active Owner and collaborator should be able to create an assignment"
+
+guarded_task_insert = (
+    "INSERT INTO annual_tasks (id, workspace_id, fiscal_year, business_id, business_name, task_code, "
+    "task_name, status, created_by, updated_by, created_at, updated_at) "
+    "SELECT ?, ?, '69', ?, 'Legacy Business', 'TAX51', 'Assigned task', 'pending', ?, ?, ?, ? "
+    "WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id "
+    "WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? "
+    "AND wm.status = 'active' AND w.status = 'active') "
+    "AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba "
+    "WHERE ba.workspace_id = ? AND ba.business_id = ? AND ba.user_id = ?))"
+)
+task_inserted = db.execute(
+    guarded_task_insert,
+    ("assigned-task-1", workspace[0], "legacy-business-1", member_id, member_id,
+     "2026-01-03T00:00:00Z", "2026-01-03T00:00:00Z", member_id, workspace[0],
+     "collaborator", "collaborator", workspace[0], "legacy-business-1", member_id),
+)
+assert task_inserted.rowcount == 1, "assigned collaborator should be able to create an annual task"
+
+db.execute("DELETE FROM business_assignments WHERE id = ? AND workspace_id = ?", (assignment_id, workspace[0]))
+guarded_task_update = (
+    "UPDATE annual_tasks SET task_name = 'Should not update' WHERE id = ? AND workspace_id = ? "
+    "AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id "
+    "WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? "
+    "AND wm.status = 'active' AND w.status = 'active') "
+    "AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba "
+    "WHERE ba.workspace_id = ? AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?))"
+)
+revoked_update = db.execute(
+    guarded_task_update,
+    ("assigned-task-1", workspace[0], member_id, workspace[0], "collaborator",
+     "collaborator", workspace[0], member_id),
+)
+assert revoked_update.rowcount == 0, "revoked assignment must block an in-flight annual-task update"
+
+guarded_task_delete = (
+    "DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ? "
+    "AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id "
+    "WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.membership_type = ? "
+    "AND wm.status = 'active' AND w.status = 'active') "
+    "AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba "
+    "WHERE ba.workspace_id = ? AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?))"
+)
+revoked_delete = db.execute(
+    guarded_task_delete,
+    ("assigned-task-1", workspace[0], member_id, workspace[0], "collaborator",
+     "collaborator", workspace[0], member_id),
+)
+assert revoked_delete.rowcount == 0, "revoked assignment must block an in-flight annual-task deletion"
+
 db.close()
-print("Legacy Owner migration, atomic auth rate limiting, and Owner account guard checks passed.")
+print("Legacy Owner migration, atomic auth rate limiting, Owner account guards, and workspace assignment revocation checks passed.")
+
