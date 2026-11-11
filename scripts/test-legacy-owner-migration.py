@@ -159,6 +159,8 @@ revoke_after_suspension = db.execute(
 assert revoke_after_suspension.rowcount == 1, "suspension must revoke all member sessions"
 
 
+db.execute("UPDATE workspace_memberships SET status = 'active' WHERE user_id = ? AND workspace_id = ?", (member_id, workspace[0]))
+
 # Workspace assignment and annual-task writes re-check authorization in the
 # mutating SQL statement, so a concurrent assignment revocation cannot race
 # between an application-level permission check and the write.
