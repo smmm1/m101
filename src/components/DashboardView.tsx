@@ -65,8 +65,6 @@ interface DashboardViewProps {
   onDeleteYear?: (year: string) => void;
   isLoggedIn: boolean;
   isAdmin?: boolean;
-  isVisitor?: boolean;
-  onReturnToLogin?: () => void;
   onToggleLogin: () => void;
 }
 
@@ -90,8 +88,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onRestoreRecords,
   isLoggedIn,
   isAdmin = false,
-  isVisitor = false,
-  onReturnToLogin,
   onToggleLogin,
 }) => {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -657,7 +653,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <span className="hidden lg:flex flex-col items-start min-w-0">
                 <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[110px]">{userName}</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">{isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</span>
               </span>
               <span className="material-symbols-outlined text-[18px] text-slate-500 dark:text-slate-400">expand_more</span>
             </button>
