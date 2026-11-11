@@ -384,7 +384,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (path === '/api/data' && request.method === 'GET') {
 
-      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      const authenticatedUser = await requireUser(request, env);
+      if (!authenticatedUser) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
       if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
