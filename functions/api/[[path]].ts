@@ -135,6 +135,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const body = await request.json() as { username?: string; password?: string; bootstrapKey?: string };
       if (!env.M101_BOOTSTRAP_KEY) return json({ error: 'ระบบยังไม่ได้เปิดการตั้งค่า Owner ครั้งแรก' }, 503);
       const nowSeconds = Math.floor(Date.now() / 1000);
+      await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempted_at <= ?').bind(nowSeconds - 15 * 60).run();
       const bootstrapIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
       const bootstrapAttemptKey = await digest(`bootstrap:${bootstrapIp}`);
       const bootstrapReservation = await env.DB.prepare(
