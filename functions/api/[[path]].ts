@@ -481,8 +481,6 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const businessId = String(body.businessId || '').trim();
       const businessName = String(body.businessName || '').trim();
       const taskCode = String(body.taskCode || '').trim().toUpperCase();
-      const business = await findWorkspaceBusiness(workspaceAccess.workspaceId, String(currentTask.business_id || ''), env);
-      if (!business) return json({ error: 'ไม่พบกิจการต้นทางในทะเบียน Workspace จึงไม่สามารถแก้ไขงานนี้ได้' }, 409);
       const taskName = String(body.taskName || '').trim();
       const status = String(body.status || 'pending');
       const dueDate = String(body.dueDate || '').trim();
@@ -526,6 +524,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const currentTask = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?')
         .bind(id, workspaceAccess.workspaceId).first() as { business_id?: string } | null;
       if (!currentTask) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      const business = await findWorkspaceBusiness(workspaceAccess.workspaceId, String(currentTask.business_id || ''), env);
+      if (!business) return json({ error: 'ไม่พบกิจการต้นทางในทะเบียน Workspace จึงไม่สามารถแก้ไขงานนี้ได้' }, 409);
       if (workspaceAccess.membershipType !== 'owner') {
         const assigned = await env.DB.prepare('SELECT 1 AS allowed FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?')
           .bind(workspaceAccess.workspaceId, String(currentTask.business_id || ''), user.id).first();
@@ -541,7 +541,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const status = String(body.status || '');
       const dueDate = String(body.dueDate || '').trim();
       const note = String(body.note || '').trim();
-      if (!businessName || businessName.length > 300 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'ข้อมูลกิจการหรือประเภทงานไม่ถูกต้อง' }, 400);
+      if (!/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'ข้อมูลกิจการหรือประเภทงานไม่ถูกต้อง' }, 400);
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
       if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
