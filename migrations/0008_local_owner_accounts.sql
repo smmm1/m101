@@ -5,7 +5,16 @@ ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active'
   CHECK (account_status IN ('active', 'suspended'));
 
 UPDATE users
-SET username = lower(substr(email, 1, instr(email, '@') - 1))
+SET username = CASE
+  WHEN length(substr(email, 1, instr(email, '@') - 1)) <= 32
+    AND (
+      SELECT COUNT(*) FROM users AS other
+      WHERE lower(substr(other.email, 1, instr(other.email, '@') - 1))
+        = lower(substr(users.email, 1, instr(users.email, '@') - 1))
+    ) = 1
+  THEN lower(substr(email, 1, instr(email, '@') - 1))
+  ELSE lower(substr(email, 1, 20)) || '_' || lower(substr(id, 1, 11))
+END
 WHERE username IS NULL AND instr(email, '@') > 1;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique
