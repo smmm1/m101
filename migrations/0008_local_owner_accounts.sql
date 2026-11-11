@@ -26,9 +26,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_m101_owner
   ON workspace_memberships(membership_type)
   WHERE membership_type = 'owner' AND status = 'active';
 
-CREATE TABLE IF NOT EXISTS password_login_attempts (
+CREATE TABLE IF NOT EXISTS auth_rate_limit_attempts (
   attempt_key TEXT NOT NULL,
   attempted_at INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_password_login_attempts_key_time
-  ON password_login_attempts(attempt_key, attempted_at);
+CREATE INDEX IF NOT EXISTS idx_auth_rate_limit_attempts_key_time
+  ON auth_rate_limit_attempts(attempt_key, attempted_at);
