@@ -198,6 +198,506 @@ function AppContent() {
     return () => { active = false; };
   }, []);
 
+  }, [sessionUser]);
+
+  useEffect(() => {
+    let active = true;
+    if (!sessionUser) {
+      setIsLoggedIn(false);
+      setUserRole('member');
+      setAccessReady(true);
+      setDataReady(false);
+      directoryRevisionRef.current = null;
+      lastSavedSnapshotRef.current = null;
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
+      return () => { active = false; };
+    }
+
+    setAccessReady(false);
+    setDataReady(false);
+    setDataError('');
+    fetch('/api/data', { credentials: 'same-origin' })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
+        return payload;
+      })
+      .then((payload) => {
+        if (!active) return;
+        const nextRecords = payload.recordsByYear && Object.keys(payload.recordsByYear).length
+          ? payload.recordsByYear as Record<string, BusinessRecord[]>
+          : { '69': [] };
+        const years = Array.isArray(payload.availableYears) && payload.availableYears.length
+          ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
+          : Object.keys(nextRecords);
+        setRecordsByYear(nextRecords);
+        setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+        lastSavedSnapshotRef.current = JSON.stringify({ availableYears: years.length ? years : ['69'], recordsByYear: nextRecords });
+        saveBlockedRef.current = false;
+        saveRequestedRef.current = false;
+        setSaveConflict(null);
+        setLoadingLatestAfterConflict(false);
+        undoStackRef.current = [];
+        setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
+        setUserName(sessionUser.username || 'ผู้ดูแลระบบ');
+        setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
+        setIsLoggedIn(true);
+        setAccessReady(true);
+        setDataReady(true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลจาก Cloudflare D1 ไม่สำเร็จ');
+        setAccessReady(true);
+        setDataReady(false);
+        if (error instanceof Error && error.message.includes('401')) setSessionUser(null);
+      });
+    return () => { active = false; };
+  }, [sessionUser, dataReloadKey]);
+
+  // Save only against the exact D1 snapshot revision loaded by this client.
+  // Requests are serialized; a stale snapshot is blocked rather than auto-overwritten.
+  useEffect(() => {
+    if (!dataReady || !isLoggedIn || !sessionUser || saveBlockedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      if (saveBlockedRef.current) return;
+      if (saveInFlightRef.current) {
+        saveRequestedRef.current = true;
+        return;
+      }
+      const snapshotKey = JSON.stringify({ availableYears, recordsByYear });
+      if (snapshotKey === lastSavedSnapshotRef.current) {
+        pendingDatabaseWriteRef.current = false;
+        return;
+      }
+      const expectedDirectoryRevision = directoryRevisionRef.current;
+      if (expectedDirectoryRevision === null) {
+        saveBlockedRef.current = true;
+        pendingDatabaseWriteRef.current = false;
+        showToast('ไม่พบเวอร์ชันข้อมูลจากเซิร์ฟเวอร์ จึงหยุดบันทึกเพื่อป้องกันข้อมูลสูญหาย กรุณาโหลดข้อมูลใหม่', 'ยังไม่ได้บันทึก', 'error');
+        return;
+      }
+
+      saveInFlightRef.current = true;
+      void (async () => {
+        try {
+          const response = await fetch('/api/data', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision }),
+          });
+          const payload = await response.json();
+          if (response.status === 409 || payload.conflict) {
+            saveBlockedRef.current = true;
+            pendingDatabaseWriteRef.current = false;
+            pendingSuccessToastsRef.current = [];
+            let baseline: { availableYears?: string[]; recordsByYear?: Record<string, BusinessRecord[]> } = {};
+            try { baseline = lastSavedSnapshotRef.current ? JSON.parse(lastSavedSnapshotRef.current) : {}; } catch { baseline = {}; }
+            const baselineRecords = baseline.recordsByYear || {};
+            const baselineYears = baseline.availableYears || [];
+            // Capture the latest React state, including edits made while this request was in flight.
+            const unsavedRecords = recordsByYearRef.current;
+            const unsavedYears = availableYearsRef.current;
+            const changedYears = Array.from(new Set([
+              ...Object.keys(baselineRecords), ...Object.keys(unsavedRecords), ...baselineYears, ...unsavedYears,
+            ])).filter((year) => JSON.stringify(baselineRecords[year] || []) !== JSON.stringify(unsavedRecords[year] || []) || baselineYears.includes(year) !== unsavedYears.includes(year));
+            setSaveConflict({
+              changedYears,
+              availableYears: [...unsavedYears],
+              recordsByYear: JSON.parse(JSON.stringify(unsavedRecords)) as Record<string, BusinessRecord[]>,
+            });
+            showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
+            return;
+          }
+          if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
+          directoryRevisionRef.current = Number(payload.directoryRevision);
+          lastSavedSnapshotRef.current = snapshotKey;
+          pendingDatabaseWriteRef.current = false;
+          const queued = pendingSuccessToastsRef.current.splice(0);
+          queued.forEach((item) => showToast(item.message, item.title, 'success'));
+        } catch (error) {
+          pendingDatabaseWriteRef.current = false;
+          pendingSuccessToastsRef.current = [];
+          showToast(
+            error instanceof Error ? `บันทึก Cloudflare D1 ไม่สำเร็จ: ${error.message}` : 'บันทึกข้อมูลไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ',
+            'ข้อมูลยังไม่ซิงก์',
+            'error'
+          );
+        } finally {
+          saveInFlightRef.current = false;
+          if (saveRequestedRef.current && !saveBlockedRef.current) {
+            saveRequestedRef.current = false;
+            setDataSaveCycle((cycle) => cycle + 1);
+          }
+        }
+      })();
+    }, 600);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears, dataSaveCycle]);
+
+  // Modals state
+  const [isYearModalOpen, setIsYearModalOpen] = useState(false);
+
+  // Import Conflict Modal State
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState('');
+  const [conflictDuplicates, setConflictDuplicates] = useState<DuplicateConflictItem[]>([]);
+  const [conflictNewItems, setConflictNewItems] = useState<Partial<BusinessRecord>[]>([]);
+
+  // Toast System
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const showToast = (
+    message: string,
+    title?: string,
+    type: 'success' | 'error' | 'info' = 'success'
+  ) => {
+    if (type === 'success' && pendingDatabaseWriteRef.current) {
+      pendingSuccessToastsRef.current.push({ message, title });
+      return;
+    }
+    const id = `${Date.now()}-${Math.random()}`;
+    setToasts([{ id, title, message, type }]);
+    const timeout = setTimeout(() => {
+      handleDismissToast(id);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  };
+
+  const handleDismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  useEffect(() => {
+    if (!saveConflict) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = 'ยังมีข้อมูลที่ไม่ได้บันทึก';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [saveConflict]);
+
+  const handleLoadLatestAfterConflict = async () => {
+    if (!saveConflict || loadingLatestAfterConflict) return;
+    setLoadingLatestAfterConflict(true);
+    try {
+      // Download the unsaved local snapshot before replacing the in-memory data.
+      const recovery = new Blob([JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        purpose: 'M101 recovery copy of changes that were not saved because the server snapshot changed.',
+        availableYears: saveConflict.availableYears,
+        recordsByYear: saveConflict.recordsByYear,
+      }, null, 2)], { type: 'application/json' });
+      const recoveryUrl = URL.createObjectURL(recovery);
+      const anchor = document.createElement('a');
+      anchor.href = recoveryUrl;
+      anchor.download = `m101-unsaved-recovery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(recoveryUrl), 1000);
+
+      const response = await fetch('/api/data', { credentials: 'same-origin', cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลล่าสุดไม่สำเร็จ');
+      const latestRecords = payload.recordsByYear && Object.keys(payload.recordsByYear).length
+        ? payload.recordsByYear as Record<string, BusinessRecord[]>
+        : { '69': [] };
+      const latestYears = Array.isArray(payload.availableYears) && payload.availableYears.length
+        ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
+        : Object.keys(latestRecords);
+      const normalizedYears = latestYears.length ? latestYears : ['69'];
+      directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+      lastSavedSnapshotRef.current = JSON.stringify({ availableYears: normalizedYears, recordsByYear: latestRecords });
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
+      undoStackRef.current = [];
+      setRecordsByYear(latestRecords);
+      setAvailableYears(normalizedYears);
+      setSelectedYear((current) => normalizedYears.includes(current) ? current : (normalizedYears[0] || '69'));
+      setSaveConflict(null);
+      showToast('โหลดข้อมูลล่าสุดแล้ว และดาวน์โหลดฉบับที่ยังไม่บันทึกไว้ให้แล้ว', 'ซิงก์ข้อมูลสำเร็จ', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'โหลดข้อมูลล่าสุดไม่สำเร็จ', 'ยังไม่ได้โหลดข้อมูล', 'error');
+    } finally {
+      setLoadingLatestAfterConflict(false);
+    }
+  };
+
+  // Year Handlers
+  const handleSelectYear = (year: string) => {
+    setSelectedYear(year);
+    if (!recordsByYear[year]) {
+      setRecordsByYear((prev) => ({
+        ...prev,
+        [year]: [],
+      }));
+    }
+    showToast(`สลับไปยังรอบปีบัญชี ${year}`, 'เปลี่ยนรอบปี');
+  };
+
+  const handleAddYear = (newYear: string, copyFromYear?: string) => {
+    if (availableYears.includes(newYear)) {
+      showToast(`รอบปี ${newYear} มีอยู่ในระบบแล้ว`, 'แจ้งเตือน', 'error');
+      return;
+    }
+
+    pushUndoSnapshot();
+    pendingDatabaseWriteRef.current = true;
+    const updatedYears = [...availableYears, newYear].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    setAvailableYears(updatedYears);
+
+    let initialDataForNewYear: BusinessRecord[] = [];
+    if (copyFromYear && recordsByYear[copyFromYear]) {
+      initialDataForNewYear = recordsByYear[copyFromYear].map((r, idx) => ({
+        ...r,
+        id: `rec-${newYear}-${Date.now()}-${idx}`,
+        auditorDate: '',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+
+    setRecordsByYear((prev) => ({
+      ...prev,
+      [newYear]: initialDataForNewYear,
+    }));
+
+    setSelectedYear(newYear);
+    setIsYearModalOpen(false);
+
+    if (copyFromYear) {
+      showToast(
+        `สร้างรอบปี ${newYear} พร้อมคัดลอกรายชื่อบริษัท ${initialDataForNewYear.length} รายการจากปี ${copyFromYear} เรียบร้อย`,
+        'สร้างรอบปีใหม่สำเร็จ'
+      );
+    } else {
+      showToast(`สร้างรอบปี ${newYear} เรียบร้อยแล้ว`, 'สร้างรอบปีใหม่สำเร็จ');
+    }
+  };
+
+  const handleDeleteYear = (yearToDelete: string) => {
+    if (availableYears.length <= 1) {
+      showToast('ไม่สามารถลบรอบปีเดียวที่เหลืออยู่ได้', 'แจ้งเตือน', 'error');
+      return;
+    }
+
+    pushUndoSnapshot();
+    pendingDatabaseWriteRef.current = true;
+    const nextAvailable = availableYears.filter((y) => y !== yearToDelete);
+    setAvailableYears(nextAvailable);
+
+    setRecordsByYear((prev) => {
+      const copy = { ...prev };
+      delete copy[yearToDelete];
+      return copy;
+    });
+
+    if (selectedYear === yearToDelete) {
+      setSelectedYear(nextAvailable[0]);
+    }
+
+    showToast(`ลบรอบปี ${yearToDelete} เรียบร้อยแล้ว`, 'ลบรอบปี');
+  };
+
+  // Record CRUD for the Active Year
+  const updateActiveYearRecords = (updater: (prev: BusinessRecord[]) => BusinessRecord[]) => {
+    pushUndoSnapshot();
+    pendingDatabaseWriteRef.current = true;
+    setRecordsByYear((prev) => {
+      const currentList = prev[selectedYear] || [];
+      const updatedList = updater(currentList);
+      return {
+        ...prev,
+        [selectedYear]: updatedList,
+      };
+    });
+  };
+
+  const handleAddRecord = (newRecord: BusinessRecord) => {
+    updateActiveYearRecords((prev) => [newRecord, ...prev]);
+  };
+
+  const handleUpdateRecord = (updated: BusinessRecord) => {
+    updateActiveYearRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    showToast(`อัปเดตข้อมูล "${updated.companyName}" สำเร็จ`, 'บันทึกเรียบร้อย');
+  };
+
+  const handleDeleteRecord = (id: string) => {
+    const target = currentRecords.find((r) => r.id === id);
+    updateActiveYearRecords((prev) => prev.filter((r) => r.id !== id));
+    showToast(`ลบข้อมูล "${target?.companyName || id}" แล้ว`, 'ลบข้อมูล');
+  };
+
+  const handleDeleteMultiple = (ids: string[]) => {
+    updateActiveYearRecords((prev) => prev.filter((r) => !ids.includes(r.id)));
+    showToast(`ลบข้อมูล ${ids.length} รายการแล้ว`, 'ลบข้อมูล');
+  };
+
+  // Helper to append formatted records
+  const createNewFormattedRecords = (
+    newItems: Partial<BusinessRecord>[],
+    currentList: BusinessRecord[]
+  ): BusinessRecord[] => {
+    const baseTimestamp = Date.now();
+    let maxSeq = 0;
+    currentList.forEach((r) => {
+      const cleaned = r.sequenceNo ? r.sequenceNo.replace(/\D/g, '') : '';
+      const num = parseInt(cleaned, 10);
+      if (!isNaN(num) && num > maxSeq) maxSeq = num;
+    });
+
+    return newItems.map((item, idx) => {
+      const rowTimestamp = new Date(baseTimestamp + (newItems.length - idx) * 1000).toISOString();
+      const calculatedSeq = maxSeq + idx + 1;
+
+      return {
+        id: `import-${selectedYear}-${baseTimestamp}-${String(idx).padStart(4, '0')}`,
+        sequenceNo: item.sequenceNo?.trim() || String(calculatedSeq),
+        taxId: item.taxId !== undefined ? item.taxId : '',
+        companyName: item.companyName || `กิจการนำเข้า ${calculatedSeq}`,
+        type: item.type || 'company',
+        auditorDate: item.auditorDate !== undefined ? item.auditorDate : '',
+        password: item.password !== undefined ? item.password : '',
+        remark: item.remark !== undefined ? item.remark : '',
+        eFilingCode: item.eFilingCode !== undefined ? item.eFilingCode : '',
+        ssoCode: item.ssoCode !== undefined ? item.ssoCode : '',
+        status: item.status || 'pending',
+        isVerifiedDbd: true,
+        topic: item.topic || `นำเข้าปี ${selectedYear}`,
+        sourceType: item.sourceType || 'excel',
+        sourceFileName: item.sourceFileName,
+        createdAt: rowTimestamp,
+        updatedAt: rowTimestamp,
+      };
+    });
+  };
+
+  // Import Process for Active Year
+  const processImportRecords = (
+    parsedItems: Partial<BusinessRecord>[],
+    fileName: string
+  ) => {
+    const duplicateList: DuplicateConflictItem[] = [];
+    const newItemsList: Partial<BusinessRecord>[] = [];
+
+    const existingTaxMap = new Map<string, BusinessRecord>();
+    currentRecords.forEach((r) => {
+      const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
+      if (cleanTax) {
+        existingTaxMap.set(cleanTax, r);
+      }
+    });
+
+    parsedItems.forEach((item) => {
+      const cleanTax = item.taxId ? item.taxId.replace(/\D/g, '').trim() : '';
+      if (cleanTax && existingTaxMap.has(cleanTax)) {
+        duplicateList.push({
+          incoming: item,
+          existing: existingTaxMap.get(cleanTax)!,
+        });
+      } else {
+        newItemsList.push(item);
+      }
+    });
+
+    if (duplicateList.length > 0) {
+      setPendingImportFile(fileName);
+      setConflictDuplicates(duplicateList);
+      setConflictNewItems(newItemsList);
+      setIsConflictModalOpen(true);
+    } else {
+      const formatted = createNewFormattedRecords(newItemsList, currentRecords);
+      updateActiveYearRecords((prev) => [...formatted, ...prev]);
+      showToast(`นำเข้าสำเร็จ ${formatted.length} รายการ เข้าสู่ปี ${selectedYear}`, 'นำเข้าไฟล์สำเร็จ');
+
+    }
+  };
+
+  // Resolve Duplicate Conflict
+  const handleResolveConflict = (mode: ConflictResolutionMode) => {
+    setIsConflictModalOpen(false);
+
+    if (mode === 'update_existing') {
+      const incomingUpdatesMap = new Map<string, Partial<BusinessRecord>>();
+      conflictDuplicates.forEach(({ incoming, existing }) => {
+        const cleanTax = existing.taxId ? existing.taxId.replace(/\D/g, '').trim() : '';
+        if (cleanTax) {
+          incomingUpdatesMap.set(cleanTax, incoming);
+        }
+      });
+
+      updateActiveYearRecords((prev) => {
+        const updatedList = prev.map((r) => {
+          const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
+          if (cleanTax && incomingUpdatesMap.has(cleanTax)) {
+            const incoming = incomingUpdatesMap.get(cleanTax)!;
+            return {
+              ...r,
+              companyName: incoming.companyName || r.companyName,
+              type: incoming.type || r.type,
+              auditorDate: incoming.auditorDate !== undefined && incoming.auditorDate !== '' ? incoming.auditorDate : r.auditorDate,
+              password: incoming.password !== undefined && incoming.password !== '' ? incoming.password : r.password,
+              remark: incoming.remark !== undefined && incoming.remark !== '' ? incoming.remark : r.remark,
+              eFilingCode: incoming.eFilingCode !== undefined && incoming.eFilingCode !== '' ? incoming.eFilingCode : r.eFilingCode,
+              ssoCode: incoming.ssoCode !== undefined && incoming.ssoCode !== '' ? incoming.ssoCode : r.ssoCode,
+              status: incoming.status || r.status,
+              topic: incoming.topic || r.topic,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return r;
+        });
+
+        const newFormatted = createNewFormattedRecords(conflictNewItems, updatedList);
+        return [...newFormatted, ...updatedList];
+      });
+
+      showToast(
+        `อัปเดตข้อมูลเดิม ${conflictDuplicates.length} รายการ และเพิ่มกิจการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
+        'อัปเดตข้อมูลสำเร็จ'
+      );
+
+    } else if (mode === 'skip_duplicates') {
+      if (conflictNewItems.length > 0) {
+        updateActiveYearRecords((prev) => {
+          const newFormatted = createNewFormattedRecords(conflictNewItems, prev);
+          return [...newFormatted, ...prev];
+        });
+        showToast(
+          `ข้ามรายการซ้ำ ${conflictDuplicates.length} รายการ และนำเข้ารายการใหม่ ${conflictNewItems.length} รายการ (ปี ${selectedYear})`,
+          'นำเข้าเฉพาะรายการใหม่'
+        );
+      } else {
+        showToast(
+          `ข้ามรายการซ้ำทั้งหมด ${conflictDuplicates.length} รายการ`,
+          'ข้ามรายการซ้ำแล้ว',
+          'info'
+        );
+      }
+
+    } else if (mode === 'import_all') {
+      const allIncoming = [...conflictDuplicates.map((d) => d.incoming), ...conflictNewItems];
+      updateActiveYearRecords((prev) => {
+        const newFormatted = createNewFormattedRecords(allIncoming, prev);
+        return [...newFormatted, ...prev];
+      });
+      showToast(
+        `นำเข้าทั้งหมด ${allIncoming.length} รายการ เข้าสู่ปี ${selectedYear}`,
+        'นำเข้าทั้งหมดสำเร็จ'
+      );
+
+    }
+  };
+
   const handleBootstrapSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBootstrapError('');
