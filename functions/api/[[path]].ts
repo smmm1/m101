@@ -67,7 +67,7 @@ async function getUser(request: Request, env: Env): Promise<UserRow | null> {
   if (!token) return null;
   const tokenHash = await digest(token);
   const row = await env.DB.prepare(
-    'SELECT u.id, u.email, u.username, u.display_name, u.role, u.account_status, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status = 'active''
+    "SELECT u.id, u.email, u.username, u.display_name, u.role, u.account_status, u.password_hash, u.password_salt FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status = 'active'"
   ).bind(tokenHash, Math.floor(Date.now() / 1000)).first();
   return row || null;
 }
