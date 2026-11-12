@@ -629,10 +629,10 @@ function AppContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
           ? { pin: authPin }
-          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
+          : { email: authEmail.trim(), password: authPassword }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      if (!response.ok) throw new Error(payload.error || 'บัญชีผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       setSessionUser(payload.user as SessionUser);
       setUserName(payload.user?.email || 'ผู้ดูแลระบบ');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
@@ -697,10 +697,10 @@ function AppContent() {
         <section aria-label="เข้าสู่ระบบ M101" className="w-full max-w-[380px] rounded-2xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_55px_rgba(30,55,90,0.10)] sm:p-8">
           <form onSubmit={handleLoginSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="m101-login-email" className="block text-sm font-medium text-slate-700">บัญชีผู้ใช้</label>
+              <label htmlFor="m101-login-username" className="block text-sm font-medium text-slate-700">บัญชีผู้ใช้</label>
               <input
-                id="m101-login-email"
-                type="email"
+                id="m101-login-username"
+                type="text"
                 autoComplete="username"
                 required
                 value={authEmail}
