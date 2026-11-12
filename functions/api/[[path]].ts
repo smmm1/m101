@@ -310,7 +310,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
-      if (!/^\\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const [workspace, years, data] = await Promise.all([
         env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ? AND status = \'active\'').bind(access.workspaceId).first() as Promise<{ directory_revision?: number } | null>,
         env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(access.workspaceId).all(),
@@ -338,7 +338,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const fiscalYear = String(body.fiscalYear || '').trim();
       const records = body.records;
       const expectedRevision = Number(body.revision);
-      if (!/^\\d{2,4}$/.test(fiscalYear) || !Array.isArray(records) || records.length > 10000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+      if (!/^\d{2,4}$/.test(fiscalYear) || !Array.isArray(records) || records.length > 10000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
         return json({ error: 'ข้อมูลทะเบียนหรือเลขรุ่นไม่ถูกต้อง' }, 400);
       }
       const serialized = JSON.stringify(records);
@@ -373,7 +373,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
-      if (!/^\\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const result = await env.DB.prepare(
         'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
       ).bind(access.workspaceId, fiscalYear).all();
@@ -403,9 +403,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const status = String(body.status || 'pending');
       const dueDate = String(body.dueDate || '').trim();
       const note = String(body.note || '').trim();
-      if (!/^\\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
+      if (!/^\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
-      if (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
       const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?')
         .bind(access.workspaceId, fiscalYear).first() as { records?: string } | null;
@@ -433,7 +433,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, id, createdAt: now, updatedAt: now }, 201);
     }
 
-    const annualTaskMatch = path.match(/^\\/api\\/annual-tasks\\/([A-Za-z0-9_-]+)$/);
+    const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
     if (annualTaskMatch && request.method === 'PUT') {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
@@ -442,7 +442,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const status = String(body.status || '');
       const dueDate = String(body.dueDate || '').trim();
       const note = String(body.note || '').trim();
-      if (!['pending', 'in_progress', 'completed'].includes(status) || (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
+      if (!['pending', 'in_progress', 'completed'].includes(status) || (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
       const current = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string } | null;
       if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
       if (access.membershipType !== 'owner') {
