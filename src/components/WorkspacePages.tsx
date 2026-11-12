@@ -273,7 +273,7 @@ export function AdminSecurity() {
 
 const importFields: { key: keyof Business; label: string; hints: string[] }[] = [
   { key: 'sequenceNo', label: 'ลำดับ', hints: ['ลำดับ','sequence','no','ที่'] },
-  { key: 'companyName', label: 'ชื่อกิจการ', hints: ['ชื่อกิจการ','ชื่อนิติบุคคล','บริษัท','company','name'] },
+  { key: 'companyName', label: 'ชื่อกิจการ', hints: ['ชื่อกิจการ','ชื่อนิติบุคคล','ชื่อบริษัท','ชื่อบริษัท/หจก','company name','business name'] },
   { key: 'type', label: 'ประเภทกิจการ', hints: ['ประเภท','type','รูปแบบ'] },
   { key: 'taxId', label: 'เลขทะเบียน / เลขผู้เสียภาษี', hints: ['เลขทะเบียน','เลขประจำตัวผู้เสียภาษี','tax','registration','เลขผู้เสียภาษี'] },
   { key: 'eFilingCode', label: 'รหัส e-Filing', hints: ['efiling','e-filing','รหัสยื่น','รหัสกรม'] },
