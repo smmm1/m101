@@ -223,13 +223,25 @@ function parseCsvRows(source: string): string[][] {
 }
 
 function splitExcelTables(matrix: string[][]): string[][][] {
-  const blocks: string[][][] = []; let current: string[][] = [];
-  for (const row of matrix) {
-    if (row.every(value => !String(value ?? '').trim())) { if (current.length) { blocks.push(current); current = []; } }
-    else current.push(row.map(value => String(value ?? '').trim()));
+  const rowGroups: number[][] = []; let rowGroup: number[] = [];
+  for (let row = 0; row < matrix.length; row++) {
+    if ((matrix[row] || []).some(value => String(value ?? '').trim())) rowGroup.push(row);
+    else if (rowGroup.length) { rowGroups.push(rowGroup); rowGroup = []; }
   }
-  if (current.length) blocks.push(current);
-  return blocks.filter(block => block.length >= 2 && block[0].some(Boolean));
+  if (rowGroup.length) rowGroups.push(rowGroup);
+  const maxColumns = Math.max(0, ...matrix.map(row => row.length));
+  const columnGroups: number[][] = []; let columnGroup: number[] = [];
+  for (let column = 0; column < maxColumns; column++) {
+    if (matrix.some(row => String(row?.[column] ?? '').trim())) columnGroup.push(column);
+    else if (columnGroup.length) { columnGroups.push(columnGroup); columnGroup = []; }
+  }
+  if (columnGroup.length) columnGroups.push(columnGroup);
+  const blocks: string[][][] = [];
+  for (const rows of rowGroups) for (const columns of columnGroups) {
+    const block = rows.map(row => columns.map(column => String(matrix[row]?.[column] ?? '').trim()));
+    if (block.length >= 2 && block[0].some(Boolean) && block.slice(1).some(row => row.some(Boolean))) blocks.push(block);
+  }
+  return blocks;
 }
 
 export function ImportExport({ year = '69' }: { year?: string }) {
