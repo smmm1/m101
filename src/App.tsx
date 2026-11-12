@@ -1,16 +1,14 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { AnnualWork, BusinessRegistry, CommandCenter } from './components/WorkspacePages';
 
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
-type Page = 'overview' | 'businesses' | 'work' | 'calendar' | 'documents' | 'reports' | 'activity' | 'settings';
+type Page = 'overview' | 'businesses' | 'work' | 'import' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
-  { id: 'overview', label: 'ศูนย์บัญชาการ', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมสถานะและสิ่งที่ต้องจัดการในพอร์ตโฟลิโอ' },
-  { id: 'businesses', label: 'พอร์ตโฟลิโอกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'จัดการข้อมูลนิติบุคคลและกิจการในพื้นที่ทำงาน' },
-  { id: 'work', label: 'งานและภาระประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'วางแผน ติดตาม และตรวจสอบงานของแต่ละกิจการ' },
-  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'กำหนดส่งและเหตุการณ์สำคัญตามช่วงเวลา' },
-  { id: 'documents', label: 'คลังเอกสาร', group: 'OPERATIONS', icon: '▱', desc: 'เอกสารและหลักฐานที่เชื่อมโยงกับกิจการและงาน' },
-  { id: 'reports', label: 'รายงานและข้อมูลเชิงลึก', group: 'INTELLIGENCE', icon: '▥', desc: 'วิเคราะห์ภาพรวมและติดตามผลการดำเนินงาน' },
-  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: '◷', desc: 'ตรวจสอบเหตุการณ์และการเปลี่ยนแปลงในระบบ' },
-  { id: 'settings', label: 'ตั้งค่าพื้นที่ทำงาน', group: 'SYSTEM', icon: '⚙', desc: 'จัดการสมาชิก สิทธิ์ และการตั้งค่าระบบ' },
+  { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
+  { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
+  { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
+  { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: '⇅', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
+  { id: 'settings', label: 'ผู้ดูแลและความปลอดภัย', group: 'SYSTEM', icon: '⚙', desc: 'จัดการบัญชีและสิทธิ์ในพื้นที่ทำงาน' },
 ];
 
 function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
@@ -18,6 +16,9 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   const [mobileMenu, setMobileMenu] = useState(false);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
+  const [year, setYear] = useState('69');
+  const [availableYears, setAvailableYears] = useState<string[]>(['69']);
+  useEffect(() => { let active = true; fetch('/api/directory?year=' + encodeURIComponent(year), { credentials: 'same-origin', cache: 'no-store' }).then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลดรอบปีไม่สำเร็จ'); return data; }).then(data => { if (active && Array.isArray(data.availableYears) && data.availableYears.length) setAvailableYears(data.availableYears); }).catch(() => {}); return () => { active = false; }; }, [year]);
   const current = pages.find(p => p.id === page)!;
   const choose = (id: Page) => { setPage(id); setMobileMenu(false); };
   const signOut = async () => { setBusy(true); try { await logout(); } finally { setBusy(false); } };
@@ -33,60 +34,16 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
       <header className="topbar">
         <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
         <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
+        <div className="topbar-right"><label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
       </header>
       <main className="content">
-        {page === 'overview' ? <CommandCenter navigate={choose} /> : <section className="module-page">
+        {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} /> : page === 'work' ? <AnnualWork year={year} /> : <section className="module-page">
           <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
-          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>ฟังก์ชันและข้อมูลของแต่ละส่วนจะเชื่อมกับระบบ M101 ตามลำดับ</p></div>
+          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>{page === 'import' ? 'เครื่องมือนำเข้าและส่งออก' : 'การจัดการ Owner และความปลอดภัย'}</h2><p>{page === 'import' ? 'การส่งออก CSV พร้อมใช้งานจากหน้าทะเบียนกิจการ ส่วนตัวช่วยจับคู่ไฟล์ Excel จะเชื่อมต่อในขั้นถัดไป' : 'บัญชี Owner และสิทธิ์สมาชิกจะเชื่อมกับระบบจัดการบัญชีในขั้นถัดไป'}</p>{page === 'import' && <button className="m101-button" onClick={() => choose('businesses')}>ไปยังทะเบียนกิจการ</button>}</div>
         </section>}
       </main>
     </div>
   </div>;
-}
-
-function CommandCenter({ navigate }: { navigate: (id: Page) => void }) {
-  return <div className="dashboard">
-    <div className="page-title"><div><h1>Dashboard</h1></div></div>
-    <div className="dashboard-top">
-      <section className="dash-panel revenue-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมกิจการ</h2><p>สถานะกิจการในพอร์ตโฟลิโอ</p></div><button onClick={() => navigate('businesses')}>ดูทะเบียนกิจการ</button></div>
-        <div className="metric-value">— <small>กิจการทั้งหมด</small></div>
-        <div className="metric-note">ข้อมูลจะแสดงเมื่อเชื่อมต่อทะเบียนกิจการ</div>
-        <div className="bar-chart" aria-label="กราฟภาพรวมกิจการยังไม่มีข้อมูล">
-          <div className="chart-gridlines"><i/><i/><i/><i/></div>
-          {Array.from({length:12},(_,i)=><div className="bar-group" key={i}><span className="bar-placeholder"/><span className="bar-placeholder pale"/><small>{String(i+1).padStart(2,'0')}</small></div>)}
-        </div>
-        <div className="chart-legend"><span><i className="blue-dot"/> กิจการที่ดำเนินการ</span><span><i className="gray-dot"/> กิจการที่รอตรวจสอบ</span></div>
-      </section>
-      <section className="dash-panel order-time-panel">
-        <div className="dash-panel-head"><div><h2>สถานะงานประจำปี</h2><p>ภาพรวมความคืบหน้าของงาน</p></div><button onClick={() => navigate('work')}>ดูรายงาน</button></div>
-        <div className="donut-area"><div className="donut"><div className="donut-hole"><b>—</b><small>ยังไม่มีข้อมูล</small></div></div></div>
-        <div className="donut-legend"><span><i className="blue-dot"/> เสร็จแล้ว</span><span><i className="purple-dot"/> กำลังทำ</span><span><i className="light-dot"/> ยังไม่เริ่ม</span></div>
-      </section>
-    </div>
-    <div className="dashboard-bottom">
-      <section className="dash-panel rating-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมการปฏิบัติงาน</h2><p>ตัวชี้วัดจากข้อมูลจริงในระบบ</p></div></div>
-        <div className="ring-metrics"><div className="ring ring-one"><b>—</b><small>งานเสร็จ</small></div><div className="ring ring-two"><b>—</b><small>ตรงเวลา</small></div><div className="ring ring-three"><b>—</b><small>รอตรวจสอบ</small></div></div>
-      </section>
-      <section className="dash-panel most-panel">
-        <div className="dash-panel-head"><div><h2>กิจการที่ต้องติดตาม</h2><p>รายการสำคัญที่ต้องดำเนินการ</p></div><button onClick={() => navigate('businesses')}>ดูทั้งหมด</button></div>
-        <div className="empty-list"><span>▤</span><div><b>ยังไม่มีรายการกิจการ</b><small>กิจการที่เพิ่มในทะเบียนจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>☷</span><div><b>ยังไม่มีงานที่ต้องติดตาม</b><small>รายการงานและกำหนดส่งจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>◷</span><div><b>ยังไม่มีกำหนดการใกล้ถึง</b><small>กำหนดส่งสำคัญจะแสดงที่นี่</small></div></div>
-        <button className="text-action" onClick={() => navigate('work')}>ไปยังงานประจำปี →</button>
-      </section>
-      <section className="dash-panel order-panel">
-        <div className="dash-panel-head"><div><h2>แนวโน้มการดำเนินงาน</h2><p>สรุปสถานะตามช่วงเวลา</p></div><button onClick={() => navigate('reports')}>ดูรายงาน</button></div>
-        <div className="line-chart"><div className="line-grid"><i/><i/><i/><i/></div><svg viewBox="0 0 300 130" preserveAspectRatio="none" aria-hidden="true"><path d="M4 90 L52 65 L100 105 L148 48 L196 74 L244 57 L296 24" fill="none" stroke="#d9dee7" strokeWidth="2.5"/><path d="M4 112 L52 118 L100 78 L148 84 L196 104 L244 50 L296 42" fill="none" stroke="#5d6ed8" strokeWidth="2.5"/></svg><div className="line-labels"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span></div></div>
-        <div className="chart-legend"><span><i className="blue-dot"/> ช่วงเวลาปัจจุบัน</span><span><i className="gray-dot"/> ช่วงเวลาก่อนหน้า</span></div>
-      </section>
-    </div>
-  </div>;
-}
-function Empty({ icon, title, text }: { icon: string; title: string; text: string }) {
-  return <div className="empty"><span>{icon}</span><b>{title}</b><p>{text}</p></div>;
 }
 
 export default function App() {
