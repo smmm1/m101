@@ -562,6 +562,61 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true });
     }
 
+
+    if (path === '/api/admin/assignments' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการการมอบหมายงานได้' }, 403);
+      const [directory, assignments] = await Promise.all([
+        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT user_id, business_id FROM business_assignments WHERE workspace_id = ?').bind(access.workspaceId).all(),
+      ]);
+      const businesses = new Map<string, { id: string; companyName: string; taxId: string }>();
+      for (const row of directory.results || []) {
+        try {
+          const records = JSON.parse(String((row as { records?: string }).records || '[]'));
+          if (Array.isArray(records)) for (const item of records) {
+            if (!item || typeof item !== 'object') continue;
+            const id = String((item as { id?: unknown }).id || '');
+            if (!id) continue;
+            businesses.set(id, { id, companyName: String((item as { companyName?: unknown }).companyName || ''), taxId: String((item as { taxId?: unknown }).taxId || '') });
+          }
+        } catch { /* Ignore malformed historical snapshots; the current year remains available. */ }
+      }
+      return json({ businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')), assignments: (assignments.results || []).map((row: Record<string, unknown>)=>({ userId:String(row.user_id), businessId:String(row.business_id) })) });
+    }
+
+    const assignmentMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)\/assignments$/);
+    if (assignmentMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่มอบหมายกิจการได้' }, 403);
+      const userId = assignmentMatch[1];
+      const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND u.account_status = 'active'")
+        .bind(userId, access.workspaceId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกที่เปิดใช้งานในพื้นที่ทำงานนี้' }, 404);
+      const body = await request.json() as { businessIds?: unknown };
+      if (!Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id => typeof id !== 'string' || !id || id.length > 128)) return json({ error: 'รายการกิจการที่เลือกไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directory.results || []) {
+        try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) if (item && typeof item === 'object' && (item as { id?: unknown }).id) validIds.add(String((item as { id: unknown }).id)); }
+        catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      }
+      if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
+      const now = new Date().toISOString();
+      const statements = [
+        env.DB.prepare('DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(access.workspaceId, userId),
+        ...businessIds.map(businessId => env.DB.prepare('INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(randomToken(18), access.workspaceId, businessId, userId, access.user.id, now)),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.assignments_updated', 'user', ?, ?, ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, JSON.stringify({ businessCount: businessIds.length }), now),
+      ];
+      await env.DB.batch(statements);
+      return json({ ok: true, assignedCount: businessIds.length });
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
