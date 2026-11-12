@@ -337,3 +337,29 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ส่งออกข้อมูล</h2><p>ดาวน์โหลดทะเบียนกิจการของรอบปีนี้เป็น CSV</p></div></div><button className="m101-button" onClick={()=>{const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','remark'];const csv=[cols.join(','),...records.map(r=>cols.map(k=>{const v=String((r as any)[k]??'');return '"'+v.replace(/"/g,'""')+'"';}).join(','))].join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`M101-${year}-export.csv`;a.click();URL.revokeObjectURL(url);}}>↓ ดาวน์โหลด CSV</button>{loading&&<span className="m101-import-file">กำลังอ่านทะเบียน…</span>}</div>
   </section>;
 }
+
+
+type RelationshipGroup = { id:string; name:string; createdAt:string; updatedAt:string; businessIds:string[] };
+export function RelationshipGroups() {
+  const [groups,setGroups]=useState<RelationshipGroup[]>([]);
+  const [businesses,setBusinesses]=useState<{id:string;companyName:string;taxId:string}[]>([]);
+  const [selectedId,setSelectedId]=useState('');
+  const [name,setName]=useState('');
+  const [businessIds,setBusinessIds]=useState<string[]>([]);
+  const [search,setSearch]=useState('');
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+  const load=useCallback(async()=>{setLoading(true);setError('');try{const data=await apiJson('/api/relationship-groups');setGroups(data.groups||[]);setBusinesses(data.businesses||[]);setSelectedId(current=>current&&((data.groups||[]).some((g:RelationshipGroup)=>g.id===current))?current:'');}catch(e){setError(e instanceof Error?e.message:'โหลดกลุ่มกิจการไม่สำเร็จ');}finally{setLoading(false);}},[]);
+  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{const selected=groups.find(g=>g.id===selectedId);setName(selected?.name||'');setBusinessIds(selected?.businessIds||[]);},[groups,selectedId]);
+  const startNew=()=>{setSelectedId('');setName('');setBusinessIds([]);};
+  const save=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);setError('');try{if(selectedId){await apiJson('/api/relationship-groups/'+selectedId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,businessIds})});}else{const data=await apiJson('/api/relationship-groups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,businessIds})});setSelectedId(data.id);}await load();setError('บันทึกกลุ่มกิจการแล้ว');}catch(e){setError(e instanceof Error?e.message:'บันทึกกลุ่มกิจการไม่สำเร็จ');}finally{setSaving(false);}};
+  const remove=async()=>{if(!selectedId||!window.confirm('ยืนยันลบกลุ่มนี้? ข้อมูลกิจการและงานประจำปีจะไม่ถูกลบ'))return;setSaving(true);try{await apiJson('/api/relationship-groups/'+selectedId,{method:'DELETE'});setSelectedId('');setName('');setBusinessIds([]);await load();}catch(e){setError(e instanceof Error?e.message:'ลบกลุ่มไม่สำเร็จ');}finally{setSaving(false);}};
+  const visible=businesses.filter(b=>(b.companyName+' '+b.taxId).toLocaleLowerCase('th-TH').includes(search.trim().toLocaleLowerCase('th-TH')));
+  return <section className="m101-page"><div className="m101-page-heading"><div><span className="m101-eyebrow">BUSINESS RELATIONSHIPS</span><h1>กลุ่มกิจการและความสัมพันธ์</h1><p>จัดกลุ่มกิจการได้หลายกลุ่มโดยไม่รวมทะเบียน บัญชี หรืองานของแต่ละกิจการเข้าด้วยกัน</p></div><button className="m101-button m101-button-primary" onClick={startNew}>＋ สร้างกลุ่ม</button></div>{error&&<div className="m101-alert" role="status">{error}<button onClick={()=>void load()}>รีเฟรช</button></div>}
+    <div className="m101-relationship-layout"><aside className="m101-panel m101-group-list"><div className="m101-panel-heading"><div><h2>กลุ่มที่สร้างไว้</h2><p>{groups.length} กลุ่ม</p></div></div>{loading?<div className="m101-empty-state">กำลังโหลด…</div>:groups.length?groups.map(group=><button key={group.id} className={'m101-group-choice '+(selectedId===group.id?'selected':'')} onClick={()=>setSelectedId(group.id)}><span><b>{group.name}</b><small>{group.businessIds.length} กิจการ</small></span><span>›</span></button>):<div className="m101-empty-state">ยังไม่มีกลุ่มกิจการ</div>}</aside>
+      <form className="m101-panel m101-group-editor" onSubmit={save}><div className="m101-panel-heading"><div><h2>{selectedId?'แก้ไขกลุ่มกิจการ':'สร้างกลุ่มกิจการใหม่'}</h2><p>กิจการหนึ่งแห่งสามารถอยู่ในหลายกลุ่มได้</p></div>{selectedId&&<button type="button" className="m101-row-actions-button" onClick={()=>void remove()} disabled={saving}>ลบกลุ่ม</button>}</div><label className="m101-group-name">ชื่อกลุ่ม<input required minLength={2} maxLength={80} value={name} onChange={e=>setName(e.target.value)} placeholder="เช่น กลุ่มธุรกิจครอบครัว"/></label><div className="m101-assignment-toolbar"><label>ค้นหากิจการ<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ชื่อกิจการหรือเลขทะเบียน"/></label><span className="m101-assignment-summary">เลือก {businessIds.length} กิจการ</span></div><div className="m101-assignment-list">{visible.map(b=><label key={b.id} className="m101-assignment-item"><input type="checkbox" checked={businessIds.includes(b.id)} onChange={e=>setBusinessIds(prev=>e.target.checked?[...prev,b.id]:prev.filter(id=>id!==b.id))}/><span><b>{b.companyName||'ไม่ระบุชื่อกิจการ'}</b><small>{b.taxId||'ไม่มีเลขทะเบียน'}</small></span></label>)}{!visible.length&&<p className="m101-empty-state">ไม่พบกิจการ</p>}</div><div className="m101-editor-actions"><button type="button" className="m101-button" onClick={startNew}>ล้างฟอร์ม</button><button className="m101-button m101-button-primary" disabled={saving||name.trim().length<2}>{saving?'กำลังบันทึก…':selectedId?'บันทึกการแก้ไข':'สร้างกลุ่มกิจการ'}</button></div></form>
+    </div>
+  </section>;
+}
