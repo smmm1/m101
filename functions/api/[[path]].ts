@@ -720,12 +720,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const result = await env.DB.prepare(
-        "SELECT id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at FROM audit_events WHERE workspace_id = ? AND (? = 'owner' OR actor_user_id = ?) ORDER BY created_at DESC LIMIT 100"
+        "SELECT a.id, a.actor_user_id, u.username, u.display_name, a.action, a.resource_type, a.resource_id, a.metadata_json, a.created_at FROM audit_events a LEFT JOIN users u ON u.id = a.actor_user_id WHERE a.workspace_id = ? AND (? = 'owner' OR a.actor_user_id = ?) ORDER BY a.created_at DESC LIMIT 100"
       ).bind(access.workspaceId, access.membershipType, access.user.id).all();
       const events = (result.results || []).map((row: Record<string, unknown>) => {
         let metadata: Record<string, unknown> = {};
         try { const parsed = JSON.parse(String(row.metadata_json || '{}')); if (parsed && typeof parsed === 'object') metadata = parsed as Record<string, unknown>; } catch { /* Keep empty metadata for legacy events. */ }
-        return { id: String(row.id), actorUserId: row.actor_user_id ? String(row.actor_user_id) : '', action: String(row.action), resourceType: String(row.resource_type), resourceId: String(row.resource_id || ''), metadata, createdAt: String(row.created_at) };
+        return { id: String(row.id), actorUserId: row.actor_user_id ? String(row.actor_user_id) : '', actorName: String(row.display_name || row.username || ''), action: String(row.action), resourceType: String(row.resource_type), resourceId: String(row.resource_id || ''), metadata, createdAt: String(row.created_at) };
       });
       return json({ events });
     }
