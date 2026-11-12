@@ -423,3 +423,40 @@ export function RelationshipGroups() {
     </div>
   </section>;
 }
+
+
+type AnnualTaskRow = { id:string; fiscalYear:string; businessId:string; businessName:string; taskCode:string; taskName:string; status:string; dueDate:string; note:string; createdAt:string; updatedAt:string };
+export function CalendarView({year='69'}:{year?:string}) {
+  const [tasks,setTasks]=useState<AnnualTaskRow[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState('');
+  const load=useCallback(async()=>{setLoading(true);setError('');try{const data=await apiJson('/api/annual-tasks?year='+encodeURIComponent(year));setTasks(data.tasks||[]);}catch(e){setError(e instanceof Error?e.message:'โหลดปฏิทินไม่สำเร็จ');}finally{setLoading(false);}},[year]);
+  useEffect(()=>{void load();},[load]);
+  const dated=tasks.filter(t=>t.dueDate).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  const overdue=dated.filter(t=>t.dueDate<new Date().toISOString().slice(0,10)&&t.status!=='completed');
+  const completed=tasks.filter(t=>t.status==='completed').length;
+  return <section className="m101-page"><div className="m101-page-heading"><div><span className="m101-eyebrow">DEADLINE CALENDAR</span><h1>ปฏิทินกำหนดการ</h1><p>กำหนดส่งงานและภาระประจำปี · รอบปี {year}</p></div><button className="m101-button" onClick={()=>void load()}>↻ รีเฟรช</button></div>{error&&<div className="m101-alert" role="alert">{error}</div>}<div className="m101-report-grid"><div className="m101-panel"><small>กำหนดส่งทั้งหมด</small><strong>{dated.length}</strong></div><div className="m101-panel"><small>เลยกำหนดและยังไม่เสร็จ</small><strong>{overdue.length}</strong></div><div className="m101-panel"><small>ดำเนินการเสร็จแล้ว</small><strong>{completed}</strong></div></div><div className="m101-panel"><div className="m101-panel-heading"><div><h2>รายการกำหนดส่ง</h2><p>เรียงตามวันที่ใกล้ถึงก่อน</p></div></div>{loading?<div className="m101-empty-state">กำลังโหลดกำหนดการ…</div>:dated.length?<div className="m101-deadline-list">{dated.map(task=><div className="m101-deadline-row" key={task.id}><div className={'m101-deadline-date '+(task.dueDate<new Date().toISOString().slice(0,10)&&task.status!=='completed'?'is-overdue':'')}><b>{task.dueDate.slice(8,10)}</b><small>{task.dueDate.slice(5,7)}/{task.dueDate.slice(0,4)}</small></div><div className="m101-deadline-meta"><b>{task.taskName}</b><small>{task.businessName} · {task.taskCode}</small></div><span className={'m101-status-chip '+(task.status==='completed'?'status-completed':task.status==='in_progress'?'status-progress':'status-pending')}>{statusText[task.status]||'รอดำเนินการ'}</span></div>)}</div>:<div className="m101-empty-state">ยังไม่มีงานที่กำหนดวันส่งในรอบปีนี้</div>}</div></section>;
+}
+export function ReportsView({year='69'}:{year?:string}) {
+  const [records,setRecords]=useState<Business[]>([]);
+  const [tasks,setTasks]=useState<AnnualTaskRow[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState('');
+  const load=useCallback(async()=>{setLoading(true);setError('');try{const [directory,annual]=await Promise.all([apiJson('/api/directory?year='+encodeURIComponent(year)),apiJson('/api/annual-tasks?year='+encodeURIComponent(year))]);setRecords(directory.records||[]);setTasks(annual.tasks||[]);}catch(e){setError(e instanceof Error?e.message:'โหลดรายงานไม่สำเร็จ');}finally{setLoading(false);}},[year]);
+  useEffect(()=>{void load();},[load]);
+  const completed=tasks.filter(t=>t.status==='completed').length;
+  const progress=tasks.filter(t=>t.status==='in_progress').length;
+  const pending=tasks.length-completed-progress;
+  const pct=tasks.length?Math.round(completed/tasks.length*100):0;
+  const types=[{key:'company',label:'บริษัทจำกัด'},{key:'partnership',label:'ห้างหุ้นส่วน'},{key:'individual',label:'บุคคลธรรมดา'}].map(item=>({...item,count:records.filter(r=>r.type===item.key).length}));
+  return <section className="m101-page"><div className="m101-page-heading"><div><span className="m101-eyebrow">WORKSPACE REPORTS</span><h1>รายงานและข้อมูลเชิงลึก</h1><p>สรุปจากทะเบียนกิจการและงานประจำปี · รอบปี {year}</p></div><button className="m101-button" onClick={()=>void load()}>↻ รีเฟรช</button></div>{error&&<div className="m101-alert" role="alert">{error}</div>}{loading?<div className="m101-panel m101-empty-state">กำลังคำนวณรายงาน…</div>:<><div className="m101-report-grid"><div className="m101-panel"><small>กิจการในทะเบียน</small><strong>{records.length.toLocaleString('th-TH')}</strong></div><div className="m101-panel"><small>งานประจำปี</small><strong>{tasks.length.toLocaleString('th-TH')}</strong></div><div className="m101-panel"><small>เสร็จแล้ว</small><strong>{completed.toLocaleString('th-TH')}</strong></div><div className="m101-panel"><small>ความคืบหน้า</small><strong>{pct}%</strong></div></div><div className="m101-report-columns"><div className="m101-panel"><div className="m101-panel-heading"><div><h2>สถานะงาน</h2><p>สัดส่วนงานทั้งหมดในรอบปี</p></div></div><div className="m101-progress-track"><span style={{width:pct+'%'}}/></div><div className="m101-report-legend"><span>เสร็จแล้ว <b>{completed}</b></span><span>กำลังทำ <b>{progress}</b></span><span>รอดำเนินการ <b>{pending}</b></span></div></div><div className="m101-panel"><div className="m101-panel-heading"><div><h2>ประเภทกิจการ</h2><p>จำแนกจากทะเบียนปัจจุบัน</p></div></div>{types.map(item=><div className="m101-type-stat" key={item.key}><span>{item.label}</span><b>{item.count}</b><i><span style={{width:(records.length?item.count/records.length*100:0)+'%'}}/></i></div>)}</div></div></>}</section>;
+}
+export function ActivityView() {
+  const [events,setEvents]=useState<{id:string;actorUserId:string;action:string;resourceType:string;resourceId:string;metadata:Record<string,unknown>;createdAt:string}[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState('');
+  const load=useCallback(async()=>{setLoading(true);setError('');try{const data=await apiJson('/api/activity');setEvents(data.events||[]);}catch(e){setError(e instanceof Error?e.message:'โหลดประวัติการทำงานไม่สำเร็จ');}finally{setLoading(false);}},[]);
+  useEffect(()=>{void load();},[load]);
+  const labels:Record<string,string>={'member.created':'สร้างบัญชีสมาชิก','member.updated':'แก้ไขบัญชีสมาชิก','member.password_reset':'ตั้งรหัสผ่านสมาชิก','member.assignments_updated':'เปลี่ยนการมอบหมายกิจการ','annual_task.created':'เพิ่มงานประจำปี','annual_task.updated':'อัปเดตงานประจำปี','annual_task.deleted':'ลบงานประจำปี','relationship_group.created':'สร้างกลุ่มกิจการ','relationship_group.updated':'แก้ไขกลุ่มกิจการ','relationship_group.deleted':'ลบกลุ่มกิจการ'};
+  return <section className="m101-page"><div className="m101-page-heading"><div><span className="m101-eyebrow">AUDIT TRAIL</span><h1>ประวัติการทำงาน</h1><p>บันทึกการเปลี่ยนแปลงและการจัดการในพื้นที่ทำงาน</p></div><button className="m101-button" onClick={()=>void load()}>↻ รีเฟรช</button></div>{error&&<div className="m101-alert" role="alert">{error}</div>}<div className="m101-panel"><div className="m101-panel-heading"><div><h2>กิจกรรมล่าสุด</h2><p>แสดงสูงสุด 100 รายการล่าสุด</p></div></div>{loading?<div className="m101-empty-state">กำลังโหลดประวัติ…</div>:events.length?<div className="m101-activity-list">{events.map(event=><div className="m101-activity-row" key={event.id}><span className="m101-activity-dot"/><div><b>{labels[event.action]||event.action}</b><small>{event.resourceType} · {event.resourceId||'—'}</small></div><time>{new Date(event.createdAt).toLocaleString('th-TH')}</time></div>)}</div>:<div className="m101-empty-state">ยังไม่มีประวัติการเปลี่ยนแปลง</div>}</div></section>;
+}
