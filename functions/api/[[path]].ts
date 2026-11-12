@@ -303,6 +303,70 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
     }
 
+
+    // Workspace-scoped directory API. Reads use the authenticated workspace;
+    // full-snapshot writes are Owner-only and guarded by a workspace CAS revision.
+    if (path === '/api/directory' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const fiscalYear = String(url.searchParams.get('year') || '').trim();
+      if (!/^\\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      const [workspace, years, data] = await Promise.all([
+        env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ? AND status = \'active\'').bind(access.workspaceId).first() as Promise<{ directory_revision?: number } | null>,
+        env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT records, revision FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?').bind(access.workspaceId, fiscalYear).first() as Promise<{ records?: string; revision?: number } | null>,
+      ]);
+      if (!workspace) return json({ error: 'ไม่พบพื้นที่ทำงานที่ใช้งานได้' }, 403);
+      let records: unknown[] = [];
+      try { const parsed = JSON.parse(String(data?.records || '[]')); if (Array.isArray(parsed)) records = parsed; }
+      catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?')
+          .bind(access.workspaceId, access.user.id).all();
+        const allowed = new Set((assigned.results || []).map((row: { business_id: string }) => String(row.business_id)));
+        records = records.filter((record: unknown) => record && typeof record === 'object' && allowed.has(String((record as { id?: unknown }).id || '')));
+      }
+      const availableYears = (years.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
+      return json({ fiscalYear, records, availableYears, revision: Number(workspace.directory_revision || 1), yearRevision: Number(data?.revision || 1) });
+    }
+
+    if (path === '/api/directory' && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่บันทึกทะเบียนกิจการทั้งรอบปีได้' }, 403);
+      const body = await request.json() as { fiscalYear?: string; records?: unknown[]; revision?: number };
+      const fiscalYear = String(body.fiscalYear || '').trim();
+      const records = body.records;
+      const expectedRevision = Number(body.revision);
+      if (!/^\\d{2,4}$/.test(fiscalYear) || !Array.isArray(records) || records.length > 10000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+        return json({ error: 'ข้อมูลทะเบียนหรือเลขรุ่นไม่ถูกต้อง' }, 400);
+      }
+      const serialized = JSON.stringify(records);
+      if (serialized.length > 8_000_000) return json({ error: 'ข้อมูลทะเบียนมีขนาดใหญ่เกินไป' }, 413);
+      const current = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ? AND status = \'active\'')
+        .bind(access.workspaceId).first() as { directory_revision?: number } | null;
+      if (!current) return json({ error: 'ไม่พบพื้นที่ทำงานที่ใช้งานได้' }, 403);
+      if (Number(current.directory_revision || 1) !== expectedRevision) {
+        return json({ error: 'ทะเบียนกิจการมีการเปลี่ยนแปลงจากผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึก', conflict: true, revision: Number(current.directory_revision || 1) }, 409);
+      }
+      const nextRevision = expectedRevision + 1;
+      const writeToken = randomToken(18);
+      const now = new Date().toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare('UPDATE workspaces SET directory_revision = ?, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ? AND status = \'active\'')
+          .bind(nextRevision, writeToken, now, access.workspaceId, expectedRevision),
+        env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at")
+          .bind(access.workspaceId, fiscalYear, serialized, access.user.id, now, access.workspaceId, nextRevision, writeToken),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'directory.year_saved', 'directory_year', ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, fiscalYear, JSON.stringify({ recordCount: records.length, revision: nextRevision }), now, access.workspaceId, nextRevision, writeToken),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) {
+        const latest = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(access.workspaceId).first() as { directory_revision?: number } | null;
+        return json({ error: 'ทะเบียนกิจการมีการเปลี่ยนแปลงจากผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึก', conflict: true, revision: Number(latest?.directory_revision || 1) }, 409);
+      }
+      return json({ ok: true, fiscalYear, savedRecords: records.length, revision: nextRevision });
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
