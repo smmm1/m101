@@ -462,8 +462,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ลบรายการงานได้' }, 403);
-      const result = await env.DB.prepare('DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId).run();
-      if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      const current = await env.DB.prepare('SELECT business_id, task_code FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId).first() as { business_id?: string; task_code?: string } | null;
+      if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.deleted', 'annual_task', ?, ?, ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, annualTaskMatch[1], JSON.stringify({ businessId: current.business_id, taskCode: current.task_code }), now),
+      ]);
       return json({ ok: true });
     }
 
