@@ -17,56 +17,72 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   const [page, setPage] = useState<Page>('overview');
   const [mobileMenu, setMobileMenu] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState('');
   const current = pages.find(p => p.id === page)!;
   const choose = (id: Page) => { setPage(id); setMobileMenu(false); };
   const signOut = async () => { setBusy(true); try { await logout(); } finally { setBusy(false); } };
   const groups = ['WORKSPACE', 'OPERATIONS', 'INTELLIGENCE', 'SYSTEM'];
-
   return <div className="shell">
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
     <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark">M</div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
-      <div className="workspace-switch"><div className="workspace-symbol">M</div><div><b>M101 Workspace</b><small>พื้นที่ทำงานหลัก</small></div><i /></div>
-      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon">{p.icon}</span><span>{p.label}</span>{page === p.id && <i />}</button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>FOUNDATION · PHASE 01</span></div></div>
+      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></button>)}</div>)}</nav>
+      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>MODERN NAVY</span></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar">
-        <div className="crumbs"><button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button><span>Workspace</span><span className="slash">/</span><b>{current.label}</b></div>
-        <div className="topbar-right"><span className="system-status"><i /> ระบบพร้อมใช้งาน</span><span className="top-divider" /><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : 'ออกจากระบบ'}</button></div>
+        <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
+        <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
       </header>
       <main className="content">
         {page === 'overview' ? <CommandCenter navigate={choose} /> : <section className="module-page">
-          <div className="page-title"><div><span className="eyebrow">M101 WORKSPACE</span><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">กำลังวางรากฐาน</span></div>
-          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>ฟังก์ชันใหม่จะถูกพัฒนาตามลำดับ โดยไม่ดึงหน้าจอหรือระบบเดิมกลับมาใช้</p></div>
+          <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
+          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>ฟังก์ชันและข้อมูลของแต่ละส่วนจะเชื่อมกับระบบ M101 ตามลำดับ</p></div>
         </section>}
       </main>
-      <footer className="footer"><span>© 2026 MUSTANG · M101</span><span>MODERN NAVY WORKSPACE</span></footer>
     </div>
   </div>;
 }
 
 function CommandCenter({ navigate }: { navigate: (id: Page) => void }) {
-  const stats = [
-    ['กิจการในพอร์ตโฟลิโอ', '—', 'รอเริ่มต้นทะเบียนกิจการ', '▤'],
-    ['งานที่กำลังดำเนินการ', '—', 'รอเริ่มต้นระบบงาน', '☷'],
-    ['กำหนดการใกล้ถึง', '—', 'รอข้อมูลกำหนดส่ง', '▦'],
-    ['รายการที่ต้องตรวจสอบ', '—', 'ยังไม่มีข้อมูลให้ประเมิน', '◈'],
-  ];
   return <div className="dashboard">
-    <div className="page-title"><div><span className="eyebrow">EXECUTIVE OVERVIEW</span><h1>ศูนย์บัญชาการ</h1><p>ภาพรวมพอร์ตโฟลิโอและงานสำคัญของพื้นที่ทำงาน</p></div><span className="overview-tag"><i /> WORKSPACE OVERVIEW</span></div>
-    <section className="hero">
-      <div className="hero-copy"><span className="hero-kicker">✧ &nbsp; YOUR BUSINESS, IN ONE PLACE</span><h2>พื้นที่ทำงานใหม่<br /><em>เริ่มต้นอย่างเป็นระบบ</em></h2><p>จัดการกิจการ ความสัมพันธ์ และภาระงานสำคัญจากศูนย์กลางเดียว</p></div>
-      <div className="hero-art"><div className="orbit orbit-a" /><div className="orbit orbit-b" /><div className="hero-core">M</div><i className="node node-a" /><i className="node node-b" /><i className="node node-c" /></div>
-      <div className="hero-index">M101<small>01 / FOUNDATION</small></div>
-    </section>
-    <div className="section-head"><div><h2>สถานะพอร์ตโฟลิโอ</h2><p>ข้อมูลภาพรวมจะปรากฏเมื่อเริ่มเพิ่มข้อมูลเข้าสู่ระบบ</p></div><span className="live"><i /> LIVE OVERVIEW</span></div>
-    <section className="stat-grid">{stats.map(([label, value, note, icon], i) => <article className="stat-card" key={label}><div className="stat-top"><span>{label}</span><b className={'stat-icon tone-' + i}>{icon}</b></div><strong>{value}</strong><small>{note}</small></article>)}</section>
-    <div className="panel-grid">
-      <section className="panel"><div className="panel-head"><div><h2>สิ่งที่ต้องดำเนินการ</h2><p>รายการสำคัญที่ต้องให้ความสนใจ</p></div><button onClick={() => navigate('work')}>ดูงานทั้งหมด ↗</button></div><Empty icon="☷" title="ยังไม่มีรายการดำเนินการ" text="เมื่อมีการสร้างงานหรือกำหนดภาระประจำปี รายการที่ต้องจัดการจะแสดงที่นี่" /></section>
-      <section className="panel"><div className="panel-head"><div><h2>พอร์ตโฟลิโอกิจการ</h2><p>ภาพรวมหน่วยธุรกิจที่คุณดูแล</p></div><button className="square-action" onClick={() => navigate('businesses')}>↗</button></div><Empty icon="▤" title="ยังไม่มีข้อมูลกิจการ" text="ทะเบียนกิจการใหม่จะเริ่มต้นจากพื้นที่นี้" /><button className="panel-link" onClick={() => navigate('businesses')}>ไปยังพอร์ตโฟลิโอกิจการ →</button></section>
+    <div className="page-title"><div><h1>Dashboard</h1></div></div>
+    <div className="dashboard-top">
+      <section className="dash-panel revenue-panel">
+        <div className="dash-panel-head"><div><h2>ภาพรวมกิจการ</h2><p>สถานะกิจการในพอร์ตโฟลิโอ</p></div><button onClick={() => navigate('businesses')}>ดูทะเบียนกิจการ</button></div>
+        <div className="metric-value">— <small>กิจการทั้งหมด</small></div>
+        <div className="metric-note">ข้อมูลจะแสดงเมื่อเชื่อมต่อทะเบียนกิจการ</div>
+        <div className="bar-chart" aria-label="กราฟภาพรวมกิจการยังไม่มีข้อมูล">
+          <div className="chart-gridlines"><i/><i/><i/><i/></div>
+          {Array.from({length:12},(_,i)=><div className="bar-group" key={i}><span className="bar-placeholder"/><span className="bar-placeholder pale"/><small>{String(i+1).padStart(2,'0')}</small></div>)}
+        </div>
+        <div className="chart-legend"><span><i className="blue-dot"/> กิจการที่ดำเนินการ</span><span><i className="gray-dot"/> กิจการที่รอตรวจสอบ</span></div>
+      </section>
+      <section className="dash-panel order-time-panel">
+        <div className="dash-panel-head"><div><h2>สถานะงานประจำปี</h2><p>ภาพรวมความคืบหน้าของงาน</p></div><button onClick={() => navigate('work')}>ดูรายงาน</button></div>
+        <div className="donut-area"><div className="donut"><div className="donut-hole"><b>—</b><small>ยังไม่มีข้อมูล</small></div></div></div>
+        <div className="donut-legend"><span><i className="blue-dot"/> เสร็จแล้ว</span><span><i className="purple-dot"/> กำลังทำ</span><span><i className="light-dot"/> ยังไม่เริ่ม</span></div>
+      </section>
     </div>
-    <section className="panel activity-panel"><div className="panel-head"><div><h2>กิจกรรมล่าสุด</h2><p>ติดตามความเคลื่อนไหวในพื้นที่ทำงาน</p></div><button onClick={() => navigate('activity')}>ดูประวัติทั้งหมด ↗</button></div><div className="activity-empty"><span>◷</span><div><b>ยังไม่มีประวัติกิจกรรม</b><small>เมื่อมีการเปลี่ยนแปลงข้อมูล ระบบจะแสดงบันทึกไว้ที่นี่</small></div></div></section>
+    <div className="dashboard-bottom">
+      <section className="dash-panel rating-panel">
+        <div className="dash-panel-head"><div><h2>ภาพรวมการปฏิบัติงาน</h2><p>ตัวชี้วัดจากข้อมูลจริงในระบบ</p></div></div>
+        <div className="ring-metrics"><div className="ring ring-one"><b>—</b><small>งานเสร็จ</small></div><div className="ring ring-two"><b>—</b><small>ตรงเวลา</small></div><div className="ring ring-three"><b>—</b><small>รอตรวจสอบ</small></div></div>
+      </section>
+      <section className="dash-panel most-panel">
+        <div className="dash-panel-head"><div><h2>กิจการที่ต้องติดตาม</h2><p>รายการสำคัญที่ต้องดำเนินการ</p></div><button onClick={() => navigate('businesses')}>ดูทั้งหมด</button></div>
+        <div className="empty-list"><span>▤</span><div><b>ยังไม่มีรายการกิจการ</b><small>กิจการที่เพิ่มในทะเบียนจะแสดงที่นี่</small></div></div>
+        <div className="empty-list"><span>☷</span><div><b>ยังไม่มีงานที่ต้องติดตาม</b><small>รายการงานและกำหนดส่งจะแสดงที่นี่</small></div></div>
+        <div className="empty-list"><span>◷</span><div><b>ยังไม่มีกำหนดการใกล้ถึง</b><small>กำหนดส่งสำคัญจะแสดงที่นี่</small></div></div>
+        <button className="text-action" onClick={() => navigate('work')}>ไปยังงานประจำปี →</button>
+      </section>
+      <section className="dash-panel order-panel">
+        <div className="dash-panel-head"><div><h2>แนวโน้มการดำเนินงาน</h2><p>สรุปสถานะตามช่วงเวลา</p></div><button onClick={() => navigate('reports')}>ดูรายงาน</button></div>
+        <div className="line-chart"><div className="line-grid"><i/><i/><i/><i/></div><svg viewBox="0 0 300 130" preserveAspectRatio="none" aria-hidden="true"><path d="M4 90 L52 65 L100 105 L148 48 L196 74 L244 57 L296 24" fill="none" stroke="#d9dee7" strokeWidth="2.5"/><path d="M4 112 L52 118 L100 78 L148 84 L196 104 L244 50 L296 42" fill="none" stroke="#5d6ed8" strokeWidth="2.5"/></svg><div className="line-labels"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span></div></div>
+        <div className="chart-legend"><span><i className="blue-dot"/> ช่วงเวลาปัจจุบัน</span><span><i className="gray-dot"/> ช่วงเวลาก่อนหน้า</span></div>
+      </section>
+    </div>
   </div>;
 }
 function Empty({ icon, title, text }: { icon: string; title: string; text: string }) {
