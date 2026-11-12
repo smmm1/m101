@@ -75,7 +75,7 @@ export function CommandCenter({ navigate, year = '69' }: { navigate: (page: 'bus
 }
 
 const blankBusiness = (): Business => ({ id: makeId(), sequenceNo: '', companyName: '', taxId: '', type: 'company', auditorDate: '', password: '', remark: '', eFilingCode: '', ssoCode: '', status: 'pending', isVerifiedDbd: false });
-export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', onYearChange }: { year?: string; globalSearch?: string; onYearChange?: (year: string) => void }) {
+export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', onYearChange, onOpenImport }: { year?: string; globalSearch?: string; onYearChange?: (year: string) => void; onOpenImport?: () => void }) {
   const [year,setYear] = useState(initialYear);
   useEffect(()=>{setYear(initialYear);},[initialYear]);
   const [years,setYears] = useState<string[]>([initialYear]);
@@ -123,7 +123,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
     setRevision(Number(data.revision)||revision+1);setYears(prev=>[...prev,value].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})));setYear(value);setNewYear('');
   };
   return <section className="m101-page m101-registry-page">
-    <div className="m101-page-heading"><div><span className="m101-eyebrow">BUSINESS PORTFOLIO</span><h1>ทะเบียนกิจการ</h1><p>จัดเก็บและจัดการข้อมูลนิติบุคคลในพื้นที่ทำงาน</p></div><div className="m101-heading-actions"><button className="m101-button" onClick={exportCsv}>↓ ส่งออก CSV</button><button className="m101-button m101-button-primary" onClick={()=>setEditor(blankBusiness())}>＋ เพิ่มกิจการ</button></div></div>
+    <div className="m101-page-heading"><div><span className="m101-eyebrow">BUSINESS PORTFOLIO</span><h1>ทะเบียนกิจการ</h1><p>จัดเก็บและจัดการข้อมูลนิติบุคคลในพื้นที่ทำงาน</p></div><div className="m101-heading-actions"><button className="m101-button" onClick={exportCsv}>↓ ส่งออก CSV</button><button className="m101-button" onClick={onOpenImport}>⇅ จับคู่ไฟล์</button><button className="m101-button m101-button-primary" onClick={()=>setEditor(blankBusiness())}>＋ เพิ่มกิจการ</button></div></div>
     <div className="m101-registry-toolbar"><div className="m101-registry-count"><strong>{filtered.length.toLocaleString('th-TH')}</strong><span>จาก {records.length.toLocaleString('th-TH')} กิจการ</span></div><label className="m101-year-select">รอบปี <select value={year} onChange={e=>{setYear(e.target.value);onYearChange?.(e.target.value);}}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label><div className="m101-add-year"><input aria-label="รอบปีใหม่" value={newYear} onChange={e=>setNewYear(e.target.value)} placeholder="ปีใหม่"/><button onClick={()=>void startNewYear()}>เพิ่มปี</button></div><input className="m101-registry-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ค้นหาชื่อ เลขทะเบียน หรือรหัส..."/></div>
     {error&&<div className="m101-alert" role="alert">{error}<button onClick={()=>void load(year)}>โหลดข้อมูลล่าสุด</button></div>}
     <div className="m101-table-wrap"><table className="m101-data-table"><thead><tr><th>ลำดับ</th><th>ชื่อกิจการ</th><th>ประเภท</th><th>เลขทะเบียน / ผู้เสียภาษี</th><th>e-Filing</th><th>ประกันสังคม</th><th>วันที่ผู้สอบบัญชี</th><th>สถานะ</th><th>ตรวจ DBD</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody>
