@@ -467,6 +467,101 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true });
     }
 
+
+    // Owner-only member administration. There is no public sign-up endpoint.
+    if (path === '/api/admin/users' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการสมาชิกได้' }, 403);
+      const result = await env.DB.prepare(
+        "SELECT u.id, u.username, u.display_name, u.role, u.account_status, u.local_password_set, wm.membership_type FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.status != 'revoked' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END, u.username COLLATE NOCASE"
+      ).bind(access.workspaceId).all();
+      const users = (result.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), username: String(row.username || ''), displayName: String(row.display_name || ''),
+        role: String(row.role), accountStatus: String(row.account_status), localPasswordSet: Number(row.local_password_set) === 1,
+        membershipType: String(row.membership_type),
+      }));
+      return json({ users });
+    }
+
+    if (path === '/api/admin/users' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่เพิ่มสมาชิกได้' }, 403);
+      const body = await request.json() as { username?: string; displayName?: string; password?: string };
+      const username = String(body.username || '').trim();
+      const displayName = String(body.displayName || '').trim();
+      const password = String(body.password || '');
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
+      if (!displayName || displayName.length > 80) return json({ error: 'กรุณาระบุชื่อสมาชิกไม่เกิน 80 ตัวอักษร' }, 400);
+      if (password.length < 12 || password.length > 1024) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const duplicate = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE').bind(username).first();
+      if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
+      const encoded = await hashPassword(password);
+      const id = randomToken(18);
+      const membershipId = randomToken(18);
+      const now = new Date().toISOString();
+      const email = username.toLowerCase() + '@m101.local';
+      try {
+        const results = await env.DB.batch([
+          env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1)")
+            .bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
+          env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)")
+            .bind(membershipId, access.workspaceId, id, now, now),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.created', 'user', ?, ?, ?)")
+            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ username, displayName }), now),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'สร้างสมาชิกไม่สำเร็จ' }, 500);
+      } catch {
+        return json({ error: 'ไม่สามารถสร้างสมาชิกได้ อาจมี ID นี้อยู่แล้ว' }, 409);
+      }
+      return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', localPasswordSet: true, membershipType: 'collaborator' } }, 201);
+    }
+
+    const adminUserMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)$/);
+    if (adminUserMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขสมาชิกได้' }, 403);
+      const id = adminUserMatch[1];
+      const body = await request.json() as { displayName?: string; accountStatus?: string };
+      const displayName = String(body.displayName || '').trim();
+      const accountStatus = String(body.accountStatus || '');
+      if (!displayName || displayName.length > 80 || !['active', 'suspended'].includes(accountStatus)) return json({ error: 'ข้อมูลสมาชิกไม่ถูกต้อง' }, 400);
+      const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
+        .bind(id, access.workspaceId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      const now = new Date().toISOString();
+      await env.DB.prepare('UPDATE users SET display_name = ?, account_status = ? WHERE id = ?').bind(displayName, accountStatus, id).run();
+      if (accountStatus === 'suspended') await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
+      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.updated', 'user', ?, ?, ?)")
+        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ displayName, accountStatus }), now).run();
+      return json({ ok: true });
+    }
+
+    const adminPasswordMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)\/password$/);
+    if (adminPasswordMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่ตั้งรหัสผ่านสมาชิกได้' }, 403);
+      const id = adminPasswordMatch[1];
+      const body = await request.json() as { password?: string };
+      const password = String(body.password || '');
+      if (password.length < 12 || password.length > 1024) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
+        .bind(id, access.workspaceId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      const encoded = await hashPassword(password);
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ?').bind(encoded.hash, encoded.salt, id),
+        env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.password_reset', 'user', ?, '{}', ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, now),
+      ]);
+      return json({ ok: true });
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
