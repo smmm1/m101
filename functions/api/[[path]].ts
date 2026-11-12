@@ -45,9 +45,12 @@ async function digest(value: string) {
   return toBase64Url(new Uint8Array(bytes));
 }
 
-async function hashPassword(password: string, salt = randomToken(16), iterations = PBKDF2_ITERATIONS) {
+async function hashPassword(password: string, salt = randomToken(16), iterations = PBKDF2_ITERATIONS, onStage?: (stage: string) => void) {
+  onStage?.('hash-import-key');
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  onStage?.('hash-derive-bits');
   const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: fromBase64Url(salt), iterations, hash: 'SHA-256' }, key, 256);
+  onStage?.('hash-encode-result');
   return { salt, hash: toBase64Url(new Uint8Array(bits)) };
 }
 
@@ -183,7 +186,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const userCount = Number(existing?.count || 0);
       const now = new Date().toISOString();
       bootstrapStage = 'hash-owner-password';
-      const encoded = await hashPassword(password);
+      const encoded = await hashPassword(password, undefined, PBKDF2_ITERATIONS, (stage) => { bootstrapStage = stage; });
       let ownerId: string;
       let workspaceId: string;
       let status = 201;
@@ -677,7 +680,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
       console.error('M101 bootstrap failed at stage:', bootstrapStage, error);
-      return json({ error: `ตั้งค่า Owner ไม่สำเร็จ (ขั้นตอน ${bootstrapStage}) กรุณาลองใหม่หลังตรวจสอบระบบ`, stage: bootstrapStage, errorType: error instanceof Error ? error.name : 'UnknownError' }, 500);
+      return json({ error: `ตั้งค่า Owner ไม่สำเร็จ (ขั้นตอน ${bootstrapStage}) กรุณาลองใหม่หลังตรวจสอบระบบ`, stage: bootstrapStage, errorType: error instanceof Error ? error.name : 'UnknownError', errorDetail: error instanceof Error ? error.message.slice(0, 180) : 'Unknown failure' }, 500);
     }
     console.error('M101 API error', error);
     return json({ error: 'เกิดข้อผิดพลาดภายในระบบ Cloudflare' }, 500);
