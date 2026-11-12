@@ -122,7 +122,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
         const sheetName=workbook.SheetNames[0];
         if(!sheetName)throw new Error('ไม่พบ Sheet ในไฟล์');
-        matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:'',raw:false}).map(row=>row.map(value=>String(value??'').trim()));
+        matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?value.toISOString().slice(0,10):String(value??'').trim()));
       }else throw new Error('รองรับไฟล์ Excel และ CSV เท่านั้น');
       let headerIndex=-1,bestScore=0;
       for(let rowIndex=0;rowIndex<Math.min(30,matrix.length);rowIndex++){
@@ -142,7 +142,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         if(!companyName)return null;
         const mappedType=rawType?(rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company'):undefined;
         const mappedStatus=rawStatus?(rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending'):undefined;
-        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:value('taxId'),type:mappedType,auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus,sourceType:'legacy-import',sourceFileName:file.name} as Business;
+        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:normalizeThaiTaxId(value('taxId')),type:mappedType,auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus,sourceType:'legacy-import',sourceFileName:file.name} as Business;
       }).filter((item):item is Business=>Boolean(item));
       if(!incoming.length)throw new Error('ไม่พบแถวข้อมูลกิจการในไฟล์');
       setPendingLegacyImport({fileName:file.name,incoming});
@@ -270,6 +270,16 @@ export function AdminSecurity() {
 }
 
 
+function normalizeThaiTaxId(value:string):string {
+  let normalized=String(value||'').trim().replace(/\\.0$/,'');
+  if(/[+-]?\\d*(\\.\\d+)?e[+-]?\\d+/i.test(normalized)){
+    const number=Number(normalized);
+    if(Number.isFinite(number))normalized=BigInt(Math.round(number)).toString();
+  }
+  const digits=normalized.replace(/\\D/g,'');
+  if(digits.length===12&&!digits.startsWith('0'))normalized='0'+normalized;
+  return normalized;
+}
 const importFields: { key: keyof Business; label: string; hints: string[] }[] = [
   { key: 'sequenceNo', label: 'ลำดับ', hints: ['ลำดับ','sequence','no','ที่'] },
   { key: 'companyName', label: 'ชื่อกิจการ', hints: ['ชื่อกิจการ','ชื่อนิติบุคคล','ชื่อบริษัท','ชื่อบริษัท/หจก','company name','business name'] },
@@ -361,7 +371,7 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   };
   const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
   const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
-  const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:value('taxId'),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
+  const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
   const seenTaxIds=new Set(records.map(item=>(item.taxId||'').trim()).filter(Boolean));
   const seenCompanyNames=new Set(records.map(item=>(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH')).filter(Boolean));
   let duplicates=0;
