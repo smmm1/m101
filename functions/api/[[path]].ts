@@ -149,6 +149,30 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, database: 'connected' });
     }
 
+    if (path === '/api/directory' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const requestedYear = String(url.searchParams.get('year') || '69').trim();
+      if (!/^\d{2,4}$/.test(requestedYear)) return json({ error: 'ปีที่เลือกไม่ถูกต้อง' }, 400);
+      const row = await env.DB.prepare(
+        'SELECT fiscal_year, records, revision, updated_at FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?'
+      ).bind(access.workspaceId, requestedYear).first() as { fiscal_year?: string; records?: string; revision?: number; updated_at?: string } | null;
+      let records: unknown[] = [];
+      if (row?.records) {
+        try {
+          const parsed = JSON.parse(row.records);
+          if (!Array.isArray(parsed)) return json({ error: 'รูปแบบข้อมูลทะเบียนกิจการไม่ถูกต้อง' }, 500);
+          records = parsed;
+        } catch {
+          return json({ error: 'ไม่สามารถอ่านข้อมูลทะเบียนกิจการได้' }, 500);
+        }
+      }
+      const years = await env.DB.prepare(
+        'SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year DESC'
+      ).bind(access.workspaceId).all();
+      return json({ year: requestedYear, records, revision: Number(row?.revision || 0), updatedAt: row?.updated_at || null, availableYears: (years.results || []).map((item: { fiscal_year: string }) => String(item.fiscal_year)) });
+    }
+
     if (path === '/api/auth/bootstrap-status' && request.method === 'GET') {
       const row = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
       const userCount = Number(row?.count || 0);
