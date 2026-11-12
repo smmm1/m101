@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 
 type Business = {
   id: string; sequenceNo?: string; companyName?: string; taxId?: string;
@@ -119,11 +119,10 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       let matrix:string[][]=[];
       if(extension==='csv')matrix=parseCsvRows((await file.text()).replace(/^\uFEFF/,''));
       else if(['xlsx','xls','xlsm'].includes(extension||'')){
-        const workbook=new ExcelJS.Workbook();
-        await workbook.xlsx.load(await file.arrayBuffer() as Parameters<typeof workbook.xlsx.load>[0]);
-        const worksheet=workbook.worksheets[0];
-        if(!worksheet)throw new Error('ไม่พบ Sheet ในไฟล์');
-        worksheet.eachRow({includeEmpty:true},row=>{matrix.push(Array.from({length:row.cellCount},(_,index)=>row.getCell(index+1).text||''));});
+        const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+        const sheetName=workbook.SheetNames[0];
+        if(!sheetName)throw new Error('ไม่พบ Sheet ในไฟล์');
+        matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:'',raw:false}).map(row=>row.map(value=>String(value??'').trim()));
       }else throw new Error('รองรับไฟล์ Excel และ CSV เท่านั้น');
       let headerIndex=-1,bestScore=0;
       for(let rowIndex=0;rowIndex<Math.min(30,matrix.length);rowIndex++){
@@ -346,28 +345,13 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     }
     if(!['xlsx','xls','xlsm'].includes(extension||'')){setError('รองรับไฟล์ .xlsx, .xls, .xlsm และ .csv');return;}
     try{
-      const workbook=new ExcelJS.Workbook();
-      const bytes=await file.arrayBuffer();
-      await workbook.xlsx.load(bytes as Parameters<typeof workbook.xlsx.load>[0]);
+      const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
       const parsedSheets:Record<string,string[][]>={};
-      for(const worksheet of workbook.worksheets){
-        const matrix:string[][]=[];
-        worksheet.eachRow({includeEmpty:true},row=>{
-          const values=row.values as unknown[];
-          matrix.push(values.slice(1).map(value=>{
-            if(value instanceof Date)return value.toISOString().slice(0,10);
-            if(value&&typeof value==='object'){
-              const cell=value as {text?:unknown;result?:unknown;richText?:Array<{text?:string}>};
-              if(typeof cell.text==='string')return cell.text;
-              if(typeof cell.result!=='undefined')return String(cell.result??'');
-              if(Array.isArray(cell.richText))return cell.richText.map(part=>part.text||'').join('');
-            }
-            return String(value??'').trim();
-          }));
-        });
-        parsedSheets[worksheet.name]=matrix;
+      for(const name of workbook.SheetNames){
+        const matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?value.toISOString().slice(0,10):String(value??'').trim()));
+        parsedSheets[name]=matrix;
       }
-      const names=workbook.worksheets.map(worksheet=>worksheet.name);
+      const names=workbook.SheetNames;
       if(!names.length){setError('ไม่พบ Worksheet ในไฟล์นี้');return;}
       setSheetData(parsedSheets);setSheetNames(names);setSelectedSheet(names[0]);
       const blocks=splitExcelTables(parsedSheets[names[0]]);
