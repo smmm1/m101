@@ -367,6 +367,106 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, fiscalYear, savedRecords: records.length, revision: nextRevision });
     }
 
+
+    // Annual obligations are stored as relational D1 rows scoped to the active workspace.
+    if (path === '/api/annual-tasks' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const fiscalYear = String(url.searchParams.get('year') || '').trim();
+      if (!/^\\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      const result = await env.DB.prepare(
+        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
+      ).bind(access.workspaceId, fiscalYear).all();
+      let tasks = (result.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), fiscalYear: String(row.fiscal_year), businessId: String(row.business_id),
+        businessName: String(row.business_name), taskCode: String(row.task_code), taskName: String(row.task_name),
+        status: String(row.status), dueDate: row.due_date ? String(row.due_date) : '',
+        note: String(row.note || ''), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+      }));
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?')
+          .bind(access.workspaceId, access.user.id).all();
+        const allowed = new Set((assigned.results || []).map((row: { business_id: string }) => String(row.business_id)));
+        tasks = tasks.filter((task: { businessId: string }) => allowed.has(task.businessId));
+      }
+      return json({ tasks });
+    }
+
+    if (path === '/api/annual-tasks' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { fiscalYear?: string; businessId?: string; taskCode?: string; taskName?: string; status?: string; dueDate?: string; note?: string };
+      const fiscalYear = String(body.fiscalYear || '').trim();
+      const businessId = String(body.businessId || '').trim();
+      const taskCode = String(body.taskCode || '').trim().toUpperCase();
+      const taskName = String(body.taskName || '').trim();
+      const status = String(body.status || 'pending');
+      const dueDate = String(body.dueDate || '').trim();
+      const note = String(body.note || '').trim();
+      if (!/^\\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
+      if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
+      if (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
+      const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?')
+        .bind(access.workspaceId, fiscalYear).first() as { records?: string } | null;
+      let business: Record<string, unknown> | undefined;
+      try {
+        const rows = JSON.parse(String(directory?.records || '[]'));
+        if (Array.isArray(rows)) business = rows.find((item: unknown) => item && typeof item === 'object' && String((item as { id?: unknown }).id || '') === businessId);
+      } catch { return json({ error: 'ข้อมูลทะเบียนกิจการไม่ถูกต้อง' }, 500); }
+      if (!business) return json({ error: 'ไม่พบกิจการในรอบปีที่เลือก' }, 404);
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS ok FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND business_id = ?')
+          .bind(access.workspaceId, access.user.id, businessId).first();
+        if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
+      }
+      const id = randomToken(18);
+      const now = new Date().toISOString();
+      try {
+        await env.DB.prepare('INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId).run();
+      } catch {
+        return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
+      }
+      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.created', 'annual_task', ?, ?, ?)")
+        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ fiscalYear, businessId, taskCode }), now).run();
+      return json({ ok: true, id, createdAt: now, updatedAt: now }, 201);
+    }
+
+    const annualTaskMatch = path.match(/^\\/api\\/annual-tasks\\/([A-Za-z0-9_-]+)$/);
+    if (annualTaskMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const id = annualTaskMatch[1];
+      const body = await request.json() as { status?: string; dueDate?: string; note?: string };
+      const status = String(body.status || '');
+      const dueDate = String(body.dueDate || '').trim();
+      const note = String(body.note || '').trim();
+      if (!['pending', 'in_progress', 'completed'].includes(status) || (dueDate && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate)) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
+      const current = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string } | null;
+      if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS ok FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND business_id = ?')
+          .bind(access.workspaceId, access.user.id, String(current.business_id)).first();
+        if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
+      }
+      const now = new Date().toISOString();
+      await env.DB.prepare('UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?')
+        .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId).run();
+      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.updated', 'annual_task', ?, ?, ?)")
+        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ status, dueDate }), now).run();
+      return json({ ok: true });
+    }
+
+    if (annualTaskMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ลบรายการงานได้' }, 403);
+      const result = await env.DB.prepare('DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId).run();
+      if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      return json({ ok: true });
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
