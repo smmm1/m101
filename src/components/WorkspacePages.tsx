@@ -23,7 +23,7 @@ async function apiJson(url: string, init?: RequestInit) {
   return payload;
 }
 
-export function CommandCenter({ navigate, year = '69' }: { navigate: (page: string) => void; year?: string }) {
+export function CommandCenter({ navigate, year = '69' }: { navigate: (page: 'businesses' | 'work') => void; year?: string }) {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [tasks, setTasks] = useState<AnnualTask[]>([]);
   const [loading, setLoading] = useState(true);
