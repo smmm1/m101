@@ -1,496 +1,125 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@layer base {
-  :root {
-    --font-sans: var(--ds-font-sans);
-    --font-sarabun: var(--ds-font-sans);
-    --font-mono: 'JetBrains Mono', monospace;
-    color-scheme: light;
-  }
-
-  html.dark {
-    color-scheme: dark;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: var(--ds-font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    letter-spacing: -0.01em;
-    background-color: var(--ds-color-canvas);
-    color: var(--ds-color-text);
-    transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  html.dark body {
-    background-color: #0a0a0a;
-    color: #f4f4f4;
-  }
+:root {
+  font-family: Inter, "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+  color: #17243b;
+  background: #f4f6fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
 }
 
-.font-headline {
-  font-family: 'Sarabun', 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; }
+button, input { font: inherit; }
 
-.font-display {
-  font-family: 'Sarabun', 'Plus Jakarta Sans', sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f4f6fa;
 }
-
-.font-body {
-  font-family: 'Sarabun', 'Plus Jakarta Sans', sans-serif;
+.auth-panel {
+  width: min(100%, 360px);
+  padding: 34px 30px;
+  border: 1px solid rgba(23, 43, 77, .07);
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 24px 70px -36px rgba(15, 23, 42, .32);
 }
-
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
-  font-feature-settings: 'tnum' 1;
-}
-
-.pastel-mesh-bg {
-  background: radial-gradient(at 0% 0%, rgba(240, 240, 240, 0.45) 0px, transparent 55%),
-              radial-gradient(at 100% 0%, rgba(241, 241, 241, 0.5) 0px, transparent 50%),
-              radial-gradient(at 50% 100%, rgba(250, 250, 250, 0.7) 0px, transparent 60%),
-              #ffffff;
-}
-
-html.dark .pastel-mesh-bg {
-  background: radial-gradient(at 0% 0%, rgba(145, 145, 145, 0.15) 0px, transparent 55%),
-              radial-gradient(at 100% 0%, rgba(138, 138, 138, 0.15) 0px, transparent 50%),
-              radial-gradient(at 50% 100%, rgba(111, 111, 111, 0.15) 0px, transparent 60%),
-              #111111;
-}
-
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: #d4d4d4;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
-}
-
-.animate-shake {
-  animation: shake 0.4s ease-in-out;
-}
-
-/* ==========================================================================
-   Dark Mode Global Theme Adaptations (High-Contrast & Eye-Comfortable)
-   ========================================================================== */
-html.dark .bg-white {
-  background-color: #1a1a1a !important;
-}
-
-html.dark .bg-\[\#fafafa\] {
-  background-color: #111111 !important;
-}
-
-html.dark .bg-\[\#f4f4f4\],
-html.dark .bg-\[\#e8e8e8\],
-html.dark .bg-\[\#f1f1f1\] {
-  background-color: #262626 !important;
-}
-
-html.dark .text-\[\#181818\],
-html.dark .text-\[\#181818\] {
-  color: #f4f4f4 !important;
-}
-
-html.dark .text-\[\#535353\],
-html.dark .text-\[\#727272\] {
-  color: #a2a2a2 !important;
-}
-
-html.dark .text-\[\#a2a2a2\] {
-  color: #8a8a8a !important;
-}
-
-html.dark .border-\[\#ececec\],
-html.dark .border-\[\#e4e4e4\],
-html.dark .border-\[\#f0f0f0\],
-html.dark .border-\[\#d4d4d4\],
-html.dark .border-\[\#f4f4f4\],
-html.dark .border-\[\#e7e7e7\] {
-  border-color: #2d2d2d !important;
-}
-
-html.dark .divide-\[\#f4f4f4\] > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-\[\#ececec\] > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-\[\#e4e4e4\] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #2d2d2d !important;
-}
-
-html.dark input:not([type="checkbox"]):not([type="radio"]),
-html.dark select,
-html.dark textarea {
-  background-color: #222222 !important;
-  color: #f4f4f4 !important;
-  border-color: #3b3b3b !important;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #727272 !important;
-}
-
-html.dark .hover\:bg-\[\#f4f4f4\]:hover,
-html.dark .hover\:bg-\[\#f1f1f1\]:hover,
-html.dark .hover\:bg-\[\#e8e8e8\]:hover {
-  background-color: #2a2a2a !important;
-}
-
-html.dark tr.hover\:bg-\[\#fafafa\]:hover,
-html.dark div.hover\:bg-\[\#fafafa\]:hover {
-  background-color: #202020 !important;
-}
-
-html.dark .shadow-2xs,
-html.dark .shadow-xs,
-html.dark .shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45) !important;
-}
-
-html.dark .shadow-md,
-html.dark .shadow-lg,
-html.dark .shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
-}
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: #404040;
-}
-
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #545454;
-}
-
-/* ==========================================================================
-   Cute Cursor Style (Pastel Pointer with Sparkle & Cute Paw on Hover)
-   ========================================================================== */
-html,
-body,
-html.cursor-mac,
-html.cursor-mac body {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cdefs%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='160%25' height='160%25'%3E%3CfeDropShadow dx='0.8' dy='1.2' stdDeviation='1' flood-color='%23d97706' flood-opacity='0.35'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23s)'%3E%3Cpath d='M3 3 L3 20 L7.5 15.5 L11.5 24 L14.5 22.5 L10.5 14 L17 14 Z' fill='%23ffffff' stroke='%23f59e0b' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='18.5' cy='7' r='3.5' fill='%23ec4899'/%3E%3Cpath d='M18.5 4.5 L18.5 9.5 M16 7 L21 7' stroke='%23ffffff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 3 3, default !important;
-}
-
-a,
-button,
-[role="button"],
-input[type="submit"],
-input[type="button"],
-input[type="checkbox"],
-input[type="radio"],
-select,
-label[for],
-.cursor-pointer,
-html.cursor-mac a,
-html.cursor-mac button,
-html.cursor-mac [role="button"],
-html.cursor-mac .cursor-pointer {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cdefs%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='160%25' height='160%25'%3E%3CfeDropShadow dx='0.8' dy='1.2' stdDeviation='1' flood-color='%23db2777' flood-opacity='0.35'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23s)'%3E%3Cpath d='M10 2 C8 2 6.5 3.5 6.5 5.5 L6.5 13 C5.5 12.3 4.5 12.5 4 13.5 C3.5 14.5 4 15.5 5 16 L9 21 C10 22 11.5 22.5 13 22.5 L17.5 22.5 C20.5 22.5 22 20 22 17.5 L22 9 C22 7 20.5 5.5 18.5 5.5 C18 5.5 17.5 5.7 17 6 C16.5 4.5 15 3.5 13.5 3.5 C12.5 3.5 11.5 4 11 4.8 C10.5 3.2 9.5 2 10 2 Z' fill='%23fff1f2' stroke='%23f43f5e' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='13' cy='16' r='2' fill='%23fb7185'/%3E%3Ccircle cx='9' cy='12' r='1.2' fill='%23fb7185'/%3E%3Ccircle cx='13' cy='10.5' r='1.2' fill='%23fb7185'/%3E%3Ccircle cx='17' cy='11.5' r='1.2' fill='%23fb7185'/%3E%3Ccircle cx='21' cy='5' r='3.5' fill='%23fbbf24'/%3E%3Cpath d='M21 2.5 L21 7.5 M18.5 5 L23.5 5' stroke='%23ffffff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 8 2, pointer !important;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="search"],
-textarea {
-  cursor: text !important;
-}
-
-/* ==========================================================================
-   Crazy Eyeball Animation Easter Egg
-   ========================================================================== */
-@keyframes crazyEyeRun {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    filter: drop-shadow(0 0 2px rgba(123, 123, 123, 0.4));
-  }
-  8% {
-    transform: translate(-110px, -20px) scale(1.4) rotate(-25deg);
-    filter: drop-shadow(0 0 10px rgba(123, 123, 123, 0.9));
-  }
-  18% {
-    transform: translate(-210px, 30px) scale(1.2) rotate(45deg);
-    filter: drop-shadow(0 0 14px rgba(113, 113, 113, 0.9));
-  }
-  28% {
-    transform: translate(-150px, -65px) scale(1.6) rotate(-60deg);
-    filter: drop-shadow(0 0 16px rgba(166, 166, 166, 0.9));
-  }
-  38% {
-    transform: translate(-40px, -90px) scale(1.3) rotate(90deg);
-    filter: drop-shadow(0 0 12px rgba(145, 145, 145, 0.9));
-  }
-  48% {
-    transform: translate(25px, -35px) scale(1.5) rotate(-120deg);
-    filter: drop-shadow(0 0 16px rgba(113, 113, 113, 0.9));
-  }
-  58% {
-    transform: translate(-190px, 55px) scale(1.1) rotate(180deg);
-    filter: drop-shadow(0 0 12px rgba(123, 123, 123, 0.9));
-  }
-  68% {
-    transform: translate(-80px, 65px) scale(1.45) rotate(-45deg);
-    filter: drop-shadow(0 0 14px rgba(113, 113, 113, 0.9));
-  }
-  78% {
-    transform: translate(-25px, 15px) scale(1.2) rotate(20deg);
-    filter: drop-shadow(0 0 8px rgba(123, 123, 123, 0.8));
-  }
-  88% {
-    transform: translate(-8px, -5px) scale(1.08) rotate(-10deg);
-    filter: drop-shadow(0 0 4px rgba(123, 123, 123, 0.5));
-  }
-  100% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    filter: none;
-  }
-}
-
-.animate-crazy-eye {
-  animation: crazyEyeRun 2.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  z-index: 50;
-  pointer-events: none;
-}
-
-/* ==========================================================================
-   Button 24 Custom Style
-   ========================================================================== */
-.button-24 {
-  background: #919191;
-  border: 1px solid #919191;
-  border-radius: 6px;
-  box-shadow: rgba(0, 0, 0, 0.1) 1px 2px 4px;
-  box-sizing: border-box;
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-family: nunito, roboto, proxima-nova, "proxima nova", sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 16px;
-  min-height: 38px;
-  outline: 0;
-  padding: 8px 14px;
+.auth-panel h1 {
+  margin: 0 0 24px;
+  color: #172b4d;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -.035em;
   text-align: center;
-  text-rendering: geometricprecision;
-  text-transform: none;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-  vertical-align: middle;
-  transition: all 0.2s ease;
 }
-
-.button-24:hover,
-.button-24:active {
-  background-color: initial;
-  background-position: 0 0;
-  color: #919191;
+.auth-subtitle {
+  margin: -14px 0 22px;
+  color: #7b8798;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
 }
-
-.button-24:active {
-  opacity: .5;
+.auth-form { display: grid; gap: 11px; }
+.auth-form input {
+  width: 100%;
+  height: 47px;
+  padding: 0 14px;
+  border: 1px solid #dce2eb;
+  border-radius: 2px;
+  outline: none;
+  color: #17243b;
+  background: #fff;
+  font-size: 14px;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-
-
-
-
-/* Lightweight tab-entry motion; isolated from the scroll container and app state. */
-@keyframes m101TabEnter {
-  from { opacity: 0.82; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+.auth-form input::placeholder { color: #9aa4b2; }
+.auth-form input:focus {
+  border-color: #526b91;
+  box-shadow: 0 0 0 3px rgba(23, 43, 77, .07);
 }
-.m101-tab-transition {
-  animation: m101TabEnter 160ms ease-out both;
+.auth-form button {
+  width: 100%;
+  height: 47px;
+  margin-top: 3px;
+  border: 0;
+  border-radius: 2px;
+  background: #172b4d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
-@media (prefers-reduced-motion: reduce) {
-  .m101-tab-transition { animation: none; }
+.auth-form button:hover { background: #10213d; }
+.auth-form button:disabled { cursor: wait; opacity: .6; }
+.auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #f3d2d2;
+  background: #fff7f7;
+  color: #a33333;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
+.loading-copy { color: #748094; font-size: 13px; }
 
-
-/* ==========================================================================
-   M101 Micro-interactions — quiet, responsive, and accessible
-   ========================================================================== */
-@layer base {
-  button,
-  [role="button"],
-  a,
-  input,
-  select,
-  textarea {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  button:not(:disabled),
-  [role="button"],
-  a {
-    transition:
-      color 160ms ease,
-      background-color 160ms ease,
-      border-color 160ms ease,
-      box-shadow 180ms ease,
-      opacity 160ms ease,
-      transform 160ms ease;
-  }
-
-  button:focus-visible,
-  [role="button"]:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
-    outline: 2px solid rgba(145, 145, 145, 0.72);
-    outline-offset: 2px;
-  }
-
-  input,
-  select,
-  textarea {
-    transition:
-      border-color 160ms ease,
-      box-shadow 160ms ease,
-      background-color 160ms ease;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    box-shadow: 0 0 0 3px rgba(145, 145, 145, 0.09);
-  }
+.new-workspace { min-height: 100vh; background: #f4f6fa; }
+.workspace-bar {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 26px;
+  border-bottom: 1px solid #e4e9f0;
+  background: #fff;
 }
-
-@media (hover: hover) and (pointer: fine) {
-  button:not(:disabled):hover,
-  [role="button"]:hover {
-    transform: translateY(-1px);
-  }
-
-  button:not(:disabled):active,
-  [role="button"]:active {
-    transform: translateY(0) scale(0.985);
-  }
-
-  a:hover {
-    text-decoration-thickness: 1.5px;
-  }
+.workspace-brand {
+  color: #172b4d;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: .08em;
 }
-
-button:disabled {
-  cursor: not-allowed;
+.workspace-account { display: flex; align-items: center; gap: 18px; color: #647187; font-size: 12px; }
+.workspace-account button {
+  border: 0;
+  padding: 7px 0 7px 14px;
+  border-left: 1px solid #e4e9f0;
+  background: transparent;
+  color: #52627a;
+  font-size: 12px;
+  cursor: pointer;
 }
+.workspace-canvas { min-height: calc(100vh - 58px); }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-
-/* ==========================================================================
-   M101 Subtle UX polish — touch feedback, list affordances, and form states.
-   CSS-only by design: no runtime listeners, timers, or extra dependencies.
-   ========================================================================== */
-@layer base {
-  button,
-  a,
-  [role="button"],
-  [role="menuitem"],
-  summary,
-  input,
-  select,
-  textarea,
-  tr {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  input[type="checkbox"],
-  input[type="radio"] {
-    accent-color: #606060;
-    transition: accent-color 140ms ease, transform 140ms ease;
-  }
-
-  input[type="checkbox"]:active,
-  input[type="radio"]:active {
-    transform: scale(0.94);
-  }
-
-  [role="menuitem"],
-  summary {
-    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
-  }
-
-  ::selection {
-    background: rgba(96, 96, 96, 0.16);
-  }
-}
-
-/* Touch devices do not have hover; provide the same tactile confirmation on press. */
-@media (hover: none) {
-  button:not(:disabled):active,
-  [role="button"]:active,
-  a[href]:active,
-  [role="menuitem"]:active {
-    transform: scale(0.985);
-    opacity: 0.88;
-  }
-}
-
-/* Quiet row feedback helps users track the item under the pointer without layout shift. */
-@media (hover: hover) and (pointer: fine) {
-  tr {
-    transition: background-color 140ms ease;
-  }
-
-  tr:hover {
-    background-color: rgba(96, 96, 96, 0.035);
-  }
-
-  [role="menuitem"]:hover,
-  summary:hover {
-    background-color: rgba(96, 96, 96, 0.045);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  input[type="checkbox"],
-  input[type="radio"],
-  [role="menuitem"],
-  summary,
-  tr {
-    transition: none !important;
-  }
+@media (max-width: 520px) {
+  .auth-panel { padding: 30px 22px; }
+  .workspace-bar { padding: 0 16px; }
+  .workspace-account { gap: 10px; }
 }
