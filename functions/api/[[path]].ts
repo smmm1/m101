@@ -138,6 +138,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     return json({ error: 'คำขอไม่ผ่านการตรวจสอบแหล่งที่มา กรุณาโหลดหน้าเว็บใหม่' }, 403);
   }
 
+  let bootstrapStage = 'request';
   try {
     if (path === '/api/health' && request.method === 'GET') {
       await env.DB.prepare('SELECT 1 AS ok').first();
@@ -155,31 +156,39 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
+      bootstrapStage = 'read-request';
       const body = await request.json() as { username?: string; password?: string; passwordConfirm?: string; bootstrapKey?: string };
       if (!env.M101_BOOTSTRAP_KEY) return json({ error: 'ระบบยังไม่ได้เปิดการตั้งค่า Owner ครั้งแรก' }, 503);
+      bootstrapStage = 'cleanup-rate-limit';
       const nowSeconds = Math.floor(Date.now() / 1000);
       await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempted_at <= ?').bind(nowSeconds - 15 * 60).run();
       const bootstrapIp = request.headers.get('CF-Connecting-IP') || 'unknown-client';
       const bootstrapAttemptKey = await digest(`bootstrap:${bootstrapIp}`);
+      bootstrapStage = 'reserve-rate-limit';
       const bootstrapReservation = await env.DB.prepare(
         'INSERT INTO auth_rate_limit_attempts (attempt_key, attempted_at) SELECT ?, ? WHERE (SELECT COUNT(*) FROM auth_rate_limit_attempts WHERE attempt_key = ? AND attempted_at > ?) < 5'
       ).bind(bootstrapAttemptKey, nowSeconds, bootstrapAttemptKey, nowSeconds - 15 * 60).run();
       if (Number(bootstrapReservation.meta?.changes || 0) !== 1) return json({ error: 'มีการลองตั้งค่าหลายครั้งเกินไป กรุณารอ 15 นาที' }, 429);
+      bootstrapStage = 'verify-bootstrap-key';
       if (!constantTimeEqual(String(body.bootstrapKey || ''), env.M101_BOOTSTRAP_KEY)) return json({ error: 'รหัสตั้งค่าครั้งแรกไม่ถูกต้อง' }, 403);
       await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempt_key = ?').bind(bootstrapAttemptKey).run();
+      bootstrapStage = 'validate-owner-input';
       const username = String(body.username || '').trim();
       const password = String(body.password || '');
       if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
       if (password.length < 11 || password.length > 1024) return json({ error: 'รหัสผ่าน Owner ต้องมีอย่างน้อย 11 ตัวอักษร' }, 400);
       if (password !== String(body.passwordConfirm || '')) return json({ error: 'รหัสผ่านทั้งสองช่องไม่ตรงกัน' }, 400);
+      bootstrapStage = 'count-existing-users';
       const existing = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
       const userCount = Number(existing?.count || 0);
       const now = new Date().toISOString();
+      bootstrapStage = 'hash-owner-password';
       const encoded = await hashPassword(password);
       let ownerId: string;
       let workspaceId: string;
       let status = 201;
       if (userCount === 0) {
+        bootstrapStage = 'create-owner-workspace-batch';
         ownerId = 'x8wLRj5Iw1zqsyWnMrF65w';
         workspaceId = 'm101-primary-workspace';
         const statements = await env.DB.batch([
@@ -190,6 +199,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
         ]);
         if (!statements.every((item: { meta?: { changes?: number } }) => Number(item.meta?.changes || 0) === 1)) return json({ error: 'สร้างบัญชี Owner ไม่สำเร็จ กรุณาตรวจสอบฐานข้อมูล' }, 500);
       } else {
+        bootstrapStage = 'claim-existing-owner';
         const existingOwner = await env.DB.prepare(
           "SELECT u.id, wm.workspace_id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id JOIN workspaces w ON w.id = wm.workspace_id WHERE u.role = 'admin' AND u.local_password_set = 0 AND u.account_status = 'active' AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
         ).first() as { id?: string; workspace_id?: string } | null;
@@ -210,9 +220,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
         ]);
         status = 200;
       }
+      bootstrapStage = 'create-owner-session';
       const token = randomToken();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
         .bind(await digest(token), ownerId, Math.floor(Date.now() / 1000) + SESSION_SECONDS, now).run();
+      bootstrapStage = 'read-created-owner';
       const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(ownerId).first() as UserRow;
       return json({ user: publicUser(user) }, status, { 'Set-Cookie': sessionCookie(token) });
     }
@@ -663,6 +675,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
+    if (path === '/api/auth/bootstrap' && request.method === 'POST') {
+      console.error('M101 bootstrap failed at stage:', bootstrapStage, error);
+      return json({ error: `ตั้งค่า Owner ไม่สำเร็จ (ขั้นตอน ${bootstrapStage}) กรุณาลองใหม่หลังตรวจสอบระบบ`, stage: bootstrapStage, errorType: error instanceof Error ? error.name : 'UnknownError' }, 500);
+    }
     console.error('M101 API error', error);
     return json({ error: 'เกิดข้อผิดพลาดภายในระบบ Cloudflare' }, 500);
   }
