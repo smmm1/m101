@@ -87,6 +87,8 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
   const [error,setError] = useState('');
   const [editor,setEditor] = useState<Business|null>(null);
   const [showPassword,setShowPassword] = useState(false);
+  const [pendingLegacyImport,setPendingLegacyImport] = useState<{fileName:string;incoming:Business[]}|null>(null);
+  const [legacyMode,setLegacyMode] = useState<'update_existing'|'skip_duplicates'|'import_all'>('update_existing');
   const [newYear,setNewYear] = useState('');
   const search = (query || globalSearch).trim().toLocaleLowerCase('th-TH');
   const load = useCallback(async (targetYear=year) => {
@@ -101,14 +103,68 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
   },[year]);
   useEffect(()=>{void load(year);},[year,load]);
   const filtered=useMemo(()=>records.filter(r=>[r.companyName,r.taxId,r.sequenceNo,r.eFilingCode,r.ssoCode,r.remark,r.auditorDate,typeText[r.type||'']].join(' ').toLocaleLowerCase('th-TH').includes(search)),[records,search]);
-  const save=async(next:Business[])=>{
+  const save=async(next:Business[]):Promise<boolean>=>{
     setSaving(true);setError('');
     try{
       const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:year,records:next,revision})});
       setRecords(next);setRevision(Number(data.revision)||revision+1);
-      setEditor(null);setShowPassword(false);
-    }catch(e){setError(e instanceof Error?e.message:'บันทึกทะเบียนไม่สำเร็จ');if(e instanceof Error&&e.message.includes('เปลี่ยนแปลง'))void load(year);}
+      setEditor(null);setShowPassword(false);return true;
+    }catch(e){setError(e instanceof Error?e.message:'บันทึกทะเบียนไม่สำเร็จ');if(e instanceof Error&&e.message.includes('เปลี่ยนแปลง'))void load(year);return false;}
     finally{setSaving(false);}
+  };
+  const readLegacyImport=async(file:File)=>{
+    setError('');
+    try{
+      const extension=file.name.toLowerCase().split('.').pop();
+      let matrix:string[][]=[];
+      if(extension==='csv')matrix=parseCsvRows((await file.text()).replace(/^\uFEFF/,''));
+      else if(['xlsx','xls','xlsm'].includes(extension||'')){
+        const workbook=new ExcelJS.Workbook();
+        await workbook.xlsx.load(await file.arrayBuffer() as Parameters<typeof workbook.xlsx.load>[0]);
+        const worksheet=workbook.worksheets[0];
+        if(!worksheet)throw new Error('ไม่พบ Sheet ในไฟล์');
+        worksheet.eachRow({includeEmpty:true},row=>{matrix.push(Array.from({length:row.cellCount},(_,index)=>row.getCell(index+1).text||''));});
+      }else throw new Error('รองรับไฟล์ Excel และ CSV เท่านั้น');
+      let headerIndex=-1,bestScore=0;
+      for(let rowIndex=0;rowIndex<Math.min(30,matrix.length);rowIndex++){
+        const score=importFields.filter(field=>matrix[rowIndex].some(header=>field.hints.some(hint=>String(header).toLocaleLowerCase('th-TH').includes(hint.toLocaleLowerCase('th-TH'))))).length;
+        if(score>bestScore){bestScore=score;headerIndex=rowIndex;}
+      }
+      if(headerIndex<0)throw new Error('ไม่พบแถวหัวตารางที่ระบบรู้จักในไฟล์นี้');
+      const headers=matrix[headerIndex].map(value=>String(value||'').trim());
+      const mapping:Record<string,number>={};
+      for(const field of importFields){const index=headers.findIndex(header=>field.hints.some(hint=>header.toLocaleLowerCase('th-TH')===hint.toLocaleLowerCase('th-TH')||header.toLocaleLowerCase('th-TH').includes(hint.toLocaleLowerCase('th-TH'))));if(index>=0)mapping[String(field.key)]=index;}
+      if(mapping.companyName===undefined)throw new Error('ไม่พบคอลัมน์ชื่อกิจการ กรุณาใช้ปุ่มจับคู่ไฟล์สำหรับกำหนดคอลัมน์เอง');
+      const incoming=matrix.slice(headerIndex+1).map((row,index)=>{
+        const value=(key:keyof Business)=>{const column=mapping[String(key)];return column===undefined?'':String(row[column]??'').trim();};
+        const rawType=value('type').toLocaleLowerCase('th-TH');
+        const rawStatus=value('status').toLocaleLowerCase('th-TH');
+        const companyName=value('companyName');
+        if(!companyName)return null;
+        const mappedType=rawType?(rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company'):undefined;
+        const mappedStatus=rawStatus?(rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending'):undefined;
+        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:value('taxId'),type:mappedType||'company',auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus||'pending',sourceType:'legacy-import',sourceFileName:file.name} as Business;
+      }).filter((item):item is Business=>Boolean(item));
+      if(!incoming.length)throw new Error('ไม่พบแถวข้อมูลกิจการในไฟล์');
+      setPendingLegacyImport({fileName:file.name,incoming});
+      setLegacyMode('update_existing');
+    }catch(e){setError(e instanceof Error?e.message:'อ่านไฟล์นำเข้าไม่สำเร็จ');}
+  };
+  const legacyDuplicateIndex=(incoming:Business,target:Business[])=>target.findIndex(existing=>(incoming.taxId&&existing.taxId===incoming.taxId)||((incoming.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===(existing.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')));
+  const confirmLegacyImport=async()=>{
+    if(!pendingLegacyImport)return;
+    const next=[...records];let added=0,updated=0,skipped=0;
+    for(const incoming of pendingLegacyImport.incoming){
+      const existingIndex=legacyDuplicateIndex(incoming,next);
+      if(existingIndex>=0&&legacyMode==='skip_duplicates'){skipped++;continue;}
+      if(existingIndex>=0&&legacyMode==='update_existing'){
+        const patch=Object.fromEntries(Object.entries(incoming).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
+        next[existingIndex]={...next[existingIndex],...patch,id:next[existingIndex].id};updated++;continue;
+      }
+      next.push({...incoming,id:makeId(),sequenceNo:incoming.sequenceNo||String(next.length+1)});added++;
+    }
+    const success=await save(next);
+    if(success){setPendingLegacyImport(null);setError('นำเข้าเดิมสำเร็จ · เพิ่ม '+added+' · อัปเดต '+updated+' · ข้าม '+skipped+' รายการ');}
   };
   const exportCsv=()=>{
     const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','isVerifiedDbd','remark'];
@@ -123,13 +179,14 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
     setRevision(Number(data.revision)||revision+1);setYears(prev=>[...prev,value].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})));setYear(value);setNewYear('');
   };
   return <section className="m101-page m101-registry-page">
-    <div className="m101-page-heading"><div><span className="m101-eyebrow">BUSINESS PORTFOLIO</span><h1>ทะเบียนกิจการ</h1><p>จัดเก็บและจัดการข้อมูลนิติบุคคลในพื้นที่ทำงาน</p></div><div className="m101-heading-actions"><button className="m101-button" onClick={exportCsv}>↓ ส่งออก CSV</button>{canManage&&<><button className="m101-button" onClick={onOpenImport}>⇅ จับคู่ไฟล์</button><button className="m101-button m101-button-primary" onClick={()=>setEditor(blankBusiness())}>＋ เพิ่มกิจการ</button></>}</div></div>
+    <div className="m101-page-heading"><div><span className="m101-eyebrow">BUSINESS PORTFOLIO</span><h1>ทะเบียนกิจการ</h1><p>จัดเก็บและจัดการข้อมูลนิติบุคคลในพื้นที่ทำงาน</p></div><div className="m101-heading-actions"><button className="m101-button" onClick={exportCsv}>↓ ส่งออก CSV</button>{canManage&&<><label className="m101-button m101-legacy-import">↑ นำเข้าเดิม<input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readLegacyImport(file);e.currentTarget.value='';}}/></label><button className="m101-button" onClick={onOpenImport}>⇅ จับคู่ไฟล์</button><button className="m101-button m101-button-primary" onClick={()=>setEditor(blankBusiness())}>＋ เพิ่มกิจการ</button></>}</div></div>
     <div className="m101-registry-toolbar"><div className="m101-registry-count"><strong>{filtered.length.toLocaleString('th-TH')}</strong><span>จาก {records.length.toLocaleString('th-TH')} กิจการ</span></div><label className="m101-year-select">รอบปี <select value={year} onChange={e=>{setYear(e.target.value);onYearChange?.(e.target.value);}}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label>{canManage&&<div className="m101-add-year"><input aria-label="รอบปีใหม่" value={newYear} onChange={e=>setNewYear(e.target.value)} placeholder="ปีใหม่"/><button onClick={()=>void startNewYear()}>เพิ่มปี</button></div>}<input className="m101-registry-search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ค้นหาชื่อ เลขทะเบียน หรือรหัส..."/></div>
     {error&&<div className="m101-alert" role="alert">{error}<button onClick={()=>void load(year)}>โหลดข้อมูลล่าสุด</button></div>}
     <div className="m101-table-wrap"><table className="m101-data-table"><thead><tr><th>ลำดับ</th><th>ชื่อกิจการ</th><th>ประเภท</th><th>เลขทะเบียน / ผู้เสียภาษี</th><th>e-Filing</th><th>ประกันสังคม</th><th>วันที่ผู้สอบบัญชี</th><th>สถานะ</th><th>ตรวจ DBD</th><th>หมายเหตุ</th>{canManage&&<th>จัดการ</th>}</tr></thead><tbody>
       {loading?<tr><td colSpan={canManage?11:10} className="m101-table-state">กำลังโหลดข้อมูลจาก D1…</td></tr>:filtered.length===0?<tr><td colSpan={11} className="m101-table-state">{records.length?'ไม่พบข้อมูลที่ตรงกับคำค้นหา':'ยังไม่มีข้อมูลกิจการในรอบปีนี้'}</td></tr>:filtered.map((r,i)=><tr key={r.id}><td className="m101-sequence">{r.sequenceNo||String(i+1).padStart(3,'0')}</td><td><b className="m101-business-name">{r.companyName||'ไม่ระบุชื่อกิจการ'}</b><small className="m101-business-sub">{r.topic||r.sourceFileName||'—'}</small></td><td>{typeText[r.type||'']||'ไม่ระบุ'}</td><td className="m101-mono">{r.taxId||'—'}</td><td className="m101-mono">{r.eFilingCode||'—'}</td><td className="m101-mono">{r.ssoCode||'—'}</td><td>{r.auditorDate||'—'}</td><td><span className={'m101-status-chip status-'+(r.status||'pending')}>{statusText[r.status||'pending']||'รอดำเนินการ'}</span></td><td>{r.isVerifiedDbd?'ยืนยันแล้ว':'รอตรวจสอบ'}</td><td className="m101-remark">{r.remark||'—'}</td>{canManage&&<td><div className="m101-row-actions"><button onClick={()=>{setEditor({...r});setShowPassword(false);}}>แก้ไข</button><button className="danger" onClick={()=>{if(window.confirm('ยืนยันลบ '+(r.companyName||'กิจการนี้')+'?'))void save(records.filter(x=>x.id!==r.id));}}>ลบ</button></div></td>}</tr>)}
     </tbody></table></div>
     <p className="m101-table-footnote">ข้อมูลจัดเก็บใน Cloudflare D1 · {canManage?'การบันทึกใช้เลขรุ่นป้องกันข้อมูลชนกัน':'แสดงเฉพาะกิจการที่ Owner มอบหมายให้'}</p>
+    {pendingLegacyImport&&<div className="m101-modal-backdrop"><section className="m101-editor m101-legacy-import-modal"><div className="m101-editor-head"><div><span className="m101-eyebrow">LEGACY FILE IMPORT</span><h2>นำเข้าไฟล์แบบเดิม</h2><p>{pendingLegacyImport.fileName} · {pendingLegacyImport.incoming.length} รายการ</p></div><button type="button" onClick={()=>setPendingLegacyImport(null)}>×</button></div><div className="m101-legacy-import-stats"><span>รายการใหม่ <b>{pendingLegacyImport.incoming.filter(item=>legacyDuplicateIndex(item,records)<0).length}</b></span><span>รายการซ้ำ <b>{pendingLegacyImport.incoming.filter(item=>legacyDuplicateIndex(item,records)>=0).length}</b></span></div><p className="m101-legacy-import-help">เลือกรูปแบบจัดการข้อมูลซ้ำ ระบบจะบันทึกเมื่อกดยืนยันเท่านั้น</p><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='update_existing'} onChange={()=>setLegacyMode('update_existing')}/> อัปเดตข้อมูลเดิมและเพิ่มรายการใหม่</label><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='skip_duplicates'} onChange={()=>setLegacyMode('skip_duplicates')}/> ข้ามรายการซ้ำ นำเข้าเฉพาะรายการใหม่</label><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='import_all'} onChange={()=>setLegacyMode('import_all')}/> นำเข้าทั้งหมดเป็นรายการใหม่</label><div className="m101-editor-actions"><button type="button" className="m101-button" onClick={()=>setPendingLegacyImport(null)}>ยกเลิก</button><button type="button" className="m101-button m101-button-primary" disabled={saving} onClick={()=>void confirmLegacyImport()}>{saving?'กำลังบันทึก…':'ยืนยันนำเข้า'}</button></div></section></div>}
     {editor&&<div className="m101-modal-backdrop" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget&&!saving)setEditor(null);}}><form className="m101-editor" onSubmit={e=>{e.preventDefault();const normalized={...editor,companyName:editor.companyName?.trim(),updatedAt:new Date().toISOString(),createdAt:editor.createdAt||new Date().toISOString()};const exists=records.some(r=>r.id===editor.id);void save(exists?records.map(r=>r.id===editor.id?normalized:r):[{...normalized,sequenceNo:normalized.sequenceNo||String(records.length+1)},...records]);}}><div className="m101-editor-head"><div><span className="m101-eyebrow">BUSINESS RECORD</span><h2>{records.some(r=>r.id===editor.id)?'แก้ไขข้อมูลกิจการ':'เพิ่มกิจการ'}</h2></div><button type="button" onClick={()=>setEditor(null)}>×</button></div><div className="m101-form-grid">
       <label>ชื่อกิจการ<input required value={editor.companyName||''} onChange={e=>setEditor({...editor,companyName:e.target.value})}/></label>
       <label>เลขทะเบียน / เลขผู้เสียภาษี<input value={editor.taxId||''} onChange={e=>setEditor({...editor,taxId:e.target.value})}/></label>
@@ -221,7 +278,8 @@ const importFields: { key: keyof Business; label: string; hints: string[] }[] = 
   { key: 'taxId', label: 'เลขทะเบียน / เลขผู้เสียภาษี', hints: ['เลขทะเบียน','เลขประจำตัวผู้เสียภาษี','tax','registration','เลขผู้เสียภาษี'] },
   { key: 'eFilingCode', label: 'รหัส e-Filing', hints: ['efiling','e-filing','รหัสยื่น','รหัสกรม'] },
   { key: 'ssoCode', label: 'รหัสประกันสังคม', hints: ['ประกันสังคม','sso'] },
-  { key: 'auditorDate', label: 'วันที่ผู้สอบบัญชี', hints: ['ผู้สอบบัญชี','วันที่','auditor','audit'] },
+  { key: 'auditorDate', label: 'วันที่ผู้สอบบัญชี', hints: ['วันที่แจ้งผู้สอบ','วันที่ผู้สอบบัญชี','ผู้สอบบัญชี','auditor date','auditor','audit'] },
+  { key: 'password', label: 'รหัสผ่าน', hints: ['รหัสผ่าน','password','pass'] },
   { key: 'status', label: 'สถานะ', hints: ['สถานะ','status'] },
   { key: 'remark', label: 'หมายเหตุ', hints: ['หมายเหตุ','remark','note'] },
 ];
