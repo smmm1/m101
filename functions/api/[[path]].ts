@@ -3,7 +3,8 @@ type UserRow = { id: string; email: string; username: string; display_name: stri
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
-const PBKDF2_ITERATIONS = 310000;
+// Cloudflare Workers WebCrypto rejects PBKDF2 iteration counts above 100,000.
+const PBKDF2_ITERATIONS = 100000;
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   const responseHeaders = new Headers(headers);
