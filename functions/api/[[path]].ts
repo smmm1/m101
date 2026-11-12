@@ -617,6 +617,98 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, assignedCount: businessIds.length });
     }
 
+
+    if (path === '/api/relationship-groups' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการกลุ่มกิจการได้' }, 403);
+      const [groupRows, membershipRows, directoryRows] = await Promise.all([
+        env.DB.prepare('SELECT id, name, created_at, updated_at FROM business_relationship_groups WHERE workspace_id = ? ORDER BY name COLLATE NOCASE').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT m.group_id, m.business_id FROM business_relationship_group_memberships m JOIN business_relationship_groups g ON g.id = m.group_id WHERE g.workspace_id = ?').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all(),
+      ]);
+      const businesses = new Map<string, { id: string; companyName: string; taxId: string }>();
+      for (const row of directoryRows.results || []) {
+        try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) {
+          if (!item || typeof item !== 'object') continue;
+          const id = String((item as { id?: unknown }).id || '');
+          if (id) businesses.set(id, { id, companyName: String((item as { companyName?: unknown }).companyName || ''), taxId: String((item as { taxId?: unknown }).taxId || '') });
+        } } catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      }
+      const groups = (groupRows.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), name: String(row.name), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+        businessIds: (membershipRows.results || []).filter((membership: Record<string, unknown>) => String(membership.group_id) === String(row.id)).map((membership: Record<string, unknown>) => String(membership.business_id)),
+      }));
+      return json({ groups, businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')) });
+    }
+
+    const relationshipGroupMatch = path.match(/^\/api\/relationship-groups\/([A-Za-z0-9_-]+)$/);
+    if (path === '/api/relationship-groups' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่สร้างกลุ่มกิจการได้' }, 403);
+      const body = await request.json() as { name?: string; businessIds?: unknown };
+      const name = String(body.name || '').trim();
+      if (name.length < 2 || name.length > 80) return json({ error: 'ชื่อกลุ่มต้องมี 2–80 ตัวอักษร' }, 400);
+      if (!Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id => typeof id !== 'string' || !id || id.length > 128)) return json({ error: 'รายการกิจการไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directoryRows = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directoryRows.results || []) { try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) if (item && typeof item === 'object' && (item as { id?: unknown }).id) validIds.add(String((item as { id: unknown }).id)); } catch { return json({ error: 'ข้อมูลทะเบียนกิจการไม่ถูกต้อง' }, 500); } }
+      if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
+      const id = randomToken(18); const now = new Date().toISOString();
+      try {
+        await env.DB.batch([
+          env.DB.prepare('INSERT INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').bind(id, access.workspaceId, name, now, now),
+          ...businessIds.map(businessId=>env.DB.prepare('INSERT INTO business_relationship_group_memberships (group_id, business_id, created_at) VALUES (?, ?, ?)').bind(id,businessId,now)),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.created', 'relationship_group', ?, ?, ?)").bind(randomToken(18),access.workspaceId,access.user.id,id,JSON.stringify({name,businessCount:businessIds.length}),now),
+        ]);
+      } catch { return json({ error: 'สร้างกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มเดิม' }, 409); }
+      return json({ ok: true, id }, 201);
+    }
+
+    if (relationshipGroupMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขกลุ่มกิจการได้' }, 403);
+      const groupId = relationshipGroupMatch[1];
+      const existing = await env.DB.prepare('SELECT id FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId).first();
+      if (!existing) return json({ error: 'ไม่พบกลุ่มกิจการนี้' }, 404);
+      const body = await request.json() as { name?: string; businessIds?: unknown };
+      const name = String(body.name || '').trim();
+      if (name.length < 2 || name.length > 80 || !Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id=>typeof id!=='string'||!id||id.length>128)) return json({ error: 'ข้อมูลกลุ่มกิจการไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directoryRows = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directoryRows.results || []) { try { const records=JSON.parse(String((row as {records?:string}).records||'[]')); if(Array.isArray(records)) for(const item of records) if(item&&typeof item==='object'&&(item as {id?:unknown}).id) validIds.add(String((item as {id:unknown}).id)); } catch { return json({error:'ข้อมูลทะเบียนกิจการไม่ถูกต้อง'},500); } }
+      if (businessIds.some(id=>!validIds.has(id))) return json({error:'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่'},400);
+      const now=new Date().toISOString();
+      try {
+        await env.DB.batch([
+          env.DB.prepare('UPDATE business_relationship_groups SET name = ?, updated_at = ? WHERE id = ? AND workspace_id = ?').bind(name,now,groupId,access.workspaceId),
+          env.DB.prepare('DELETE FROM business_relationship_group_memberships WHERE group_id = ?').bind(groupId),
+          ...businessIds.map(businessId=>env.DB.prepare('INSERT INTO business_relationship_group_memberships (group_id,business_id,created_at) VALUES (?,?,?)').bind(groupId,businessId,now)),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.updated', 'relationship_group', ?, ?, ?)").bind(randomToken(18),access.workspaceId,access.user.id,groupId,JSON.stringify({name,businessCount:businessIds.length}),now),
+        ]);
+      } catch { return json({error:'บันทึกกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มอื่น'},409); }
+      return json({ok:true});
+    }
+
+    if (relationshipGroupMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({error:'กรุณาเข้าสู่ระบบใหม่'},401);
+      if (access.membershipType !== 'owner') return json({error:'เฉพาะ Owner เท่านั้นที่ลบกลุ่มกิจการได้'},403);
+      const groupId=relationshipGroupMatch[1];
+      const existing=await env.DB.prepare('SELECT id FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId).first();
+      if(!existing)return json({error:'ไม่พบกลุ่มกิจการนี้'},404);
+      const now=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.deleted', 'relationship_group', ?, '{}', ?)").bind(randomToken(18),access.workspaceId,access.user.id,groupId,now),
+      ]);
+      return json({ok:true});
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
