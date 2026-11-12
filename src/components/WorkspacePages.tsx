@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
 
 type Business = {
   id: string; sequenceNo?: string; companyName?: string; taxId?: string;
@@ -220,6 +221,17 @@ function parseCsvRows(source: string): string[][] {
   for(let i=0;i<source.length;i++){const ch=source[i];if(ch==='"'&&quoted&&source[i+1]==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&source[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell='';}else cell+=ch;}
   row.push(cell);if(row.some(v=>v.trim()))rows.push(row);return rows;
 }
+
+function splitExcelTables(matrix: string[][]): string[][][] {
+  const blocks: string[][][] = []; let current: string[][] = [];
+  for (const row of matrix) {
+    if (row.every(value => !String(value ?? '').trim())) { if (current.length) { blocks.push(current); current = []; } }
+    else current.push(row.map(value => String(value ?? '').trim()));
+  }
+  if (current.length) blocks.push(current);
+  return blocks.filter(block => block.length >= 2 && block[0].some(Boolean));
+}
+
 export function ImportExport({ year = '69' }: { year?: string }) {
   const [records,setRecords]=useState<Business[]>([]);
   const [revision,setRevision]=useState(1);
@@ -227,22 +239,46 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const [rows,setRows]=useState<string[][]>([]);
   const [mapping,setMapping]=useState<Record<string,string>>({});
   const [fileName,setFileName]=useState('');
+  const [sheetNames,setSheetNames]=useState<string[]>([]);
+  const [sheetData,setSheetData]=useState<Record<string,string[][]>>({});
+  const [selectedSheet,setSelectedSheet]=useState('');
+  const [tableBlocks,setTableBlocks]=useState<string[][][]>([]);
+  const [selectedTable,setSelectedTable]=useState(0);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
   const load=useCallback(async()=>{setLoading(true);try{const data=await apiJson('/api/directory?year='+encodeURIComponent(year));setRecords(data.records||[]);setRevision(Number(data.revision)||1);}catch(e){setError(e instanceof Error?e.message:'โหลดทะเบียนไม่สำเร็จ');}finally{setLoading(false);}},[year]);
   useEffect(()=>{void load();},[load]);
-  const readFile=async(file:File)=>{
-    setError('');setMessage('');
-    if(!file.name.toLowerCase().endsWith('.csv')){setError('ขณะนี้รองรับไฟล์ CSV (UTF-8) ก่อน ส่วน Excel mapping จะเชื่อมในขั้นถัดไป');return;}
-    const text=await file.text();const parsed=parseCsvRows(text.replace(/^\uFEFF/,''));
-    if(parsed.length<2){setError('ไฟล์นี้ไม่มีแถวข้อมูลเพียงพอ');return;}
-    const cols=parsed[0].map(v=>v.trim());
+  const applyTable=(table:string[][])=>{
+    if(table.length<2){setError('ตารางที่เลือกไม่มีแถวข้อมูลเพียงพอ');setHeaders([]);setRows([]);return;}
+    const cols=table[0].map(v=>String(v||'').trim());
     const auto:Record<string,string>={};
     for(const field of importFields){const found=cols.find(h=>field.hints.some(hint=>h.toLocaleLowerCase('th-TH')===hint.toLocaleLowerCase('th-TH')||h.toLocaleLowerCase('th-TH').includes(hint.toLocaleLowerCase('th-TH'))));if(found)auto[field.key]=found;}
-    setHeaders(cols);setRows(parsed.slice(1));setMapping(auto);setFileName(file.name);
+    setHeaders(cols);setRows(table.slice(1));setMapping(auto);
   };
+  const readFile=async(file:File)=>{
+    setError('');setMessage('');setFileName(file.name);setHeaders([]);setRows([]);setMapping({});setSheetNames([]);setSheetData({});setSelectedSheet('');setTableBlocks([]);setSelectedTable(0);
+    const extension=file.name.toLowerCase().split('.').pop();
+    if(extension==='csv'){
+      const parsed=parseCsvRows((await file.text()).replace(/^\\uFEFF/,''));
+      if(parsed.length<2){setError('ไฟล์นี้ไม่มีแถวข้อมูลเพียงพอ');return;}
+      setTableBlocks([parsed]);applyTable(parsed);return;
+    }
+    if(!['xlsx','xls','xlsm'].includes(extension||'')){setError('รองรับไฟล์ .xlsx, .xls, .xlsm และ .csv');return;}
+    try{
+      const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+      const parsedSheets:Record<string,string[][]>={};
+      for(const name of workbook.SheetNames){const matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name],{header:1,defval:'',raw:false}).map(row=>row.map(value=>String(value??'').trim()));parsedSheets[name]=matrix;}
+      if(!workbook.SheetNames.length){setError('ไม่พบ Worksheet ในไฟล์นี้');return;}
+      setSheetData(parsedSheets);setSheetNames(workbook.SheetNames);setSelectedSheet(workbook.SheetNames[0]);
+      const blocks=splitExcelTables(parsedSheets[workbook.SheetNames[0]]);
+      if(!blocks.length){setError('ไม่พบตารางข้อมูลในชีตนี้');return;}
+      setTableBlocks(blocks);setSelectedTable(0);applyTable(blocks[0]);
+    }catch(e){setError(e instanceof Error?'อ่านไฟล์ Excel ไม่สำเร็จ: '+e.message:'อ่านไฟล์ Excel ไม่สำเร็จ');}
+  };
+  const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
+  const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
   const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:value('taxId'),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
   const duplicates=mapped.filter(item=>records.some(existing=>(item.taxId&&existing.taxId===item.taxId)||existing.companyName?.trim().toLocaleLowerCase('th-TH')===item.companyName?.trim().toLocaleLowerCase('th-TH'))).length;
   const confirmImport=async()=>{
@@ -253,9 +289,9 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     finally{setSaving(false);}
   };
   return <section className="m101-page"><div className="m101-page-heading"><div><span className="m101-eyebrow">DATA EXCHANGE</span><h1>นำเข้า / ส่งออกข้อมูล</h1><p>ตรวจสอบและจับคู่คอลัมน์ก่อนนำเข้าทะเบียนกิจการ · ปี {year}</p></div></div>{error&&<div className="m101-alert" role="alert">{error}<button onClick={()=>void load()}>โหลดข้อมูลใหม่</button></div>}{message&&<div className="m101-import-success" role="status">{message}</div>}
-    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>นำเข้าจากไฟล์ CSV</h2><p>เลือกไฟล์ ตรวจสอบการจับคู่ และยืนยันก่อนบันทึกลง D1</p></div></div><label className="m101-file-picker">เลือกไฟล์ CSV<input type="file" accept=".csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.currentTarget.value='';}}/></label>{fileName&&<p className="m101-import-file">ไฟล์ที่เลือก: <b>{fileName}</b> · {rows.length} แถวข้อมูล</p>}</div>
+    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>นำเข้าจาก Excel / CSV</h2><p>เลือกไฟล์ เลือกชีตและตาราง จับคู่คอลัมน์ แล้วตรวจสอบก่อนบันทึกลง D1</p></div></div><label className="m101-file-picker">เลือกไฟล์ Excel / CSV<input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.currentTarget.value='';}}/></label>{fileName&&<p className="m101-import-file">ไฟล์ที่เลือก: <b>{fileName}</b> · {rows.length} แถวข้อมูล</p>}{sheetNames.length>0&&<div className="m101-workbook-selectors"><label>Worksheet<select value={selectedSheet} onChange={e=>chooseSheet(e.target.value)}>{sheetNames.map(name=><option key={name} value={name}>{name}</option>)}</select></label>{tableBlocks.length>1&&<label>ตารางที่พบ<select value={selectedTable} onChange={e=>chooseTable(Number(e.target.value))}>{tableBlocks.map((block,index)=><option key={index} value={index}>ตาราง {index+1} · {block.length-1} แถว</option>)}</select></label>}</div>}</div>
     {headers.length>0&&<><div className="m101-panel"><div className="m101-panel-heading"><div><h2>จับคู่คอลัมน์</h2><p>ตรวจสอบให้แต่ละฟิลด์ตรงกับคอลัมน์ในไฟล์ก่อนนำเข้า</p></div></div><div className="m101-mapping-grid">{importFields.map(field=><label key={String(field.key)}>{field.label}<select value={mapping[String(field.key)]||''} onChange={e=>setMapping(prev=>({...prev,[String(field.key)]:e.target.value}))}><option value="">ไม่ใช้คอลัมน์นี้</option>{headers.map(h=><option key={h} value={h}>{h}</option>)}</select></label>)}</div></div>
-    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ตัวอย่างก่อนนำเข้า</h2><p>แสดงตัวอย่าง 5 รายการแรก · ตรวจพบรายการซ้ำ {duplicates} รายการ</p></div><span className="m101-status-chip status-completed">{mapped.length} พร้อมนำเข้า</span></div><div className="m101-table-wrap"><table className="m101-data-table"><thead><tr><th>ชื่อกิจการ</th><th>เลขทะเบียน</th><th>ประเภท</th><th>e-Filing</th><th>สถานะ</th></tr></thead><tbody>{mapped.slice(0,5).map((r,i)=><tr key={i}><td>{r.companyName}</td><td>{r.taxId||'—'}</td><td>{typeText[r.type]||'บริษัทจำกัด'}</td><td>{r.eFilingCode||'—'}</td><td>{statusText[r.status]||'รอดำเนินการ'}</td></tr>)}</tbody></table></div><div className="m101-editor-actions"><button className="m101-button" onClick={()=>{setHeaders([]);setRows([]);setMapping({});}}>ยกเลิก</button><button className="m101-button m101-button-primary" disabled={saving||loading||!mapped.length} onClick={()=>void confirmImport()}>{saving?'กำลังบันทึก…':`ยืนยันนำเข้า ${mapped.length-duplicates} รายการ`}</button></div></div></>}
+    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ตัวอย่างก่อนนำเข้า</h2><p>แสดงตัวอย่าง 5 รายการแรก · ตรวจพบรายการซ้ำ {duplicates} รายการ</p></div><span className="m101-status-chip status-completed">{mapped.length} พร้อมนำเข้า</span></div><div className="m101-table-wrap"><table className="m101-data-table"><thead><tr><th>ชื่อกิจการ</th><th>เลขทะเบียน</th><th>ประเภท</th><th>e-Filing</th><th>สถานะ</th></tr></thead><tbody>{mapped.slice(0,5).map((r,i)=><tr key={i}><td>{r.companyName}</td><td>{r.taxId||'—'}</td><td>{typeText[r.type]||'บริษัทจำกัด'}</td><td>{r.eFilingCode||'—'}</td><td>{statusText[r.status]||'รอดำเนินการ'}</td></tr>)}</tbody></table></div><div className="m101-editor-actions"><button className="m101-button" onClick={()=>{setHeaders([]);setRows([]);setMapping({});setFileName('');setSheetNames([]);setSheetData({});setSelectedSheet('');setTableBlocks([]);}}>ยกเลิก</button><button className="m101-button m101-button-primary" disabled={saving||loading||!mapped.length} onClick={()=>void confirmImport()}>{saving?'กำลังบันทึก…':`ยืนยันนำเข้า ${mapped.length-duplicates} รายการ`}</button></div></div></>}
     <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ส่งออกข้อมูล</h2><p>ดาวน์โหลดทะเบียนกิจการของรอบปีนี้เป็น CSV</p></div></div><button className="m101-button" onClick={()=>{const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','remark'];const csv=[cols.join(','),...records.map(r=>cols.map(k=>{const v=String((r as any)[k]??'');return '"'+v.replace(/"/g,'""')+'"';}).join(','))].join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`M101-${year}-export.csv`;a.click();URL.revokeObjectURL(url);}}>↓ ดาวน์โหลด CSV</button>{loading&&<span className="m101-import-file">กำลังอ่านทะเบียน…</span>}</div>
   </section>;
 }
