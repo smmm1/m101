@@ -143,7 +143,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         if(!companyName)return null;
         const mappedType=rawType?(rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company'):undefined;
         const mappedStatus=rawStatus?(rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending'):undefined;
-        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:value('taxId'),type:mappedType||'company',auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus||'pending',sourceType:'legacy-import',sourceFileName:file.name} as Business;
+        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:value('taxId'),type:mappedType,auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus,sourceType:'legacy-import',sourceFileName:file.name} as Business;
       }).filter((item):item is Business=>Boolean(item));
       if(!incoming.length)throw new Error('ไม่พบแถวข้อมูลกิจการในไฟล์');
       setPendingLegacyImport({fileName:file.name,incoming});
@@ -161,7 +161,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         const patch=Object.fromEntries(Object.entries(incoming).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
         next[existingIndex]={...next[existingIndex],...patch,id:next[existingIndex].id};updated++;continue;
       }
-      next.push({...incoming,id:makeId(),sequenceNo:incoming.sequenceNo||String(next.length+1)});added++;
+      next.push({...incoming,id:makeId(),type:incoming.type||'company',status:incoming.status||'pending',sequenceNo:incoming.sequenceNo||String(next.length+1)});added++;
     }
     const success=await save(next);
     if(success){setPendingLegacyImport(null);setError('นำเข้าเดิมสำเร็จ · เพิ่ม '+added+' · อัปเดต '+updated+' · ข้าม '+skipped+' รายการ');}
