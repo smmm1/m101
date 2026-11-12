@@ -1,13 +1,16 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { AdminSecurity, AnnualWork, BusinessRegistry, CommandCenter, ImportExport, RelationshipGroups } from './components/WorkspacePages';
+import { ActivityView, AdminSecurity, AnnualWork, BusinessRegistry, CalendarView, CommandCenter, ImportExport, RelationshipGroups, ReportsView } from './components/WorkspacePages';
 
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
-type Page = 'overview' | 'businesses' | 'groups' | 'work' | 'import' | 'settings';
+type Page = 'overview' | 'businesses' | 'groups' | 'work' | 'calendar' | 'reports' | 'activity' | 'import' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
   { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
   { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
   { id: 'groups', label: 'กลุ่มกิจการ', group: 'WORKSPACE', icon: '◎', desc: 'จัดกลุ่มกิจการและความสัมพันธ์' },
   { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
+  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'ติดตามกำหนดส่งและงานที่ใกล้ถึง' },
+  { id: 'reports', label: 'รายงาน', group: 'INTELLIGENCE', icon: '▥', desc: 'สรุปข้อมูลทะเบียนและความคืบหน้างาน' },
+  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: '◷', desc: 'ตรวจสอบประวัติการเปลี่ยนแปลง' },
   { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: '⇅', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
   { id: 'settings', label: 'ผู้ดูแลและความปลอดภัย', group: 'SYSTEM', icon: '⚙', desc: 'จัดการบัญชีและสิทธิ์ในพื้นที่ทำงาน' },
 ];
@@ -38,7 +41,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
         <div className="topbar-right"><label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
       </header>
       <main className="content">
-        {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} onYearChange={setYear} onOpenImport={() => choose('import')} canManage={user.role === 'admin'} /> : page === 'groups' ? <RelationshipGroups /> : page === 'work' ? <AnnualWork year={year} canManage={user.role === 'admin'} /> : page === 'settings' ? <AdminSecurity /> : page === 'import' ? <ImportExport year={year} /> : <section className="module-page">
+        {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} onYearChange={setYear} onOpenImport={() => choose('import')} canManage={user.role === 'admin'} /> : page === 'groups' ? <RelationshipGroups /> : page === 'work' ? <AnnualWork year={year} canManage={user.role === 'admin'} /> : page === 'calendar' ? <CalendarView year={year} /> : page === 'reports' ? <ReportsView year={year} /> : page === 'activity' ? <ActivityView /> : page === 'settings' ? <AdminSecurity /> : page === 'import' ? <ImportExport year={year} /> : <section className="module-page">
           <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
           <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>{page === 'import' ? 'เครื่องมือนำเข้าและส่งออก' : 'การจัดการ Owner และความปลอดภัย'}</h2><p>{page === 'import' ? 'การส่งออก CSV พร้อมใช้งานจากหน้าทะเบียนกิจการ ส่วนตัวช่วยจับคู่ไฟล์ Excel จะเชื่อมต่อในขั้นถัดไป' : 'บัญชี Owner และสิทธิ์สมาชิกจะเชื่อมกับระบบจัดการบัญชีในขั้นถัดไป'}</p>{page === 'import' && <button className="m101-button" onClick={() => choose('businesses')}>ไปยังทะเบียนกิจการ</button>}</div>
         </section>}
