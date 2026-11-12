@@ -700,7 +700,7 @@ function AppContent() {
               <label htmlFor="m101-login-email" className="block text-sm font-medium text-slate-700">บัญชีผู้ใช้</label>
               <input
                 id="m101-login-email"
-                type="email"
+                type="text"
                 autoComplete="username"
                 required
                 value={authEmail}
