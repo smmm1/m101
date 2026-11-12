@@ -711,7 +711,7 @@ function AppContent() {
         body: JSON.stringify({ username: bootstrapUsername.trim(), password: bootstrapPassword, passwordConfirm: bootstrapPasswordConfirm, bootstrapKey }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'ตั้งค่า Owner ไม่สำเร็จ');
+      if (!response.ok) throw new Error([payload.error || 'ตั้งค่า Owner ไม่สำเร็จ', payload.errorType ? `ประเภท: ${payload.errorType}` : '', payload.errorDetail ? `รายละเอียด: ${payload.errorDetail}` : ''].filter(Boolean).join(' — '));
       setBootstrapRequired(false);
       setBootstrapPassword('');
       setBootstrapPasswordConfirm('');
