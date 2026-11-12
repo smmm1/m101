@@ -11,12 +11,6 @@
       "migrations_dir": "./migrations"
     }
   ],
-  "services": [
-    {
-      "binding": "MONEY102_AUTH",
-      "service": "money102-auth-bridge"
-    }
-  ],
   "env": {
     "preview": {
       "d1_databases": [
@@ -25,12 +19,6 @@
           "database_name": "m101-preview-isolated",
           "database_id": "f945e064-a72f-403a-aaf4-557ebef99f46",
           "migrations_dir": "./migrations"
-        }
-      ],
-      "services": [
-        {
-          "binding": "MONEY102_AUTH",
-          "service": "money102-auth-bridge"
         }
       ]
     }

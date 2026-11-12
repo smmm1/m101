@@ -7,6 +7,7 @@ interface AdminControlCenterProps {
   onClose: () => void;
   onNavigate: (tab: AdminTab) => void;
   onPreviewAfk: () => void;
+  onManageUsers: () => void;
 }
 
 const destinations: Array<{ id: AdminTab; title: string; detail: string; icon: string }> = [
@@ -17,7 +18,7 @@ const destinations: Array<{ id: AdminTab; title: string; detail: string; icon: s
   { id: 'settings', title: 'ตั้งค่าระบบ', detail: 'การตั้งค่า เสียง และสำรองข้อมูล', icon: 'settings' },
 ];
 
-export function AdminControlCenter({ onClose, onNavigate, onPreviewAfk }: AdminControlCenterProps) {
+export function AdminControlCenter({ onClose, onNavigate, onPreviewAfk, onManageUsers }: AdminControlCenterProps) {
   return (
     <div className="m101-dialog-overlay fixed inset-0 z-[260] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-labelledby="m101-admin-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="ds-admin-dialog m101-dialog-panel w-full max-w-2xl overflow-hidden">
@@ -37,6 +38,11 @@ export function AdminControlCenter({ onClose, onNavigate, onPreviewAfk }: AdminC
               <span className="ds-admin-arrow">→</span>
             </DSButton>
           ))}
+          <DSButton type="button" onClick={onManageUsers} variant="ghost" className="ds-admin-destination">
+            <span className="ds-admin-icon material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+            <span><span className="ds-admin-title">จัดการบัญชีผู้ใช้</span><span className="ds-admin-description">สร้าง ID ตั้งรหัสผ่าน และระงับบัญชีสมาชิก</span></span>
+            <span className="ds-admin-arrow">→</span>
+          </DSButton>
           <DSButton type="button" onClick={onPreviewAfk} variant="secondary" className="ds-admin-destination ds-admin-preview">
             <span className="ds-admin-icon material-symbols-outlined" aria-hidden="true">visibility</span>
             <span><span className="block text-sm font-bold text-slate-900 dark:text-white">ทดสอบภาพ AFK</span><span className="mt-1 block text-[11px] leading-5 text-slate-500 dark:text-slate-400">เปิดหน้าพักหน้าจอทันที ไม่ต้องรอ 3 นาที</span></span>

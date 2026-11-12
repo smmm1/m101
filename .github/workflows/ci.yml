@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - feature/conflict-notification-recovery
   push:
     branches:
       - main
       - product/m101-new-system-blueprint
+      - feature/m101-local-owner-auth
 
 permissions:
   contents: read
@@ -35,6 +37,9 @@ jobs:
 
       - name: Validate D1 migrations locally
         run: npx wrangler d1 migrations apply m101_db --local
+
+      - name: Verify legacy Owner migration and auth rate limiting
+        run: python3 scripts/test-legacy-owner-migration.py
 
       - name: Dependency vulnerability audit
         run: |
