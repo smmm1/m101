@@ -709,6 +709,21 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ok:true});
     }
 
+
+    if (path === '/api/activity' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const result = await env.DB.prepare(
+        "SELECT id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at FROM audit_events WHERE workspace_id = ? AND (? = 'owner' OR actor_user_id = ?) ORDER BY created_at DESC LIMIT 100"
+      ).bind(access.workspaceId, access.membershipType, access.user.id).all();
+      const events = (result.results || []).map((row: Record<string, unknown>) => {
+        let metadata: Record<string, unknown> = {};
+        try { const parsed = JSON.parse(String(row.metadata_json || '{}')); if (parsed && typeof parsed === 'object') metadata = parsed as Record<string, unknown>; } catch { /* Keep empty metadata for legacy events. */ }
+        return { id: String(row.id), actorUserId: row.actor_user_id ? String(row.actor_user_id) : '', action: String(row.action), resourceType: String(row.resource_type), resourceId: String(row.resource_id || ''), metadata, createdAt: String(row.created_at) };
+      });
+      return json({ events });
+    }
+
     return json({ error: 'API route not found' }, 404);
   } catch (error) {
     if (path === '/api/auth/bootstrap' && request.method === 'POST') {
