@@ -149,7 +149,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       setLegacyMode('update_existing');
     }catch(e){setError(e instanceof Error?e.message:'อ่านไฟล์นำเข้าไม่สำเร็จ');}
   };
-  const legacyDuplicateIndex=(incoming:Business,target:Business[])=>target.findIndex(existing=>(incoming.taxId&&existing.taxId===incoming.taxId)||((incoming.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===(existing.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')));
+  const legacyDuplicateIndex=(incoming:Business,target:Business[])=>target.findIndex(existing=>(normalizeThaiTaxId(incoming.taxId||'')&&normalizeThaiTaxId(existing.taxId||'')===normalizeThaiTaxId(incoming.taxId||''))||((incoming.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===(existing.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')));
   const confirmLegacyImport=async()=>{
     if(!pendingLegacyImport)return;
     const next=[...records];let added=0,updated=0,skipped=0;
@@ -372,11 +372,11 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
   const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
   const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
-  const seenTaxIds=new Set(records.map(item=>(item.taxId||'').trim()).filter(Boolean));
+  const seenTaxIds=new Set(records.map(item=>normalizeThaiTaxId(item.taxId||'')).filter(Boolean));
   const seenCompanyNames=new Set(records.map(item=>(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH')).filter(Boolean));
   let duplicates=0;
   const uniqueMapped=mapped.filter(item=>{
-    const taxId=(item.taxId||'').trim();
+    const taxId=normalizeThaiTaxId(item.taxId||'');
     const companyName=(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH');
     if((taxId&&seenTaxIds.has(taxId))||(companyName&&seenCompanyNames.has(companyName))){duplicates++;return false;}
     if(taxId)seenTaxIds.add(taxId);
