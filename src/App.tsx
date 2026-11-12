@@ -36,13 +36,53 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
         <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button><button className="notice" aria-label="การแจ้งเตือน">♧<i /></button></div>
       </header>
       <main className="content">
-        {page === 'overview' ? <CommandCenter navigate={choose} /> : <section className="module-page">
+        {page === 'overview' ? <CommandCenter navigate={choose} /> : page === 'businesses' ? <BusinessRegistry /> : <section className="module-page">
           <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
           <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>หน้าจอนี้จะเชื่อมกับข้อมูลและความสามารถเดิมของ M101 ในเฟสถัดไป</p></div>
         </section>}
       </main>
     </div>
   </div>;
+}
+
+
+type DirectoryRecord = {
+  id: string; sequenceNo?: string; taxId?: string; companyName?: string;
+  type?: 'company' | 'partnership' | 'individual'; auditorDate?: string;
+  remark?: string; eFilingCode?: string; ssoCode?: string;
+  status?: 'pending' | 'in_progress' | 'completed'; isVerifiedDbd?: boolean;
+  topic?: string; sourceType?: string; sourceFileName?: string;
+  createdAt?: string; updatedAt?: string;
+};
+function BusinessRegistry() {
+  const [records,setRecords] = useState<DirectoryRecord[]>([]);
+  const [years,setYears] = useState<string[]>(['69']);
+  const [year,setYear] = useState('69');
+  const [query,setQuery] = useState('');
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState('');
+  useEffect(() => {
+    let active=true;
+    setLoading(true); setError('');
+    fetch('/api/directory?year='+encodeURIComponent(year),{credentials:'same-origin',cache:'no-store'})
+      .then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||'โหลดทะเบียนกิจการไม่สำเร็จ');return data;})
+      .then(data=>{if(!active)return;setRecords(Array.isArray(data.records)?data.records:[]);setYears(Array.isArray(data.availableYears)&&data.availableYears.length?data.availableYears:['69']);})
+      .catch(e=>{if(active)setError(e instanceof Error?e.message:'เกิดข้อผิดพลาดในการโหลดข้อมูล');})
+      .finally(()=>{if(active)setLoading(false);});
+    return ()=>{active=false;};
+  },[year]);
+  const filtered=records.filter(r=>[r.companyName,r.taxId,r.sequenceNo,r.eFilingCode,r.ssoCode,r.remark].join(' ').toLocaleLowerCase('th-TH').includes(query.trim().toLocaleLowerCase('th-TH')));
+  const typeLabel=(v?:string)=>v==='company'?'บริษัทจำกัด':v==='partnership'?'ห้างหุ้นส่วน':v==='individual'?'บุคคลธรรมดา':'ไม่ระบุ';
+  const statusLabel=(v?:string)=>v==='completed'?'เสร็จแล้ว':v==='in_progress'?'กำลังดำเนินการ':'รอดำเนินการ';
+  return <section className="registry-page">
+    <div className="page-title"><div><h1>ทะเบียนกิจการ</h1><p>รายการนิติบุคคลและข้อมูลที่จัดเก็บในพื้นที่ทำงาน</p></div><div className="registry-controls"><label>ปีข้อมูล <select value={year} onChange={e=>setYear(e.target.value)}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
+    <div className="registry-toolbar"><div className="registry-count"><b>{records.length.toLocaleString('th-TH')}</b><span>กิจการในทะเบียน</span></div><div className="registry-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน หรือรหัส..." /></div></div>
+    {error&&<div className="registry-error" role="alert">{error}</div>}
+    <div className="registry-table-wrap"><table className="registry-table"><thead><tr><th>ลำดับ</th><th>ชื่อกิจการ</th><th>ประเภท</th><th>เลขทะเบียน / เลขผู้เสียภาษี</th><th>e-Filing</th><th>ประกันสังคม</th><th>ผู้สอบบัญชี / วันที่</th><th>สถานะ</th><th>ตรวจ DBD</th><th>หมายเหตุ</th></tr></thead><tbody>
+      {loading?<tr><td colSpan={10} className="registry-state">กำลังโหลดข้อมูลทะเบียน…</td></tr>:filtered.length===0?<tr><td colSpan={10} className="registry-state">{records.length===0?'ยังไม่มีข้อมูลกิจการในปีนี้':'ไม่พบกิจการที่ตรงกับคำค้นหา'}</td></tr>:filtered.map((r,i)=><tr key={r.id}><td className="sequence">{r.sequenceNo||String(i+1).padStart(3,'0')}</td><td className="business-name"><b>{r.companyName||'ไม่ระบุชื่อกิจการ'}</b><small>{r.topic||r.sourceFileName||'—'}</small></td><td>{typeLabel(r.type)}</td><td className="mono">{r.taxId||'—'}</td><td className="mono">{r.eFilingCode||'—'}</td><td className="mono">{r.ssoCode||'—'}</td><td>{r.auditorDate||'—'}</td><td><span className={'status-chip status-'+(r.status||'pending')}>{statusLabel(r.status)}</span></td><td>{r.isVerifiedDbd?'ยืนยันแล้ว':'ยังไม่ยืนยัน'}</td><td className="remark-cell">{r.remark||'—'}</td></tr>)}
+    </tbody></table></div>
+    <div className="registry-footnote">แสดง {filtered.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} รายการ · ข้อมูลรหัสผ่านไม่แสดงในตารางเพื่อความปลอดภัย</div>
+  </section>;
 }
 
 function CommandCenter({ navigate }: { navigate: (id: Page) => void }) {
