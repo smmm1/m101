@@ -172,7 +172,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
     const a=document.createElement('a');a.href=url;a.download=`M101-businesses-${year}.csv`;a.click();URL.revokeObjectURL(url);
   };
   const startNewYear=async()=>{
-    const value=newYear.trim();if(!/^\\d{2,4}$/.test(value)){setError('กรุณากรอกรอบปีบัญชีเป็นตัวเลข 2–4 หลัก');return;}
+    const value=newYear.trim();if(!/^\d{2,4}$/.test(value)){setError('กรุณากรอกรอบปีบัญชีเป็นตัวเลข 2–4 หลัก');return;}
     if(years.includes(value)){setYear(value);onYearChange?.(value);setNewYear('');return;}
     const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:value,records:[],revision})});
     setRevision(Number(data.revision)||revision+1);setYears(prev=>[...prev,value].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})));setYear(value);setNewYear('');
@@ -271,12 +271,12 @@ export function AdminSecurity() {
 
 
 function normalizeThaiTaxId(value:string):string {
-  let normalized=String(value||'').trim().replace(/\\.0$/,'');
-  if(/[+-]?\\d*(\\.\\d+)?e[+-]?\\d+/i.test(normalized)){
+  let normalized=String(value||'').trim().replace(/\.0$/,'');
+  if(/[+-]?\d*(\.\d+)?e[+-]?\d+/i.test(normalized)){
     const number=Number(normalized);
     if(Number.isFinite(number))normalized=BigInt(Math.round(number)).toString();
   }
-  const digits=normalized.replace(/\\D/g,'');
+  const digits=normalized.replace(/\D/g,'');
   if(digits.length===12&&!digits.startsWith('0'))normalized='0'+normalized;
   return normalized;
 }
@@ -349,7 +349,7 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     setError('');setMessage('');setFileName(file.name);setHeaders([]);setRows([]);setMapping({});setSheetNames([]);setSheetData({});setSelectedSheet('');setTableBlocks([]);setSelectedTable(0);
     const extension=file.name.toLowerCase().split('.').pop();
     if(extension==='csv'){
-      const parsed=parseCsvRows((await file.text()).replace(/^\\uFEFF/,''));
+      const parsed=parseCsvRows((await file.text()).replace(/^\uFEFF/,''));
       if(parsed.length<2){setError('ไฟล์นี้ไม่มีแถวข้อมูลเพียงพอ');return;}
       setTableBlocks([parsed]);applyTable(parsed);return;
     }
@@ -373,11 +373,11 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
   const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
   const seenTaxIds=new Set(records.map(item=>normalizeThaiTaxId(item.taxId||'')).filter(Boolean));
-  const seenCompanyNames=new Set(records.map(item=>(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH')).filter(Boolean));
+  const seenCompanyNames=new Set(records.map(item=>(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')).filter(Boolean));
   let duplicates=0;
   const uniqueMapped=mapped.filter(item=>{
     const taxId=normalizeThaiTaxId(item.taxId||'');
-    const companyName=(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH');
+    const companyName=(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');
     if((taxId&&seenTaxIds.has(taxId))||(companyName&&seenCompanyNames.has(companyName))){duplicates++;return false;}
     if(taxId)seenTaxIds.add(taxId);
     if(companyName)seenCompanyNames.add(companyName);
