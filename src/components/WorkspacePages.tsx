@@ -167,7 +167,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
     if(success){setPendingLegacyImport(null);setError('นำเข้าเดิมสำเร็จ · เพิ่ม '+added+' · อัปเดต '+updated+' · ข้าม '+skipped+' รายการ');}
   };
   const exportCsv=()=>{
-    const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','isVerifiedDbd','remark'];
+    const cols=['id','sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','isVerifiedDbd','remark'];
     const csv=[cols.join(','),...filtered.map(r=>cols.map(k=>csvCell((r as any)[k])).join(','))].join('\r\n');
     const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
     const a=document.createElement('a');a.href=url;a.download=`M101-businesses-${year}.csv`;a.click();URL.revokeObjectURL(url);
@@ -285,7 +285,13 @@ function normalizeThaiTaxId(value:string):string {
   if(digits.length===12&&!digits.startsWith('0'))normalized='0'+normalized;
   return normalized;
 }
-function findBusinessImportMatch(incoming: Pick<Business,'companyName'|'taxId'>, target: Business[]): number {
+function findBusinessImportMatch(incoming: Pick<Business,'id'|'companyName'|'taxId'>, target: Business[]): number {
+  const sourceId = String(incoming.id || '').trim();
+  if (sourceId) {
+    const idMatches = target.map((item,index)=>({item,index})).filter(({item})=>item.id===sourceId);
+    if (idMatches.length === 1) return idMatches[0].index;
+    if (idMatches.length > 1) return -1;
+  }
   const taxId = normalizeThaiTaxId(incoming.taxId || '');
   if (taxId) {
     const taxMatches = target.map((item,index)=>({item,index})).filter(({item})=>normalizeThaiTaxId(item.taxId||'')===taxId);
@@ -298,6 +304,7 @@ function findBusinessImportMatch(incoming: Pick<Business,'companyName'|'taxId'>,
   return nameMatches.length === 1 ? nameMatches[0].index : -1;
 }
 const importFields: { key: keyof Business; label: string; hints: string[] }[] = [
+  { key: 'id', label: 'รหัสกิจการ (สำหรับจับคู่รายการเดิม)', hints: ['business id','business_id','รหัสกิจการ','record id','record_id','id'] },
   { key: 'sequenceNo', label: 'ลำดับ', hints: ['ลำดับ','sequence','no','ที่'] },
   { key: 'companyName', label: 'ชื่อกิจการ', hints: ['ชื่อกิจการ','ชื่อนิติบุคคล','ชื่อบริษัท','ชื่อบริษัท/หจก','company name','business name'] },
   { key: 'type', label: 'ประเภทกิจการ', hints: ['ประเภท','type','รูปแบบ'] },
@@ -395,7 +402,7 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   };
   const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
   const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
-  const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
+  const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {id:value('id'),sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
   const matchedMapped = mapped.map(item=>({item,index:findBusinessImportMatch(item,records)}));
   const seenImportKeys = new Set<string>();
   let duplicates = 0;
@@ -426,7 +433,7 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     <div className="m101-panel"><div className="m101-panel-heading"><div><h2>นำเข้าจาก Excel / CSV</h2><p>เลือกไฟล์ เลือกชีตและตาราง จับคู่คอลัมน์ แล้วตรวจสอบก่อนบันทึกลง D1</p></div></div><label className="m101-file-picker">เลือกไฟล์ Excel / CSV<input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.currentTarget.value='';}}/></label>{fileName&&<p className="m101-import-file">ไฟล์ที่เลือก: <b>{fileName}</b> · {rows.length} แถวข้อมูล</p>}{sheetNames.length>0&&<div className="m101-workbook-selectors"><label>Worksheet<select value={selectedSheet} onChange={e=>chooseSheet(e.target.value)}>{sheetNames.map(name=><option key={name} value={name}>{name}</option>)}</select></label>{tableBlocks.length>1&&<label>ตารางที่พบ<select value={selectedTable} onChange={e=>chooseTable(Number(e.target.value))}>{tableBlocks.map((block,index)=><option key={index} value={index}>ตาราง {index+1} · {block.length-1} แถว</option>)}</select></label>}</div>}</div>
     {headers.length>0&&<><div className="m101-panel"><div className="m101-panel-heading"><div><h2>จับคู่คอลัมน์</h2><p>ตรวจสอบให้แต่ละฟิลด์ตรงกับคอลัมน์ในไฟล์ก่อนนำเข้า</p></div></div><div className="m101-mapping-grid">{importFields.map(field=><label key={String(field.key)}>{field.label}<select value={mapping[String(field.key)]||''} onChange={e=>setMapping(prev=>({...prev,[String(field.key)]:e.target.value}))}><option value="">ไม่ใช้คอลัมน์นี้</option>{headers.map(h=><option key={h} value={h}>{h}</option>)}</select></label>)}</div></div>
     <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ตัวอย่างก่อนนำเข้า</h2><p>แสดงตัวอย่าง 5 รายการแรก · ตรวจพบรายการซ้ำ {duplicates} รายการ</p></div><span className="m101-status-chip status-completed">{importPlan.length} พร้อมนำเข้า</span></div><div className="m101-table-wrap"><table className="m101-data-table"><thead><tr><th>ชื่อกิจการ</th><th>เลขทะเบียน</th><th>ประเภท</th><th>e-Filing</th><th>สถานะ</th></tr></thead><tbody>{mapped.slice(0,5).map((r,i)=><tr key={i}><td>{r.companyName}</td><td>{r.taxId||'—'}</td><td>{typeText[r.type]||'บริษัทจำกัด'}</td><td>{r.eFilingCode||'—'}</td><td>{statusText[r.status]||'รอดำเนินการ'}</td></tr>)}</tbody></table></div><div className="m101-editor-actions"><button className="m101-button" onClick={()=>{setHeaders([]);setRows([]);setMapping({});setFileName('');setSheetNames([]);setSheetData({});setSelectedSheet('');setTableBlocks([]);}}>ยกเลิก</button><button className="m101-button m101-button-primary" disabled={saving||loading||!importPlan.length} onClick={()=>void confirmImport()}>{saving?'กำลังบันทึก…':`ยืนยันนำเข้า/อัปเดต ${importPlan.length} รายการ`}</button></div></div></>}
-    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ส่งออกข้อมูล</h2><p>ดาวน์โหลดทะเบียนกิจการของรอบปีนี้เป็น CSV</p></div></div><button className="m101-button" onClick={()=>{const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','remark'];const csv=[cols.join(','),...records.map(r=>cols.map(k=>{const v=String((r as any)[k]??'');return '"'+v.replace(/"/g,'""')+'"';}).join(','))].join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`M101-${year}-export.csv`;a.click();URL.revokeObjectURL(url);}}>↓ ดาวน์โหลด CSV</button>{loading&&<span className="m101-import-file">กำลังอ่านทะเบียน…</span>}</div>
+    <div className="m101-panel"><div className="m101-panel-heading"><div><h2>ส่งออกข้อมูล</h2><p>ดาวน์โหลดทะเบียนกิจการของรอบปีนี้เป็น CSV</p></div></div><button className="m101-button" onClick={()=>{const cols=['id','sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','remark'];const csv=[cols.join(','),...records.map(r=>cols.map(k=>{const v=String((r as any)[k]??'');return '"'+v.replace(/"/g,'""')+'"';}).join(','))].join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`M101-${year}-export.csv`;a.click();URL.revokeObjectURL(url);}}>↓ ดาวน์โหลด CSV</button>{loading&&<span className="m101-import-file">กำลังอ่านทะเบียน…</span>}</div>
   </section>;
 }
 
