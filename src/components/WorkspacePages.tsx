@@ -175,7 +175,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
   const startNewYear=async()=>{
     const value=newYear.trim();if(!/^\d{2,4}$/.test(value)){setError('กรุณากรอกรอบปีบัญชีเป็นตัวเลข 2–4 หลัก');return;}
     if(years.includes(value)){setYear(value);onYearChange?.(value);setNewYear('');return;}
-    const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:value,records:[],revision})});
+    const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:value,records,revision})});
     setRevision(Number(data.revision)||revision+1);setYears(prev=>[...prev,value].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})));setYear(value);setNewYear('');
   };
   return <section className="m101-page m101-registry-page">
