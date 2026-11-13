@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { ActivityView, AdminSecurity, AnnualWork, BusinessRegistry, CalendarView, CommandCenter, ImportExport, RelationshipGroups, ReportsView } from './components/WorkspacePages';
 
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
+type WorkspaceOption = { id: string; name: string; membershipType: 'owner' | 'collaborator' };
 type Page = 'overview' | 'businesses' | 'groups' | 'work' | 'calendar' | 'reports' | 'activity' | 'import' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
   { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
@@ -22,6 +23,28 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   const [search, setSearch] = useState('');
   const [year, setYear] = useState('69');
   const [availableYears, setAvailableYears] = useState<string[]>(['69']);
+  const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState('');
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState('');
+  useEffect(() => {
+    let active = true;
+    fetch('/api/workspaces', { credentials: 'same-origin', cache: 'no-store' })
+      .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลด Workspace ไม่สำเร็จ'); return data; })
+      .then(data => { if (active) { setWorkspaces(Array.isArray(data.workspaces) ? data.workspaces : []); setActiveWorkspaceId(String(data.activeWorkspaceId || '')); } })
+      .catch(e => { if (active) setWorkspaceError(e instanceof Error ? e.message : 'โหลด Workspace ไม่สำเร็จ'); });
+    return () => { active = false; };
+  }, []);
+  const switchWorkspace = async (workspaceId: string) => {
+    if (!workspaceId || workspaceId === activeWorkspaceId || workspaceBusy) return;
+    setWorkspaceBusy(true); setWorkspaceError('');
+    try {
+      const response = await fetch('/api/workspaces/select', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspaceId }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'เปลี่ยน Workspace ไม่สำเร็จ');
+      window.location.reload();
+    } catch (e) { setWorkspaceError(e instanceof Error ? e.message : 'เปลี่ยน Workspace ไม่สำเร็จ'); setWorkspaceBusy(false); }
+  };
   useEffect(() => { let active = true; fetch('/api/directory?year=' + encodeURIComponent(year), { credentials: 'same-origin', cache: 'no-store' }).then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลดรอบปีไม่สำเร็จ'); return data; }).then(data => { if (active && Array.isArray(data.availableYears) && data.availableYears.length) setAvailableYears(data.availableYears); }).catch(() => {}); return () => { active = false; }; }, [year]);
   const current = pages.find(p => p.id === page)!;
   const choose = (id: Page) => { setPage(id); setMobileMenu(false); };
@@ -38,7 +61,8 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
       <header className="topbar">
         <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
         <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right"><label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
+        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
+        {workspaceError && <span className="auth-error" role="alert">{workspaceError}</span>}
       </header>
       <main className="content">
         {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} onYearChange={setYear} onOpenImport={() => choose('import')} canManage={user.role === 'admin'} /> : page === 'groups' ? <RelationshipGroups /> : page === 'work' ? <AnnualWork year={year} canManage={user.role === 'admin'} /> : page === 'calendar' ? <CalendarView year={year} /> : page === 'reports' ? <ReportsView year={year} /> : page === 'activity' ? <ActivityView /> : page === 'settings' ? <AdminSecurity /> : page === 'import' ? <ImportExport year={year} /> : <section className="module-page">
