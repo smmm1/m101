@@ -546,10 +546,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
       // Account status is global to the user, not scoped to one Workspace.
       // Do not let one Workspace suspend an account that is also active elsewhere.
-      const otherWorkspace = await env.DB.prepare(
-        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
-      ).bind(id, access.workspaceId).first();
-      if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถระงับบัญชีรวมจาก Workspace นี้ได้' }, 409);
+      if (accountStatus === 'suspended') {
+        const otherWorkspace = await env.DB.prepare(
+          "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+        ).bind(id, access.workspaceId).first();
+        if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถระงับบัญชีรวมจาก Workspace นี้ได้' }, 409);
+      }
       const now = new Date().toISOString();
       await env.DB.prepare('UPDATE users SET display_name = ?, account_status = ? WHERE id = ?').bind(displayName, accountStatus, id).run();
       if (accountStatus === 'suspended') await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
