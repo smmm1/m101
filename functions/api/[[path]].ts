@@ -782,11 +782,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
       const id = randomToken(18); const now = new Date().toISOString();
       try {
-        await env.DB.batch([
-          env.DB.prepare('INSERT INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').bind(id, access.workspaceId, name, now, now),
-          ...businessIds.map(businessId=>env.DB.prepare('INSERT INTO business_relationship_group_memberships (group_id, business_id, created_at) VALUES (?, ?, ?)').bind(id,businessId,now)),
-          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.created', 'relationship_group', ?, ?, ?)").bind(randomToken(18),access.workspaceId,access.user.id,id,JSON.stringify({name,businessCount:businessIds.length}),now),
+        const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+        const results = await env.DB.batch([
+          env.DB.prepare(`INSERT INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) SELECT ?, ?, ?, ?, ? WHERE ${ownerGuard}`).bind(id, access.workspaceId, name, now, now, access.workspaceId, access.user.id),
+          ...businessIds.map(businessId=>env.DB.prepare(`INSERT INTO business_relationship_group_memberships (group_id, business_id, created_at) SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(id,businessId,now,id,access.workspaceId,access.workspaceId,access.user.id)),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.created', 'relationship_group', ?, ?, ? WHERE ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,id,JSON.stringify({name,businessCount:businessIds.length}),now,access.workspaceId,access.user.id),
         ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
       } catch { return json({ error: 'สร้างกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มเดิม' }, 409); }
       return json({ ok: true, id }, 201);
     }
@@ -808,12 +810,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (businessIds.some(id=>!validIds.has(id))) return json({error:'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่'},400);
       const now=new Date().toISOString();
       try {
-        await env.DB.batch([
-          env.DB.prepare('UPDATE business_relationship_groups SET name = ?, updated_at = ? WHERE id = ? AND workspace_id = ?').bind(name,now,groupId,access.workspaceId),
-          env.DB.prepare('DELETE FROM business_relationship_group_memberships WHERE group_id = ?').bind(groupId),
-          ...businessIds.map(businessId=>env.DB.prepare('INSERT INTO business_relationship_group_memberships (group_id,business_id,created_at) VALUES (?,?,?)').bind(groupId,businessId,now)),
-          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.updated', 'relationship_group', ?, ?, ?)").bind(randomToken(18),access.workspaceId,access.user.id,groupId,JSON.stringify({name,businessCount:businessIds.length}),now),
+        const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+        const results = await env.DB.batch([
+          env.DB.prepare(`UPDATE business_relationship_groups SET name = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND ${ownerGuard}`).bind(name,now,groupId,access.workspaceId,access.workspaceId,access.user.id),
+          env.DB.prepare(`DELETE FROM business_relationship_group_memberships WHERE group_id = ? AND EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(groupId,groupId,access.workspaceId,access.workspaceId,access.user.id),
+          ...businessIds.map(businessId=>env.DB.prepare(`INSERT INTO business_relationship_group_memberships (group_id,business_id,created_at) SELECT ?,?,? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(groupId,businessId,now,groupId,access.workspaceId,access.workspaceId,access.user.id)),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.updated', 'relationship_group', ?, ?, ? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,groupId,JSON.stringify({name,businessCount:businessIds.length}),now,groupId,access.workspaceId,access.workspaceId,access.user.id),
         ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือกลุ่มกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
       } catch { return json({error:'บันทึกกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มอื่น'},409); }
       return json({ok:true});
     }
@@ -826,10 +830,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const existing=await env.DB.prepare('SELECT id FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId).first();
       if(!existing)return json({error:'ไม่พบกลุ่มกิจการนี้'},404);
       const now=new Date().toISOString();
-      await env.DB.batch([
-        env.DB.prepare('DELETE FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId),
-        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'relationship_group.deleted', 'relationship_group', ?, '{}', ?)").bind(randomToken(18),access.workspaceId,access.user.id,groupId,now),
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+      const results = await env.DB.batch([
+        env.DB.prepare(`DELETE FROM business_relationship_groups WHERE id = ? AND workspace_id = ? AND ${ownerGuard}`).bind(groupId,access.workspaceId,access.workspaceId,access.user.id),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.deleted', 'relationship_group', ?, '{}', ? WHERE ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,groupId,now,access.workspaceId,access.user.id),
       ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือกลุ่มกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
       return json({ok:true});
     }
 
