@@ -423,11 +423,12 @@ export function ImportExport({ year = '69' }: { year?: string }) {
 
     const next=[...records];let added=0,updated=0;
     for(const entry of importPlan){
-      const item=entry.item;const selectedId=manualMatches[entry.item.sourceRowIndex];const selectedIndex=selectedId?next.findIndex(r=>r.id===selectedId):findBusinessImportMatch(item,next);const existingIndex=selectedIndex;
+      const item=entry.item;const {sourceRowIndex,...importItem}=item;const selectedId=manualMatches[sourceRowIndex];const selectedIndex=selectedId?next.findIndex(r=>r.id===selectedId):findBusinessImportMatch(item,next);const existingIndex=selectedIndex;
+      if(selectedId&&existingIndex<0)throw new Error('ไม่พบกิจการเดิมที่เลือก กรุณาโหลดข้อมูลใหม่แล้วจับคู่ซ้ำ');
       if(existingIndex>=0){
-        const patch=Object.fromEntries(Object.entries(item).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
+        const patch=Object.fromEntries(Object.entries(importItem).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
         next[existingIndex]={...next[existingIndex],...patch,id:next[existingIndex].id};updated++;
-      }else{next.push({...item,id:makeId(),sequenceNo:item.sequenceNo||String(next.length+1),isVerifiedDbd:false});added++;}
+      }else{next.push({...importItem,id:makeId(),sequenceNo:importItem.sequenceNo||String(next.length+1),isVerifiedDbd:false});added++;}
     }
     setSaving(true);setError('');setMessage('');
     try{const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:year,records:next,revision})});setRecords(next);setRevision(Number(data.revision)||revision+1);setMessage('นำเข้าแล้ว · เพิ่ม '+added+' · อัปเดต '+updated+' · ข้ามรายการซ้ำ '+duplicates);setManualMatches({});setHeaders([]);setRows([]);setMapping({});setFileName('');}
