@@ -6,6 +6,13 @@ const SESSION_SECONDS = 60 * 60 * 24 * 30;
 // Cloudflare Workers WebCrypto rejects PBKDF2 iteration counts above 100,000.
 const PBKDF2_ITERATIONS = 100000;
 
+function isValidDateOnly(value: string) {
+  if (!value) return true;
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   const responseHeaders = new Headers(headers);
   responseHeaders.set('Content-Type', 'application/json; charset=utf-8');
