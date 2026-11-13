@@ -22,5 +22,15 @@
         }
       ]
     }
+  },
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "m101-preview-isolated",
+        "database_id": "f945e064-a72f-403a-aaf4-557ebef99f46",
+        "migrations_dir": "./migrations"
+      }
+    ]
   }
 }
