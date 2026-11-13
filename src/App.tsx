@@ -48,7 +48,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   useEffect(() => { let active = true; fetch('/api/directory?year=' + encodeURIComponent(year), { credentials: 'same-origin', cache: 'no-store' }).then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลดรอบปีไม่สำเร็จ'); return data; }).then(data => { if (active && Array.isArray(data.availableYears) && data.availableYears.length) setAvailableYears(data.availableYears); }).catch(() => {}); return () => { active = false; }; }, [year]);
   const current = pages.find(p => p.id === page)!;
   const choose = (id: Page) => { setPage(id); setMobileMenu(false); };
-  const signOut = async () => { setBusy(true); try { await logout(); } finally { setBusy(false); } };
+  const signOut = async () => { if (busy) return; setBusy(true); setWorkspaceError(''); try { await logout(); } catch (e) { setWorkspaceError(e instanceof Error ? e.message : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง'); } finally { setBusy(false); } };
   const groups = ['WORKSPACE', 'OPERATIONS', 'INTELLIGENCE', 'SYSTEM'];
   return <div className="shell">
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
@@ -61,7 +61,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
       <header className="topbar">
         <button className="menu-toggle" aria-label="เปิดเมนู" onClick={() => setMobileMenu(true)}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#menu" /></svg></button>
         <div className="global-search"><svg className="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#search" /></svg><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : <svg className="logout-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#chevron-down" /></svg>}</button></div>
+        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy} aria-label="ออกจากระบบ">{busy ? 'กำลังออก…' : 'ออกจากระบบ'}</button></div>
         {workspaceError && <span className="auth-error" role="alert">{workspaceError}</span>}
       </header>
       <main className="content">
@@ -132,7 +132,7 @@ export default function App() {
     } catch (e) { setBootstrapError(e instanceof Error ? e.message : 'ตั้งค่า Owner ไม่สำเร็จ'); }
     finally { setBootstrapBusy(false); }
   };
-  const logout = async () => { try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } finally { setUser(null); setUsername(''); setPassword(''); setError(''); } };
+  const logout = async () => { const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); if (!response.ok) { let message = 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง'; try { const payload = await response.json(); if (payload.error) message = payload.error; } catch {} throw new Error(message); } setUser(null); setUsername(''); setPassword(''); setError(''); };
 
   if (!ready) return <main className="auth-screen"><p className="loading-copy">กำลังตรวจสอบการเข้าสู่ระบบ…</p></main>;
   if (user) return <Workspace user={user} logout={logout} />;
