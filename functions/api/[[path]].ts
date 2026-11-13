@@ -90,10 +90,23 @@ function publicUser(user: UserRow) {
 
 type WorkspaceAccess = { user: UserRow; workspaceId: string; membershipType: 'owner' | 'collaborator' };
 
-async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAccess | null> {
-  const row = await env.DB.prepare(
-    "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1"
-  ).bind(user.id).first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
+const WORKSPACE_COOKIE = 'm101_workspace';
+
+function getWorkspaceCookie(request: Request): string {
+  return getCookie(request, WORKSPACE_COOKIE) || '';
+}
+
+function workspaceCookie(value: string, maxAge = SESSION_SECONDS): string {
+  return WORKSPACE_COOKIE + '=' + value + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + maxAge;
+}
+
+async function getWorkspaceAccess(user: UserRow, env: Env, request?: Request): Promise<WorkspaceAccess | null> {
+  const selectedWorkspaceId = request ? getWorkspaceCookie(request) : '';
+  const query = selectedWorkspaceId
+    ? "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+    : "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1";
+  const statement = selectedWorkspaceId ? env.DB.prepare(query).bind(user.id, selectedWorkspaceId) : env.DB.prepare(query).bind(user.id);
+  const row = await statement.first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
   if (!row?.workspace_id || !row.membership_type) return null;
   return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
 }
@@ -120,7 +133,7 @@ async function findWorkspaceBusiness(workspaceId: string, businessId: string, en
 async function requireWorkspaceAccess(request: Request, env: Env): Promise<WorkspaceAccess | null> {
   const user = await getUser(request, env);
   if (!user) return null;
-  return getWorkspaceAccess(user, env);
+  return getWorkspaceAccess(user, env, request);
 }
 
 async function requireUser(request: Request, env: Env) {
@@ -267,7 +280,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       // Valid credentials clear this IP+username window before workspace checks.
       await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempt_key = ?').bind(attemptKey).run();
-      const workspaceAccess = await getWorkspaceAccess(user, env);
+      const workspaceAccess = await getWorkspaceAccess(user, env, request);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
       const token = randomToken();
       const createdAt = new Date().toISOString();
@@ -299,15 +312,40 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, message: 'เปลี่ยนรหัสผ่านแล้ว' });
     }
 
+    if (path === '/api/workspaces' && request.method === 'GET') {
+      const user = await getUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const result = await env.DB.prepare(
+        "SELECT w.id, w.name, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END, w.name COLLATE NOCASE"
+      ).bind(user.id).all();
+      const workspaces = (result.results || []).map((row: Record<string, unknown>) => ({ id: String(row.id), name: String(row.name), membershipType: String(row.membership_type) }));
+      const access = await getWorkspaceAccess(user, env, request);
+      return json({ workspaces, activeWorkspaceId: access?.workspaceId || '' });
+    }
+
+    if (path === '/api/workspaces/select' && request.method === 'POST') {
+      const user = await getUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { workspaceId?: string };
+      const workspaceId = String(body.workspaceId || '').trim();
+      if (!workspaceId || workspaceId.length > 128) return json({ error: 'Workspace ที่เลือกไม่ถูกต้อง' }, 400);
+      const membership = await env.DB.prepare(
+        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).bind(user.id, workspaceId).first();
+      if (!membership) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้าถึง Workspace ที่เลือก' }, 403);
+      return json({ ok: true }, 200, { 'Set-Cookie': workspaceCookie(workspaceId) });
+    }
+
     if (path === '/api/auth/me' && request.method === 'GET') {
       const user = await getUser(request, env);
-      return json({ user: user ? publicUser(user) : null });
+      const access = user ? await getWorkspaceAccess(user, env, request) : null;
+      return json({ user: user ? publicUser(user) : null, activeWorkspaceId: access?.workspaceId || '' });
     }
 
     if (path === '/api/auth/logout' && request.method === 'POST') {
       const token = getCookie(request, COOKIE_NAME);
       if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await digest(token)).run();
-      return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
+      return json({ ok: true }, 200, { 'Set-Cookie': [`${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`, workspaceCookie('', 0)].join(', ') });
     }
 
 
