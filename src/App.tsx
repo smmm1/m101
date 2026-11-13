@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { ActivityView, AdminSecurity, AnnualWork, BusinessRegistry, CalendarView, CommandCenter, ImportExport, RelationshipGroups, ReportsView } from './components/WorkspacePages';
+import { ActivityView, AdminSecurity, AnnualWork, BusinessRegistry, CalendarView, ImportExport, RelationshipGroups, ReportsView } from './components/WorkspacePages';
+import CommandCenter from './components/CommandCenter';
 
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
 type WorkspaceOption = { id: string; name: string; membershipType: 'owner' | 'collaborator' };
