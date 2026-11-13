@@ -143,7 +143,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         if(!companyName)return null;
         const mappedType=rawType?(rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company'):undefined;
         const mappedStatus=rawStatus?(rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending'):undefined;
-        return {id:makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:normalizeThaiTaxId(value('taxId')),type:mappedType,auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus,sourceType:'legacy-import',sourceFileName:file.name} as Business;
+        return {id:value('id')||makeId(),sequenceNo:value('sequenceNo')||String(records.length+index+1),companyName,taxId:normalizeThaiTaxId(value('taxId')),type:mappedType,auditorDate:value('auditorDate'),password:value('password'),remark:value('remark'),eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),status:mappedStatus,sourceType:'legacy-import',sourceFileName:file.name} as Business;
       }).filter((item):item is Business=>Boolean(item));
       if(!incoming.length)throw new Error('ไม่พบแถวข้อมูลกิจการในไฟล์');
       setPendingLegacyImport({fileName:file.name,incoming});
