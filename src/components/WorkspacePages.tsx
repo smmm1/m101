@@ -296,7 +296,7 @@ const importFields: { key: keyof Business; label: string; hints: string[] }[] = 
 function csvCell(value: unknown): string {
   const text = String(value ?? '');
   // Prefix spreadsheet formula starters so exported user data is treated as text.
-  const safe = /^[\\u0000-\\u0020]*[=+\\-@]/.test(text) ? "'" + text : text;
+  const safe = /^[\t\n\r ]*[=+\-@]/.test(text) ? "'" + text : text;
   return '"' + safe.replace(/"/g, '""') + '"';
 }
 
