@@ -469,14 +469,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const id = randomToken(18);
       const now = new Date().toISOString();
       try {
-        const inserted = await env.DB.prepare("INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
-          .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.workspaceId, access.user.id, businessId).run();
-        if (Number(inserted.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+        const results = await env.DB.batch([
+          env.DB.prepare("INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active' AND (? != 'owner' OR u.role = 'admin')) AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+            .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.membershipType, access.workspaceId, access.user.id, businessId),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.created', 'annual_task', ?, ?, ? WHERE EXISTS (SELECT 1 FROM annual_tasks WHERE id = ? AND workspace_id = ? AND created_by = ?)")
+            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ fiscalYear, businessId, taskCode }), now, id, access.workspaceId, access.user.id),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+        if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติรายการงานไม่สำเร็จ กรุณาลองใหม่' }, 500);
       } catch {
         return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
       }
-      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.created', 'annual_task', ?, ?, ?)")
-        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ fiscalYear, businessId, taskCode }), now).run();
       return json({ ok: true, id, createdAt: now, updatedAt: now }, 201);
     }
 
@@ -498,11 +501,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
       }
       const now = new Date().toISOString();
-      const updated = await env.DB.prepare("UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
-        .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.workspaceId, access.user.id, String(current.business_id)).run();
-      if (Number(updated.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
-      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.updated', 'annual_task', ?, ?, ?)")
-        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ status, dueDate }), now).run();
+      const results = await env.DB.batch([
+        env.DB.prepare("UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active' AND (? != 'owner' OR u.role = 'admin')) AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+          .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.membershipType, access.workspaceId, access.user.id, String(current.business_id)),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.updated', 'annual_task', ?, ?, ? WHERE EXISTS (SELECT 1 FROM annual_tasks WHERE id = ? AND workspace_id = ? AND updated_by = ? AND updated_at = ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ status, dueDate }), now, id, access.workspaceId, access.user.id, now),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติรายการงานไม่สำเร็จ กรุณาลองใหม่' }, 500);
       return json({ ok: true });
     }
 
@@ -513,11 +519,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const current = await env.DB.prepare('SELECT business_id, task_code FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId).first() as { business_id?: string; task_code?: string } | null;
       if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
       const now = new Date().toISOString();
-      const deleted = await env.DB.prepare("DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND u.role = 'admin')")
-        .bind(annualTaskMatch[1], access.workspaceId, access.workspaceId, access.user.id).run();
-      if (Number(deleted.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
-      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.deleted', 'annual_task', ?, ?, ?)")
-        .bind(randomToken(18), access.workspaceId, access.user.id, annualTaskMatch[1], JSON.stringify({ businessId: current.business_id, taskCode: current.task_code }), now).run();
+      const results = await env.DB.batch([
+        env.DB.prepare("DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND u.role = 'admin')")
+          .bind(annualTaskMatch[1], access.workspaceId, access.workspaceId, access.user.id),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.deleted', 'annual_task', ?, ?, ? WHERE changes() = 1")
+          .bind(randomToken(18), access.workspaceId, access.user.id, annualTaskMatch[1], JSON.stringify({ businessId: current.business_id, taskCode: current.task_code }), now),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติการลบไม่สำเร็จ กรุณาตรวจสอบรายการอีกครั้ง' }, 500);
       return json({ ok: true });
     }
 
