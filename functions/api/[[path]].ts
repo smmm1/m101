@@ -715,10 +715,16 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการการมอบหมายงานได้' }, 403);
-      const [directory, assignments] = await Promise.all([
-        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all(),
-        env.DB.prepare('SELECT user_id, business_id FROM business_assignments WHERE workspace_id = ?').bind(access.workspaceId).all(),
+      const snapshot = await env.DB.batch([
+        env.DB.prepare("SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND u.role = 'admin'")
+          .bind(access.workspaceId, access.user.id),
+        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId),
+        env.DB.prepare("SELECT user_id, business_id FROM business_assignments WHERE workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')")
+          .bind(access.workspaceId, access.workspaceId, access.user.id),
       ]);
+      if (!snapshot[0]?.results?.length) return json({ error: 'สิทธิ์ Owner หรือพื้นที่ทำงานเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      const directory = snapshot[1];
+      const assignments = snapshot[2];
       const businesses = new Map<string, { id: string; companyName: string; taxId: string }>();
       for (const row of directory.results || []) {
         try {
@@ -731,7 +737,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
           }
         } catch { /* Ignore malformed historical snapshots; the current year remains available. */ }
       }
-      return json({ businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')), assignments: (assignments.results || []).map((row: Record<string, unknown>)=>({ userId:String(row.user_id), businessId:String(row.business_id) })) });
+      const validBusinessIds = new Set(businesses.keys());
+      return json({ businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')), assignments: (assignments.results || []).filter((row: Record<string, unknown>) => validBusinessIds.has(String(row.business_id))).map((row: Record<string, unknown>)=>({ userId:String(row.user_id), businessId:String(row.business_id) })) });
     }
 
     const assignmentMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)\/assignments$/);
