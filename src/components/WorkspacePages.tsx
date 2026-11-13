@@ -150,7 +150,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       setLegacyMode('update_existing');
     }catch(e){setError(e instanceof Error?e.message:'อ่านไฟล์นำเข้าไม่สำเร็จ');}
   };
-  const legacyDuplicateIndex=(incoming:Business,target:Business[])=>target.findIndex(existing=>(normalizeThaiTaxId(incoming.taxId||'')&&normalizeThaiTaxId(existing.taxId||'')===normalizeThaiTaxId(incoming.taxId||''))||((incoming.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===(existing.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')));
+  const legacyDuplicateIndex=(incoming:Business,target:Business[])=>findBusinessImportMatch(incoming,target);
   const confirmLegacyImport=async()=>{
     if(!pendingLegacyImport)return;
     const next=[...records];let added=0,updated=0,skipped=0;
@@ -285,6 +285,18 @@ function normalizeThaiTaxId(value:string):string {
   if(digits.length===12&&!digits.startsWith('0'))normalized='0'+normalized;
   return normalized;
 }
+function findBusinessImportMatch(incoming: Pick<Business,'companyName'|'taxId'>, target: Business[]): number {
+  const taxId = normalizeThaiTaxId(incoming.taxId || '');
+  if (taxId) {
+    const taxMatches = target.map((item,index)=>({item,index})).filter(({item})=>normalizeThaiTaxId(item.taxId||'')===taxId);
+    if (taxMatches.length === 1) return taxMatches[0].index;
+    if (taxMatches.length > 1) return -1;
+  }
+  const name = (incoming.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');
+  if (!name) return -1;
+  const nameMatches = target.map((item,index)=>({item,index})).filter(({item})=>(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===name);
+  return nameMatches.length === 1 ? nameMatches[0].index : -1;
+}
 const importFields: { key: keyof Business; label: string; hints: string[] }[] = [
   { key: 'sequenceNo', label: 'ลำดับ', hints: ['ลำดับ','sequence','no','ที่'] },
   { key: 'companyName', label: 'ชื่อกิจการ', hints: ['ชื่อกิจการ','ชื่อนิติบุคคล','ชื่อบริษัท','ชื่อบริษัท/หจก','company name','business name'] },
@@ -384,21 +396,29 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
   const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
   const mapped=rows.map(row=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark')};}).filter(r=>r.companyName);
-  const seenTaxIds=new Set(records.map(item=>normalizeThaiTaxId(item.taxId||'')).filter(Boolean));
-  const seenCompanyNames=new Set(records.map(item=>(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')).filter(Boolean));
-  let duplicates=0;
-  const uniqueMapped=mapped.filter(item=>{
+  const matchedMapped = mapped.map(item=>({item,index:findBusinessImportMatch(item,records)}));
+  const seenImportKeys = new Set<string>();
+  let duplicates = 0;
+  const importPlan = matchedMapped.filter(({item,index})=>{
     const taxId=normalizeThaiTaxId(item.taxId||'');
-    const companyName=(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');
-    if((taxId&&seenTaxIds.has(taxId))||(companyName&&seenCompanyNames.has(companyName))){duplicates++;return false;}
-    if(taxId)seenTaxIds.add(taxId);
-    if(companyName)seenCompanyNames.add(companyName);
+    const name=(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');
+    const key=taxId?'tax:'+taxId:'name:'+name;
+    if(seenImportKeys.has(key)){duplicates++;return false;}
+    seenImportKeys.add(key);
+    if(index<0 && ((taxId&&records.some(r=>normalizeThaiTaxId(r.taxId||'')===taxId)) || records.some(r=>(r.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===name))){duplicates++;return false;}
     return true;
   });
   const confirmImport=async()=>{
-    const additions=uniqueMapped.map((item,index)=>({...item,id:makeId(),sequenceNo:item.sequenceNo||String(records.length+index+1),isVerifiedDbd:false}));
+    const next=[...records];let added=0,updated=0;
+    for(const entry of importPlan){
+      const item=entry.item;const existingIndex=findBusinessImportMatch(item,next);
+      if(existingIndex>=0){
+        const patch=Object.fromEntries(Object.entries(item).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
+        next[existingIndex]={...next[existingIndex],...patch,id:next[existingIndex].id};updated++;
+      }else{next.push({...item,id:makeId(),sequenceNo:item.sequenceNo||String(next.length+1),isVerifiedDbd:false});added++;}
+    }
     setSaving(true);setError('');setMessage('');
-    try{const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:year,records:[...records,...additions],revision})});setRecords(prev=>[...prev,...additions]);setRevision(Number(data.revision)||revision+1);setMessage(`นำเข้าแล้ว ${additions.length} รายการ · ข้ามรายการซ้ำ ${duplicates} รายการ`);setHeaders([]);setRows([]);setMapping({});setFileName('');}
+    try{const data=await apiJson('/api/directory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({fiscalYear:year,records:next,revision})});setRecords(next);setRevision(Number(data.revision)||revision+1);setMessage('นำเข้าแล้ว · เพิ่ม '+added+' · อัปเดต '+updated+' · ข้ามรายการซ้ำ '+duplicates);setHeaders([]);setRows([]);setMapping({});setFileName('');}
     catch(e){setError(e instanceof Error?e.message:'นำเข้าข้อมูลไม่สำเร็จ');if(e instanceof Error&&e.message.includes('เปลี่ยนแปลง'))void load();}
     finally{setSaving(false);}
   };
