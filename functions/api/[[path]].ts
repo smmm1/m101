@@ -648,10 +648,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถแก้ไขชื่อหรือสถานะบัญชีรวมจาก Workspace นี้ได้' }, 409);
       }
       const now = new Date().toISOString();
-      await env.DB.prepare('UPDATE users SET display_name = ?, account_status = ? WHERE id = ?').bind(displayName, accountStatus, id).run();
-      if (accountStatus === 'suspended') await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
-      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.updated', 'user', ?, ?, ?)")
-        .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ displayName, accountStatus }), now).run();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const isolatedMemberGuard = "NOT EXISTS (SELECT 1 FROM workspace_memberships other_membership JOIN workspaces other_workspace ON other_workspace.id = other_membership.workspace_id WHERE other_membership.user_id = ? AND other_membership.workspace_id != ? AND other_membership.status = 'active' AND other_workspace.status = 'active')";
+      const statements = [
+        env.DB.prepare(`UPDATE users SET display_name = ?, account_status = ? WHERE id = ? AND ${ownerGuard} AND ${isolatedMemberGuard}`)
+          .bind(displayName, accountStatus, id, access.workspaceId, access.user.id, id, access.workspaceId),
+        ...(accountStatus === 'suspended' ? [env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = 'suspended' AND display_name = ?)`)
+          .bind(id, access.workspaceId, access.user.id, id, access.workspaceId, id, displayName)] : []),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.updated', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = ? AND display_name = ?)`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ displayName, accountStatus }), now, access.workspaceId, access.user.id, id, access.workspaceId, id, accountStatus, displayName),
+      ];
+      const results = await env.DB.batch(statements);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สมาชิกอยู่ใน Workspace อื่น หรือสิทธิ์ Owner เปลี่ยนแปลง จึงแก้ไขบัญชีรวมไม่ได้' }, 409);
       return json({ ok: true });
     }
 
@@ -675,12 +683,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถตั้งรหัสผ่านรวมจาก Workspace นี้ได้' }, 409);
       const encoded = await hashPassword(password);
       const now = new Date().toISOString();
-      await env.DB.batch([
-        env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ?').bind(encoded.hash, encoded.salt, id),
-        env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id),
-        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.password_reset', 'user', ?, '{}', ?)")
-          .bind(randomToken(18), access.workspaceId, access.user.id, id, now),
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const isolatedMemberGuard = "NOT EXISTS (SELECT 1 FROM workspace_memberships other_membership JOIN workspaces other_workspace ON other_workspace.id = other_membership.workspace_id WHERE other_membership.user_id = ? AND other_membership.workspace_id != ? AND other_membership.status = 'active' AND other_workspace.status = 'active')";
+      const results = await env.DB.batch([
+        env.DB.prepare(`UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND ${ownerGuard} AND ${isolatedMemberGuard}`)
+          .bind(encoded.hash, encoded.salt, id, access.workspaceId, access.user.id, id, access.workspaceId),
+        env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+          .bind(id, access.workspaceId, access.user.id, id, access.workspaceId, id, encoded.hash, encoded.salt),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.password_reset', 'user', ?, '{}', ? WHERE ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, now, access.workspaceId, access.user.id, id, access.workspaceId, id, encoded.hash, encoded.salt),
       ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สมาชิกอยู่ใน Workspace อื่น หรือสิทธิ์ Owner เปลี่ยนแปลง จึงตั้งรหัสผ่านรวมไม่ได้' }, 409);
       return json({ ok: true });
     }
 
