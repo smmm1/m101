@@ -422,9 +422,9 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const confirmImport=async()=>{
 
     const next=[...records];let added=0,updated=0;
+    if(importPlan.some(({item})=>{const selectedId=manualMatches[item.sourceRowIndex];return Boolean(selectedId)&&!records.some(record=>record.id===selectedId);})){setError('ไม่พบกิจการเดิมที่เลือก กรุณาโหลดข้อมูลใหม่แล้วจับคู่ซ้ำ');return;}
     for(const entry of importPlan){
       const item=entry.item;const {sourceRowIndex,...importItem}=item;const selectedId=manualMatches[sourceRowIndex];const selectedIndex=selectedId?next.findIndex(r=>r.id===selectedId):findBusinessImportMatch(item,next);const existingIndex=selectedIndex;
-      if(selectedId&&existingIndex<0)throw new Error('ไม่พบกิจการเดิมที่เลือก กรุณาโหลดข้อมูลใหม่แล้วจับคู่ซ้ำ');
       if(existingIndex>=0){
         const patch=Object.fromEntries(Object.entries(importItem).filter(([key,value])=>key!=='id'&&key!=='createdAt'&&key!=='updatedAt'&&value!==''&&value!==undefined));
         next[existingIndex]={...next[existingIndex],...patch,id:next[existingIndex].id};updated++;
