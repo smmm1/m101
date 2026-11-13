@@ -8,7 +8,7 @@ const PBKDF2_ITERATIONS = 100000;
 
 function isValidDateOnly(value: string) {
   if (!value) return true;
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
@@ -412,7 +412,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const note = String(body.note || '').trim();
       if (!/^\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
-      if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (!isValidDateOnly(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
       const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?')
         .bind(access.workspaceId, fiscalYear).first() as { records?: string } | null;
@@ -449,7 +449,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const status = String(body.status || '');
       const dueDate = String(body.dueDate || '').trim();
       const note = String(body.note || '').trim();
-      if (!['pending', 'in_progress', 'completed'].includes(status) || (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
+      if (!['pending', 'in_progress', 'completed'].includes(status) || !isValidDateOnly(dueDate) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
       const current = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string } | null;
       if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
       if (access.membershipType !== 'owner') {
