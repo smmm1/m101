@@ -90,14 +90,14 @@ INSERT OR IGNORE INTO workspace_directory_year_data
 SELECT w.id, d.fiscal_year, d.records, 1, d.updated_by, d.updated_at
 FROM directory_year_data d
 CROSS JOIN workspaces w
-WHERE w.id = 'm101-main-workspace-v1';
+WHERE w.id = 'm101-primary-workspace';
 
 -- 4. Add workspace ownership to existing annual tasks; preserve all task rows.
 ALTER TABLE annual_tasks
   ADD COLUMN workspace_id TEXT REFERENCES workspaces(id) ON DELETE RESTRICT;
 
 UPDATE annual_tasks
-SET workspace_id = 'm101-main-workspace-v1'
+SET workspace_id = 'm101-primary-workspace'
 WHERE workspace_id IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_annual_tasks_workspace_year
@@ -186,7 +186,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_workspace_time
 -- SELECT membership_type, status, COUNT(*) FROM workspace_memberships GROUP BY membership_type, status;
 -- SELECT fiscal_year, json_array_length(records) AS records FROM directory_year_data;
 -- SELECT fiscal_year, json_array_length(records) AS records
---   FROM workspace_directory_year_data WHERE workspace_id = 'm101-main-workspace-v1';
+--   FROM workspace_directory_year_data WHERE workspace_id = 'm101-primary-workspace';
 -- SELECT COUNT(*) AS annual_tasks FROM annual_tasks;
 -- SELECT COUNT(*) AS unscoped_tasks FROM annual_tasks WHERE workspace_id IS NULL;
 
