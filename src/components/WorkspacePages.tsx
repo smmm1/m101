@@ -245,7 +245,6 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       <label className="m101-check-field"><input type="checkbox" checked={Boolean(editor.isVerifiedDbd)} onChange={e=>setEditor({...editor,isVerifiedDbd:e.target.checked})}/> ตรวจสอบ DBD แล้ว</label>
     </div><div className="m101-editor-actions"><button type="button" className="m101-button" onClick={()=>setEditor(null)} disabled={saving}>ยกเลิก</button><button type="submit" className="m101-button m101-button-primary" disabled={saving}>{saving?'กำลังบันทึก…':'บันทึกข้อมูล'}</button></div></form></div>}
   </section>;
-  </section>;
 }
 
 export function AnnualWork({ year = '69', canManage = true }: { year?: string; canManage?: boolean }) {
