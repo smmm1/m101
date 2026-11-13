@@ -661,3 +661,79 @@ body,#root{font-size:14px}
   .m101-page th,.m101-modal th,.m101-panel th,th{padding:8px 9px}
   .m101-page td,.m101-modal td,.m101-panel td,td{padding:8px 9px}
 }
+
+
+/* M101 · Readability pass 2 — another small step up */
+:root{font-size:15px;--xp-font-size:15px}
+body,#root{font-size:15px}
+.sidebar{width:212px;padding:15px 10px}
+.main-column{margin-left:212px}
+.brand-mark{width:33px;height:33px;font-size:14px}
+.brand b{font-size:15px}
+.brand small,.nav-group label{font-size:12px}
+.nav-link{min-height:35px;padding:6px 10px;font-size:14px}
+.nav-icon{width:20px;font-size:17px}
+.topbar{min-height:52px;height:52px;padding:8px 19px}
+.crumbs{font-size:13px}
+.system-status,.user-meta b{font-size:12px}
+.user-meta small{font-size:11px}
+.avatar{width:32px;height:32px;font-size:13px}
+.logout{padding:6px 11px;font-size:13px}
+.content{padding:21px 25px 31px}
+.footer{padding:9px 25px 11px;font-size:12px}
+.page-title h1,.m101-page-heading h1{font-size:20px}
+.page-title p,.m101-page-heading p{font-size:13px}
+.eyebrow,.m101-eyebrow,.overview-tag,.phase-tag{font-size:12px}
+.m101-button{min-height:31px;padding:0 13px;font-size:13px}
+.m101-text-button{font-size:13px}
+.m101-stat span,.stat-top{font-size:13px}
+.m101-stat strong,.stat-card>strong{font-size:23px}
+.m101-stat small,.stat-card>small{font-size:12px}
+.m101-panel-heading,.panel-head,.section-head{min-height:37px;padding:8px 15px}
+.m101-panel-heading h2,.panel-head h2,.section-head h2{font-size:14px}
+.m101-panel-heading p,.panel-head p,.section-head p{font-size:12px}
+.m101-progress-summary{font-size:13px}
+.m101-progress-summary strong{font-size:22px}
+.m101-follow-item b,.m101-compact-row b,.m101-deadline-meta b,.m101-activity-row b{font-size:13px}
+.m101-follow-item small,.m101-compact-row small,.m101-deadline-meta small,.m101-activity-row small{font-size:12px}
+.m101-status-chip{padding:4px 8px;font-size:12px}
+.m101-page table,.m101-modal table,.m101-panel table,table{font-size:14px}
+.m101-page th,.m101-modal th,.m101-panel th,th{padding:9px 12px;font-size:13px}
+.m101-page td,.m101-modal td,.m101-panel td,td{padding:9px 12px;font-size:13px}
+.m101-page input:not([type=checkbox]):not([type=radio]):not([type=file]),.m101-page select,.m101-page textarea,.m101-modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.m101-modal select,.m101-modal textarea{min-height:35px;padding:6px 10px;font-size:13px}
+.m101-page label,.m101-modal label{font-size:13px}
+.m101-page .toolbar,.m101-toolbar,.m101-filter-bar{gap:8px;padding:10px 13px}
+.m101-page .chip,.m101-chip,.m101-filter-chip{min-height:29px;padding:4px 11px;font-size:13px}
+.m101-page .hint,.m101-hint{padding:8px 13px;font-size:12px}
+.m101-page .row-item{padding:7px 10px;font-size:13px}
+.m101-modal-header,.m101-modal-head,.modal-header,.dialog-header{padding:10px 15px!important}
+.m101-modal-header h2,.m101-modal-head h2,.modal-header h2,.dialog-header h2{font-size:15px!important}
+.m101-modal-footer,.modal-footer,.dialog-footer{padding:11px 15px!important}
+.m101-file-picker{padding:11px 13px;font-size:12px}
+.m101-import-file,.m101-legacy-import-help,.m101-legacy-import-stats span,.m101-legacy-mode{font-size:12px}
+.m101-mapping-grid label,.m101-workbook-selectors label,.m101-assignment-toolbar label,.m101-group-name{font-size:12px}
+.m101-mapping-grid select,.m101-workbook-selectors select,.m101-assignment-toolbar select,.m101-assignment-toolbar input,.m101-group-name input{font-size:13px}
+.m101-group-choice{padding:10px 13px;font-size:13px}
+.m101-group-choice small,.m101-user-meta small{font-size:12px}
+.m101-user-meta b{font-size:13px}
+.m101-owner-label{font-size:12px}
+.m101-row-actions-button{padding:6px 9px;font-size:12px}
+.m101-empty-state b,.empty b,.module-empty h2{font-size:14px}
+.m101-empty-state span,.empty p,.module-empty p{font-size:12px}
+.auth-panel{width:min(100%,410px);padding:33px 33px 29px}
+.auth-panel h1{font-size:21px}
+.auth-subtitle{font-size:14px}
+.auth-form input{height:39px;font-size:14px}
+.auth-form button{height:36px;font-size:14px}
+.auth-error{font-size:13px}
+@media(max-width:820px){
+ .sidebar{width:212px;transform:translateX(-100%)}
+ .main-column{margin-left:0}
+ .topbar{min-height:50px;height:auto;padding:8px 13px}
+ .content{padding:18px 15px 25px}
+}
+@media(max-width:560px){
+ .content{padding:15px 11px 21px}
+ .page-title h1,.m101-page-heading h1{font-size:19px}
+ .m101-stat strong,.stat-card>strong{font-size:20px}
+}
