@@ -9,7 +9,7 @@ const pages: { id: Page; label: string; group: string; icon: string; desc: strin
   { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: 'building', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
   { id: 'groups', label: 'กลุ่มกิจการ', group: 'WORKSPACE', icon: 'network', desc: 'จัดกลุ่มกิจการและความสัมพันธ์' },
   { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: 'clipboard', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
-  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'ติดตามกำหนดส่งและงานที่ใกล้ถึง' },
+  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: 'calendar', desc: 'ติดตามกำหนดส่งและงานที่ใกล้ถึง' },
   { id: 'reports', label: 'รายงาน', group: 'INTELLIGENCE', icon: 'chart', desc: 'สรุปข้อมูลทะเบียนและความคืบหน้างาน' },
   { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: 'history', desc: 'ตรวจสอบประวัติการเปลี่ยนแปลง' },
   { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: 'transfer', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
