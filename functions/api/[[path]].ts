@@ -357,19 +357,23 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
       if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
-      const [workspace, years, data] = await Promise.all([
-        env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ? AND status = \'active\'').bind(access.workspaceId).first() as Promise<{ directory_revision?: number } | null>,
-        env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(access.workspaceId).all(),
-        env.DB.prepare('SELECT records, revision FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?').bind(access.workspaceId, fiscalYear).first() as Promise<{ records?: string; revision?: number } | null>,
+      const snapshot = await env.DB.batch([
+        env.DB.prepare("SELECT w.directory_revision FROM workspaces w JOIN workspace_memberships wm ON wm.workspace_id = w.id WHERE w.id = ? AND w.status = 'active' AND wm.user_id = ? AND wm.status = 'active' AND wm.membership_type = ?")
+          .bind(access.workspaceId, access.user.id, access.membershipType),
+        env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(access.workspaceId),
+        env.DB.prepare('SELECT records, revision FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?').bind(access.workspaceId, fiscalYear),
+        ...(access.membershipType === 'owner' ? [] : [env.DB.prepare("SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active')").bind(access.workspaceId, access.user.id, access.workspaceId, access.user.id)]),
       ]);
-      if (!workspace) return json({ error: 'ไม่พบพื้นที่ทำงานที่ใช้งานได้' }, 403);
+      const workspace = snapshot[0]?.results?.[0] as { directory_revision?: number } | undefined;
+      const years = snapshot[1];
+      const data = snapshot[2]?.results?.[0] as { records?: string; revision?: number } | undefined;
+      if (!workspace) return json({ error: 'สมาชิกหรือพื้นที่ทำงานนี้ไม่ได้เปิดใช้งานแล้ว กรุณาเข้าสู่ระบบใหม่' }, 403);
       let records: unknown[] = [];
       try { const parsed = JSON.parse(String(data?.records || '[]')); if (Array.isArray(parsed)) records = parsed; }
       catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
       if (access.membershipType !== 'owner') {
-        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?')
-          .bind(access.workspaceId, access.user.id).all();
-        const allowed = new Set((assigned.results || []).map((row: { business_id: string }) => String(row.business_id)));
+        const assigned = snapshot[3];
+        const allowed = new Set(((assigned?.results || []) as Array<{ business_id: string }>).map(row => String(row.business_id)));
         records = records.filter((record: unknown) => record && typeof record === 'object' && allowed.has(String((record as { id?: unknown }).id || '')));
       }
       const availableYears = (years.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
