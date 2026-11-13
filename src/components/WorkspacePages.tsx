@@ -212,22 +212,25 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
     {error&&<div className="m101-alert" role="alert">{error}<button onClick={()=>void load(year)}>โหลดข้อมูลล่าสุด</button></div>}
     <div className="registry-sheet-frame">
       <div className="registry-sheet-scroll">
-        <div className="registry-sheet" role="table" aria-label="ทะเบียนกิจการ">
-          <div className="registry-sheet-head" role="row">
-            <span role="columnheader">ลำดับ</span><span role="columnheader">ชื่อกิจการ / รายละเอียด</span><span role="columnheader">รูปแบบ</span><span role="columnheader">เลขทะเบียน / ผู้เสียภาษี</span><span role="columnheader">e-Filing</span><span role="columnheader">ประกันสังคม</span><span role="columnheader">วันที่ผู้สอบบัญชี</span><span role="columnheader">สถานะงาน</span><span role="columnheader">DBD</span><span role="columnheader">หมายเหตุ</span>{canManage&&<span role="columnheader">จัดการ</span>}
-          </div>
-          {loading?<div className="registry-sheet-state">กำลังโหลดข้อมูลจากพื้นที่จัดเก็บ...</div>:filtered.length===0?<div className="registry-sheet-state">{records.length?'ไม่พบข้อมูลที่ตรงกับคำค้นหา':'ยังไม่มีข้อมูลกิจการในรอบปีนี้'}</div>:filtered.map((r,i)=><div className="registry-sheet-row" role="row" key={r.id}>
-            <span className="registry-cell-index" role="cell">{r.sequenceNo||String(i+1).padStart(3,'0')}</span>
-            <span className="registry-cell-business" role="cell"><b>{r.companyName||'ไม่ระบุชื่อกิจการ'}</b><small>{r.topic||r.sourceFileName||'ไม่มีรายละเอียดเพิ่มเติม'}</small></span>
-            <span role="cell"><i className={'registry-type '+(r.type||'')}>{typeText[r.type||'']||'ไม่ระบุ'}</i></span>
-            <span className="registry-cell-mono" role="cell">{r.taxId||'—'}</span><span className="registry-cell-mono" role="cell">{r.eFilingCode||'—'}</span><span className="registry-cell-mono" role="cell">{r.ssoCode||'—'}</span><span role="cell">{r.auditorDate||'—'}</span>
-            <span role="cell"><i className={'registry-status '+(r.status||'pending')}>{statusText[r.status||'pending']||'รอดำเนินการ'}</i></span>
-            <span role="cell"><i className={'registry-dbd '+(r.isVerifiedDbd?'verified':'')}>{r.isVerifiedDbd?'ยืนยันแล้ว':'รอตรวจสอบ'}</i></span>
-            <span className="registry-cell-remark" role="cell">{r.remark||'—'}</span>
-            {canManage&&<span className="registry-cell-actions" role="cell"><button onClick={()=>{setEditor({...r});setShowPassword(false);}}>แก้ไข</button><button className="remove" onClick={()=>{if(window.confirm('ยืนยันลบ '+(r.companyName||'กิจการนี้')+'?'))void save(records.filter(x=>x.id!==r.id));}}>ลบ</button></span>}
-          </div>)}
-        </div>
+        <table className="registry-table" aria-label="ทะเบียนกิจการ">
+          <thead><tr>
+            <th scope="col">ลำดับ</th><th scope="col">ชื่อกิจการ / รายละเอียด</th><th scope="col">รูปแบบ</th><th scope="col">เลขทะเบียน / ผู้เสียภาษี</th><th scope="col">e-Filing</th><th scope="col">ประกันสังคม</th><th scope="col">วันที่ผู้สอบบัญชี</th><th scope="col">สถานะงาน</th><th scope="col">DBD</th><th scope="col">หมายเหตุ</th>{canManage&&<th scope="col">จัดการ</th>}
+          </tr></thead>
+          <tbody>
+            {loading?<tr><td className="registry-table-state" colSpan={canManage?11:10}>กำลังโหลดข้อมูลจากพื้นที่จัดเก็บ...</td></tr>:filtered.length===0?<tr><td className="registry-table-state" colSpan={canManage?11:10}>{records.length?'ไม่พบข้อมูลที่ตรงกับคำค้นหา':'ยังไม่มีข้อมูลกิจการในรอบปีนี้'}</td></tr>:filtered.map((r,i)=><tr key={r.id}>
+              <td className="registry-cell-index">{r.sequenceNo||String(i+1).padStart(3,'0')}</td>
+              <td className="registry-cell-business"><b>{r.companyName||'ไม่ระบุชื่อกิจการ'}</b><small>{r.topic||r.sourceFileName||'ไม่มีรายละเอียดเพิ่มเติม'}</small></td>
+              <td><i className={'registry-type '+(r.type||'')}>{typeText[r.type||'']||'ไม่ระบุ'}</i></td>
+              <td className="registry-cell-mono">{r.taxId||'—'}</td><td className="registry-cell-mono">{r.eFilingCode||'—'}</td><td className="registry-cell-mono">{r.ssoCode||'—'}</td><td>{r.auditorDate||'—'}</td>
+              <td><i className={'registry-status '+(r.status||'pending')}>{statusText[r.status||'pending']||'รอดำเนินการ'}</i></td>
+              <td><i className={'registry-dbd '+(r.isVerifiedDbd?'verified':'')}>{r.isVerifiedDbd?'ยืนยันแล้ว':'รอตรวจสอบ'}</i></td>
+              <td className="registry-cell-remark">{r.remark||'—'}</td>
+              {canManage&&<td className="registry-cell-actions"><button onClick={()=>{setEditor({...r});setShowPassword(false);}}>แก้ไข</button><button className="remove" onClick={()=>{if(window.confirm('ยืนยันลบ '+(r.companyName||'กิจการนี้')+'?'))void save(records.filter(x=>x.id!==r.id));}}>ลบ</button></td>}
+            </tr>)}
+          </tbody>
+        </table>
       </div>
+div>
       <footer className="registry-sheet-footer"><span>แสดง {filtered.length.toLocaleString('th-TH')} จาก {records.length.toLocaleString('th-TH')} รายการ</span><span>ข้อมูลจัดเก็บใน Cloudflare D1 · ป้องกันการบันทึกทับด้วยเลขรุ่นข้อมูล</span></footer>
     </div>
         {pendingLegacyImport&&<div className="m101-modal-backdrop"><section className="m101-editor m101-legacy-import-modal"><div className="m101-editor-head"><div><span className="m101-eyebrow">LEGACY FILE IMPORT</span><h2>นำเข้าไฟล์แบบเดิม</h2><p>{pendingLegacyImport.fileName} · {pendingLegacyImport.incoming.length} รายการที่ไม่ซ้ำ {pendingLegacyImport.duplicateRows? '· พบแถวซ้ำ '+pendingLegacyImport.duplicateRows+' แถว':''}{pendingLegacyImport.ambiguousRows? '· ข้อมูลเดิมจับคู่ไม่ชัดเจน '+pendingLegacyImport.ambiguousRows+' รายการ':''}</p></div><button type="button" onClick={()=>setPendingLegacyImport(null)}>×</button></div><div className="m101-legacy-import-stats"><span>รายการใหม่ <b>{pendingLegacyImport.incoming.filter(item=>legacyDuplicateIndex(item,records)<0).length}</b></span><span>รายการซ้ำ <b>{pendingLegacyImport.incoming.filter(item=>legacyDuplicateIndex(item,records)>=0).length}</b></span></div><p className="m101-legacy-import-help">เลือกรูปแบบจัดการข้อมูลซ้ำ ระบบจะบันทึกเมื่อกดยืนยันเท่านั้น</p><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='update_existing'} onChange={()=>setLegacyMode('update_existing')}/> อัปเดตข้อมูลเดิมและเพิ่มรายการใหม่</label><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='skip_duplicates'} onChange={()=>setLegacyMode('skip_duplicates')}/> ข้ามรายการซ้ำ นำเข้าเฉพาะรายการใหม่</label><label className="m101-legacy-mode"><input type="radio" checked={legacyMode==='import_all'} onChange={()=>setLegacyMode('import_all')}/> นำเข้าทั้งหมดเป็นรายการใหม่</label><div className="m101-editor-actions"><button type="button" className="m101-button" onClick={()=>setPendingLegacyImport(null)}>ยกเลิก</button><button type="button" className="m101-button m101-button-primary" disabled={saving} onClick={()=>void confirmLegacyImport()}>{saving?'กำลังบันทึก…':'ยืนยันนำเข้า'}</button></div></section></div>}
