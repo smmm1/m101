@@ -88,7 +88,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
   const [error,setError] = useState('');
   const [editor,setEditor] = useState<Business|null>(null);
   const [showPassword,setShowPassword] = useState(false);
-  const [pendingLegacyImport,setPendingLegacyImport] = useState<{fileName:string;incoming:Business[]}|null>(null);
+  const [pendingLegacyImport,setPendingLegacyImport] = useState<{fileName:string;incoming:Business[];duplicateRows:number}|null>(null);
   const [legacyMode,setLegacyMode] = useState<'update_existing'|'skip_duplicates'|'import_all'>('update_existing');
   const [newYear,setNewYear] = useState('');
   const search = (query || globalSearch).trim().toLocaleLowerCase('th-TH');
@@ -148,9 +148,9 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       const seenLegacyKeys=new Set<string>();let duplicateRows=0;
       const incoming=parsedIncoming.filter(item=>{
         const sourceId=String(item.id||'').trim();const taxId=normalizeThaiTaxId(item.taxId||'');const name=(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH');
-        const keys=[sourceId?'id:'+sourceId:'',taxId?'tax:'+taxId:'',name?'name:'+name:''].filter(Boolean);
-        if(keys.some(key=>seenLegacyKeys.has(key))){duplicateRows++;return false;}
-        keys.forEach(key=>seenLegacyKeys.add(key));return true;
+        const key=sourceId?'id:'+sourceId:taxId?'tax:'+taxId:name?'name:'+name:'';
+        if(key&&seenLegacyKeys.has(key)){duplicateRows++;return false;}
+        if(key)seenLegacyKeys.add(key);return true;
       });
       if(!incoming.length)throw new Error('ไม่พบแถวข้อมูลกิจการในไฟล์');
       setPendingLegacyImport({fileName:file.name,incoming,duplicateRows});
@@ -419,9 +419,9 @@ export function ImportExport({ year = '69' }: { year?: string }) {
     const taxId=normalizeThaiTaxId(item.taxId||'');
     const name=(item.companyName||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase('th-TH');
     const sourceId=String(item.id||'').trim();
-    const keys=[sourceId?'id:'+sourceId:'',taxId?'tax:'+taxId:'',name?'name:'+name:''].filter(Boolean);
-    if(keys.some(key=>seenImportKeys.has(key))){duplicates++;return false;}
-    keys.forEach(key=>seenImportKeys.add(key));
+    const key=sourceId?'id:'+sourceId:taxId?'tax:'+taxId:name?'name:'+name:'';
+    if(key&&seenImportKeys.has(key)){duplicates++;return false;}
+    if(key)seenImportKeys.add(key);
     return true;
   });
   const effectiveTargetIds=importPlan.map(({item,index})=>manualMatches[item.sourceRowIndex]||(index>=0?records[index]?.id:'' )).filter(Boolean);
