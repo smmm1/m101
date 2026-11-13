@@ -165,3 +165,78 @@
  .m101-registry-redesign .registry-search{flex:1}
  .m101-registry-redesign .registry-search input{width:100%}
 }
+
+
+/* Registry hero alignment refinement — clear left/right hierarchy */
+.m101-registry-redesign .registry-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:clamp(24px,4vw,64px);
+  row-gap:14px;
+  padding:24px 0 22px;
+}
+.m101-registry-redesign .registry-hero-copy{
+  min-width:0;
+  justify-self:start;
+  text-align:left;
+}
+.m101-registry-redesign .registry-hero-copy .registry-kicker,
+.m101-registry-redesign .registry-hero-copy h1,
+.m101-registry-redesign .registry-hero-copy p{
+  text-align:left;
+}
+.m101-registry-redesign .registry-hero h1{
+  margin:8px 0 6px;
+  font-size:clamp(28px,2.5vw,36px);
+  letter-spacing:-.04em;
+}
+.m101-registry-redesign .registry-hero-actions{
+  justify-self:end;
+  align-self:center;
+  width:auto;
+  max-width:100%;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+}
+.m101-registry-redesign .registry-action{
+  min-height:34px;
+  padding:0 11px;
+  border-radius:7px;
+  font-size:11px;
+}
+@media(max-width:760px){
+  .m101-registry-redesign .registry-hero{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    gap:13px;
+    padding:12px 0 16px;
+  }
+  .m101-registry-redesign .registry-hero-copy{
+    width:100%;
+    align-self:flex-start;
+    text-align:left;
+  }
+  .m101-registry-redesign .registry-hero-actions{
+    width:100%;
+    align-self:flex-start;
+    justify-self:start;
+    justify-content:flex-start;
+    align-items:center;
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:7px;
+    margin:0;
+  }
+  .m101-registry-redesign .registry-action{
+    flex:0 0 auto;
+    min-height:32px;
+    padding:0 10px;
+    font-size:10px;
+  }
+}
