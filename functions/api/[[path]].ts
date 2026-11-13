@@ -587,11 +587,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (existing?.status === 'active') return json({ error: 'สมาชิกนี้อยู่ใน Workspace นี้อยู่แล้ว' }, 409);
       const now = new Date().toISOString();
       const membershipId = existing?.id || randomToken(18);
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users owner_user ON owner_user.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const memberGuard = "EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'member' AND account_status = 'active')";
       const write = existing
-        ? env.DB.prepare("UPDATE workspace_memberships SET membership_type = 'collaborator', status = 'active', updated_at = ? WHERE id = ? AND workspace_id = ? AND user_id = ? AND membership_type != 'owner'").bind(now, membershipId, access.workspaceId, member.id)
-        : env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(membershipId, access.workspaceId, member.id, now, now);
+        ? env.DB.prepare(`UPDATE workspace_memberships SET membership_type = 'collaborator', status = 'active', updated_at = ? WHERE id = ? AND workspace_id = ? AND user_id = ? AND membership_type != 'owner' AND ${ownerGuard} AND ${memberGuard}`).bind(now, membershipId, access.workspaceId, member.id, access.workspaceId, access.user.id, member.id)
+        : env.DB.prepare(`INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, ?, ?, 'collaborator', 'active', ?, ? WHERE ${ownerGuard} AND ${memberGuard}`).bind(membershipId, access.workspaceId, member.id, now, now, access.workspaceId, access.user.id, member.id);
       try {
-        const result = await env.DB.batch([write, env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.added_to_workspace', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, member.id, JSON.stringify({ username: member.username, reactivated: Boolean(existing) }), now)]);
+        const result = await env.DB.batch([write, env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.added_to_workspace', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${memberGuard}`).bind(randomToken(18), access.workspaceId, access.user.id, member.id, JSON.stringify({ username: member.username, reactivated: Boolean(existing) }), now, access.workspaceId, access.user.id, member.id)]);
         if (Number(result[0]?.meta?.changes || 0) !== 1) return json({ error: 'เพิ่มสมาชิกเข้า Workspace ไม่สำเร็จ' }, 409);
       } catch { return json({ error: 'เพิ่มสมาชิกไม่สำเร็จ กรุณารีเฟรชแล้วลองอีกครั้ง' }, 409); }
       return json({ ok: true, user: { id: member.id, username: member.username, displayName: member.display_name || '', membershipType: 'collaborator' } }, 201);
@@ -608,12 +610,15 @@ export async function onRequest(context: { request: Request; env: Env }) {
         .bind(access.workspaceId, userId).first();
       if (!member) return json({ error: 'ไม่พบสมาชิกที่ใช้งานอยู่ใน Workspace นี้' }, 404);
       const now = new Date().toISOString();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const revokedGuard = "EXISTS (SELECT 1 FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'revoked')";
       const results = await env.DB.batch([
-        env.DB.prepare("UPDATE workspace_memberships SET status = 'revoked', updated_at = ? WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active' AND EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active')")
+        env.DB.prepare(`UPDATE workspace_memberships SET status = 'revoked', updated_at = ? WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active' AND ${ownerGuard}`)
           .bind(now, access.workspaceId, userId, access.workspaceId, access.user.id),
-        env.DB.prepare('DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(access.workspaceId, userId),
-        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.removed_from_workspace', 'user', ?, '{}', ? WHERE EXISTS (SELECT 1 FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND status = 'revoked')")
-          .bind(randomToken(18), access.workspaceId, access.user.id, userId, now, access.workspaceId, userId),
+        env.DB.prepare(`DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND ${ownerGuard} AND ${revokedGuard}`)
+          .bind(access.workspaceId, userId, access.workspaceId, access.user.id, access.workspaceId, userId),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.removed_from_workspace', 'user', ?, '{}', ? WHERE ${ownerGuard} AND ${revokedGuard}`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, now, access.workspaceId, access.user.id, access.workspaceId, userId),
       ]);
       if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'นำสมาชิกออกไม่สำเร็จ กรุณาโหลดข้อมูลใหม่' }, 409);
       return json({ ok: true });
