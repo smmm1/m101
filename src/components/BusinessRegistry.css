@@ -240,3 +240,155 @@
     font-size:10px;
   }
 }
+
+
+/* Business registry: semantic, information-first table */
+.m101-registry-redesign .registry-sheet-frame{
+  overflow:hidden;
+  border:1px solid #e3e0d9;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(34,31,25,.035);
+}
+.m101-registry-redesign .registry-sheet-scroll{width:100%;overflow:auto}
+.m101-registry-redesign .registry-table{
+  width:100%;
+  min-width:1320px;
+  table-layout:fixed;
+  border-collapse:separate;
+  border-spacing:0;
+  background:#fff;
+  color:#3f4143;
+  font-family:inherit;
+}
+.m101-registry-redesign .registry-table th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  height:44px;
+  padding:0 12px;
+  border-bottom:1px solid #dedfdc;
+  background:#f5f6f5;
+  color:#62686b;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.35;
+  text-align:left;
+  white-space:nowrap;
+}
+.m101-registry-redesign .registry-table th:nth-child(1){width:54px;text-align:center}
+.m101-registry-redesign .registry-table th:nth-child(2){width:230px}
+.m101-registry-redesign .registry-table th:nth-child(3){width:104px}
+.m101-registry-redesign .registry-table th:nth-child(4){width:142px}
+.m101-registry-redesign .registry-table th:nth-child(5){width:102px}
+.m101-registry-redesign .registry-table th:nth-child(6){width:112px}
+.m101-registry-redesign .registry-table th:nth-child(7){width:118px}
+.m101-registry-redesign .registry-table th:nth-child(8){width:116px}
+.m101-registry-redesign .registry-table th:nth-child(9){width:108px}
+.m101-registry-redesign .registry-table th:nth-child(10){width:154px}
+.m101-registry-redesign .registry-table th:nth-child(11){width:108px}
+.m101-registry-redesign .registry-table td{
+  height:59px;
+  padding:9px 12px;
+  border-bottom:1px solid #eceeeb;
+  color:#555c5e;
+  font-size:10px;
+  line-height:1.45;
+  text-align:left;
+  vertical-align:middle;
+  overflow-wrap:anywhere;
+  background:#fff;
+}
+.m101-registry-redesign .registry-table tbody tr:last-child td{border-bottom:0}
+.m101-registry-redesign .registry-table tbody tr{transition:background .14s ease}
+.m101-registry-redesign .registry-table tbody tr:hover td{background:#f8faf9}
+.m101-registry-redesign .registry-table td.registry-cell-index{
+  color:#92999a;
+  text-align:center;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+}
+.m101-registry-redesign .registry-table td.registry-cell-business b{
+  display:block;
+  color:#30383a;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.4;
+}
+.m101-registry-redesign .registry-table td.registry-cell-business small{
+  display:block;
+  margin-top:3px;
+  color:#899092;
+  font-size:9px;
+  line-height:1.35;
+}
+.m101-registry-redesign .registry-table td.registry-cell-mono{
+  color:#596467;
+  font-size:10px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.01em;
+}
+.m101-registry-redesign .registry-table td.registry-cell-remark{color:#747c7e}
+.m101-registry-redesign .registry-table .registry-type,
+.m101-registry-redesign .registry-table .registry-status,
+.m101-registry-redesign .registry-table .registry-dbd{
+  display:inline-flex;
+  align-items:center;
+  min-height:22px;
+  padding:3px 7px;
+  border:1px solid #e1e5e2;
+  border-radius:5px;
+  background:#f5f7f5;
+  color:#66716c;
+  font-size:9px;
+  font-style:normal;
+  font-weight:650;
+  white-space:nowrap;
+}
+.m101-registry-redesign .registry-table .registry-status.completed,
+.m101-registry-redesign .registry-table .registry-dbd.verified{
+  border-color:#d7e8dc;background:#edf6f0;color:#47765a;
+}
+.m101-registry-redesign .registry-table .registry-status.in_progress{
+  border-color:#e9dfc5;background:#fbf5e8;color:#94743a;
+}
+.m101-registry-redesign .registry-table .registry-status.pending{
+  border-color:#e6e2dc;background:#f6f5f2;color:#82796d;
+}
+.m101-registry-redesign .registry-table td.registry-cell-actions{
+  white-space:nowrap;
+}
+.m101-registry-redesign .registry-table .registry-cell-actions button{
+  height:27px;
+  margin-right:5px;
+  padding:0 8px;
+  border:1px solid #dfe3e0;
+  border-radius:5px;
+  background:#fff;
+  color:#53625b;
+  font-size:9px;
+  font-weight:650;
+  cursor:pointer;
+}
+.m101-registry-redesign .registry-table .registry-cell-actions button:hover{
+  border-color:#bfcfc5;background:#f4f8f5;
+}
+.m101-registry-redesign .registry-table .registry-cell-actions button.remove{
+  border-color:#eadfda;color:#a36556;
+}
+.m101-registry-redesign .registry-table .registry-cell-actions button.remove:hover{
+  background:#fbf3f0;
+}
+.m101-registry-redesign .registry-table td.registry-table-state{
+  height:150px;
+  color:#8a9291;
+  text-align:center;
+  font-size:12px;
+}
+@media(max-width:760px){
+  .m101-registry-redesign .registry-table{min-width:1260px}
+  .m101-registry-redesign .registry-table th{height:40px;padding:0 9px;font-size:9px}
+  .m101-registry-redesign .registry-table td{height:54px;padding:7px 9px;font-size:9px}
+  .m101-registry-redesign .registry-table td.registry-cell-business b{font-size:10px}
+  .m101-registry-redesign .registry-table td.registry-cell-business small{font-size:8px}
+}
