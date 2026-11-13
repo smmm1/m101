@@ -402,8 +402,8 @@ export function ImportExport({ year = '69' }: { year?: string }) {
       setTableBlocks(blocks);setSelectedTable(0);applyTable(blocks[0]);
     }catch(e){setError(e instanceof Error?'อ่านไฟล์ Excel ไม่สำเร็จ: '+e.message:'อ่านไฟล์ Excel ไม่สำเร็จ');}
   };
-  const chooseSheet=(name:string)=>{setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
-  const chooseTable=(index:number)=>{setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
+  const chooseSheet=(name:string)=>{setManualMatches({});setSelectedSheet(name);const blocks=splitExcelTables(sheetData[name]||[]);setTableBlocks(blocks);setSelectedTable(0);if(blocks.length)applyTable(blocks[0]);else{setHeaders([]);setRows([]);setError('ไม่พบตารางข้อมูลในชีตนี้');}};
+  const chooseTable=(index:number)=>{setManualMatches({});setSelectedTable(index);applyTable(tableBlocks[index]||[]);};
   const mapped=rows.map((row,sourceRowIndex)=>{const value=(key:keyof Business)=>{const header=mapping[String(key)];const index=headers.indexOf(header);return index>=0?String(row[index]||'').trim():'';};const rawType=value('type').toLocaleLowerCase('th-TH');const rawStatus=value('status').toLocaleLowerCase('th-TH');return {id:value('id'),sequenceNo:value('sequenceNo'),companyName:value('companyName'),taxId:normalizeThaiTaxId(value('taxId')),type:rawType.includes('ห้าง')||rawType.includes('partnership')?'partnership':rawType.includes('บุคคล')?'individual':'company',eFilingCode:value('eFilingCode'),ssoCode:value('ssoCode'),auditorDate:value('auditorDate'),password:value('password'),status:rawStatus.includes('เสร็จ')||rawStatus.includes('complete')?'completed':rawStatus.includes('กำลัง')||rawStatus.includes('progress')?'in_progress':'pending',remark:value('remark'),sourceRowIndex};}).filter(r=>r.companyName);
   const matchedMapped = mapped.map(item=>({item,index:findBusinessImportMatch(item,records)}));
   const seenImportKeys = new Set<string>();
