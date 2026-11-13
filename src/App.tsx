@@ -5,15 +5,15 @@ type User = { id: string; username: string; displayName?: string; role: 'admin' 
 type WorkspaceOption = { id: string; name: string; membershipType: 'owner' | 'collaborator' };
 type Page = 'overview' | 'businesses' | 'groups' | 'work' | 'calendar' | 'reports' | 'activity' | 'import' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
-  { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
-  { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
-  { id: 'groups', label: 'กลุ่มกิจการ', group: 'WORKSPACE', icon: '◎', desc: 'จัดกลุ่มกิจการและความสัมพันธ์' },
-  { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
+  { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: 'dashboard', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
+  { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: 'building', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
+  { id: 'groups', label: 'กลุ่มกิจการ', group: 'WORKSPACE', icon: 'network', desc: 'จัดกลุ่มกิจการและความสัมพันธ์' },
+  { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: 'clipboard', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
   { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'ติดตามกำหนดส่งและงานที่ใกล้ถึง' },
-  { id: 'reports', label: 'รายงาน', group: 'INTELLIGENCE', icon: '▥', desc: 'สรุปข้อมูลทะเบียนและความคืบหน้างาน' },
-  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: '◷', desc: 'ตรวจสอบประวัติการเปลี่ยนแปลง' },
-  { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: '⇅', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
-  { id: 'settings', label: 'ผู้ดูแลและความปลอดภัย', group: 'SYSTEM', icon: '⚙', desc: 'จัดการบัญชีและสิทธิ์ในพื้นที่ทำงาน' },
+  { id: 'reports', label: 'รายงาน', group: 'INTELLIGENCE', icon: 'chart', desc: 'สรุปข้อมูลทะเบียนและความคืบหน้างาน' },
+  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: 'history', desc: 'ตรวจสอบประวัติการเปลี่ยนแปลง' },
+  { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: 'transfer', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
+  { id: 'settings', label: 'ผู้ดูแลและความปลอดภัย', group: 'SYSTEM', icon: 'settings', desc: 'จัดการบัญชีและสิทธิ์ในพื้นที่ทำงาน' },
 ];
 
 function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
@@ -53,21 +53,21 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   return <div className="shell">
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
     <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
-      <div className="brand"><div className="brand-mark">M</div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
-      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group && (user.role === 'admin' || !['groups', 'import', 'settings'].includes(p.id))).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
+      <div className="brand"><div className="brand-mark"><img src="/icons/m101-icons.svg" alt="" /></div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
+      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group && (user.role === 'admin' || !['groups', 'import', 'settings'].includes(p.id))).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><use href={`/icons/m101-icons.svg#${p.icon}`} /></svg><span>{p.label}</span></button>)}</div>)}</nav>
+      <div className="sidebar-bottom"><div className="secure-note"><svg className="secure-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#lock" /></svg><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar">
-        <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
-        <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
+        <button className="menu-toggle" aria-label="เปิดเมนู" onClick={() => setMobileMenu(true)}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#menu" /></svg></button>
+        <div className="global-search"><svg className="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#search" /></svg><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : <svg className="logout-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#chevron-down" /></svg>}</button></div>
         {workspaceError && <span className="auth-error" role="alert">{workspaceError}</span>}
       </header>
       <main className="content">
         {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} onYearChange={setYear} onOpenImport={() => choose('import')} canManage={user.role === 'admin'} /> : page === 'groups' ? <RelationshipGroups /> : page === 'work' ? <AnnualWork year={year} canManage={user.role === 'admin'} /> : page === 'calendar' ? <CalendarView year={year} /> : page === 'reports' ? <ReportsView year={year} /> : page === 'activity' ? <ActivityView /> : page === 'settings' ? <AdminSecurity /> : page === 'import' ? <ImportExport year={year} /> : <section className="module-page">
           <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
-          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>{page === 'import' ? 'เครื่องมือนำเข้าและส่งออก' : 'การจัดการ Owner และความปลอดภัย'}</h2><p>{page === 'import' ? 'การส่งออก CSV พร้อมใช้งานจากหน้าทะเบียนกิจการ ส่วนตัวช่วยจับคู่ไฟล์ Excel จะเชื่อมต่อในขั้นถัดไป' : 'บัญชี Owner และสิทธิ์สมาชิกจะเชื่อมกับระบบจัดการบัญชีในขั้นถัดไป'}</p>{page === 'import' && <button className="m101-button" onClick={() => choose('businesses')}>ไปยังทะเบียนกิจการ</button>}</div>
+          <div className="module-empty"><div className="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href={`/icons/m101-icons.svg#${current.icon}`} /></svg></div><h2>{page === 'import' ? 'เครื่องมือนำเข้าและส่งออก' : 'การจัดการ Owner และความปลอดภัย'}</h2><p>{page === 'import' ? 'การส่งออก CSV พร้อมใช้งานจากหน้าทะเบียนกิจการ ส่วนตัวช่วยจับคู่ไฟล์ Excel จะเชื่อมต่อในขั้นถัดไป' : 'บัญชี Owner และสิทธิ์สมาชิกจะเชื่อมกับระบบจัดการบัญชีในขั้นถัดไป'}</p>{page === 'import' && <button className="m101-button" onClick={() => choose('businesses')}>ไปยังทะเบียนกิจการ</button>}</div>
         </section>}
       </main>
     </div>
