@@ -741,12 +741,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
       const now = new Date().toISOString();
-      const ownerStillActive = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active')";
+      const ownerStillActive = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
       const memberStillActive = "EXISTS (SELECT 1 FROM workspace_memberships member_membership JOIN users u ON u.id = member_membership.user_id WHERE member_membership.workspace_id = ? AND member_membership.user_id = ? AND member_membership.membership_type = 'collaborator' AND member_membership.status = 'active' AND u.account_status = 'active')";
       const statements = [
-        // A no-op compare step makes the membership check part of the same D1 batch as the writes.
-        env.DB.prepare(`UPDATE workspace_memberships SET updated_at = updated_at WHERE workspace_id = ? AND user_id = ? AND membership_type = 'owner' AND status = 'active' AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND status = 'active')`)
-          .bind(access.workspaceId, access.user.id, access.workspaceId),
+        // Revalidate the global Owner role, active membership, and Workspace inside the same D1 batch as writes.
+        env.DB.prepare("UPDATE workspace_memberships SET updated_at = updated_at WHERE workspace_id = ? AND user_id = ? AND membership_type = 'owner' AND status = 'active' AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND status = 'active') AND EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'admin')")
+          .bind(access.workspaceId, access.user.id, access.workspaceId, access.user.id),
         env.DB.prepare(`DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND ${ownerStillActive} AND ${memberStillActive}`)
           .bind(access.workspaceId, userId, access.workspaceId, access.user.id, access.workspaceId, userId),
         ...businessIds.map(businessId => env.DB.prepare(`INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE ${ownerStillActive} AND ${memberStillActive} AND EXISTS (SELECT 1 FROM workspace_directory_year_data d, json_each(d.records) item WHERE d.workspace_id = ? AND json_extract(item.value, '$.id') = ?)`)
