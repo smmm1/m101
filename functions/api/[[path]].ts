@@ -399,8 +399,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const writeToken = randomToken(18);
       const now = new Date().toISOString();
       const results = await env.DB.batch([
-        env.DB.prepare('UPDATE workspaces SET directory_revision = ?, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ? AND status = \'active\'')
-          .bind(nextRevision, writeToken, now, access.workspaceId, expectedRevision),
+        env.DB.prepare("UPDATE workspaces SET directory_revision = ?, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ? AND status = 'active' AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = workspaces.id AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND u.role = 'admin')")
+          .bind(nextRevision, writeToken, now, access.workspaceId, expectedRevision, access.user.id),
         env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at")
           .bind(access.workspaceId, fiscalYear, serialized, access.user.id, now, access.workspaceId, nextRevision, writeToken),
         env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'directory.year_saved', 'directory_year', ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)")
