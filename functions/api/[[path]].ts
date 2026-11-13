@@ -556,16 +556,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const membershipId = randomToken(18);
       const now = new Date().toISOString();
       const email = username.toLowerCase() + '@m101.local';
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users owner_user ON owner_user.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const newMemberGuard = "EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'member' AND account_status = 'active')";
       try {
         const results = await env.DB.batch([
-          env.DB.prepare("INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) VALUES (?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1)")
-            .bind(id, email, displayName, encoded.hash, encoded.salt, now, username),
-          env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)")
-            .bind(membershipId, access.workspaceId, id, now, now),
-          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.created', 'user', ?, ?, ?)")
-            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ username, displayName }), now),
+          env.DB.prepare(`INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) SELECT ?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1 WHERE ${ownerGuard}`)
+            .bind(id, email, displayName, encoded.hash, encoded.salt, now, username, access.workspaceId, access.user.id),
+          env.DB.prepare(`INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, ?, ?, 'collaborator', 'active', ?, ? WHERE ${ownerGuard} AND ${newMemberGuard}`)
+            .bind(membershipId, access.workspaceId, id, now, now, access.workspaceId, access.user.id, id),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.created', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${newMemberGuard}`)
+            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ username, displayName }), now, access.workspaceId, access.user.id, id),
         ]);
-        if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'สร้างสมาชิกไม่สำเร็จ' }, 500);
+        if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner เปลี่ยนแปลงหรือสร้างสมาชิกไม่สำเร็จ กรุณาโหลดข้อมูลใหม่' }, 403);
       } catch {
         return json({ error: 'ไม่สามารถสร้างสมาชิกได้ อาจมี ID นี้อยู่แล้ว' }, 409);
       }
