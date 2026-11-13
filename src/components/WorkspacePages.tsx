@@ -123,7 +123,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
         const sheetName=workbook.SheetNames[0];
         if(!sheetName)throw new Error('ไม่พบ Sheet ในไฟล์');
-        matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?value.toISOString().slice(0,10):String(value??'').trim()));
+        matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?localDateKey(value):String(value??'').trim()));
       }else throw new Error('รองรับไฟล์ Excel และ CSV เท่านั้น');
       let headerIndex=-1,bestScore=0;
       for(let rowIndex=0;rowIndex<Math.min(30,matrix.length);rowIndex++){
@@ -359,7 +359,7 @@ export function ImportExport({ year = '69' }: { year?: string }) {
       const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
       const parsedSheets:Record<string,string[][]>={};
       for(const name of workbook.SheetNames){
-        const matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?value.toISOString().slice(0,10):String(value??'').trim()));
+        const matrix=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name],{header:1,defval:'',raw:false}).map(row=>row.map(value=>value instanceof Date?localDateKey(value):String(value??'').trim()));
         parsedSheets[name]=matrix;
       }
       const names=workbook.SheetNames;
