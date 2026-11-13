@@ -605,16 +605,16 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const displayName = String(body.displayName || '').trim();
       const accountStatus = String(body.accountStatus || '');
       if (!displayName || displayName.length > 80 || !['active', 'suspended'].includes(accountStatus)) return json({ error: 'ข้อมูลสมาชิกไม่ถูกต้อง' }, 400);
-      const member = await env.DB.prepare("SELECT u.id, u.account_status FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
-        .bind(id, access.workspaceId).first() as { id?: string; account_status?: string } | null;
+      const member = await env.DB.prepare("SELECT u.id, u.account_status, u.display_name FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
+        .bind(id, access.workspaceId).first() as { id?: string; account_status?: string; display_name?: string } | null;
       if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
-      // Account status is global to the user, not scoped to one Workspace.
-      // Prevent either suspension or reactivation from one Workspace affecting another active Workspace.
-      if (accountStatus !== String(member.account_status || 'active')) {
+      // Profile name and account status live on the global user record, not on a Workspace membership.
+      // Do not let one Workspace silently change another active Workspace's shared account.
+      if (accountStatus !== String(member.account_status || 'active') || displayName !== String(member.display_name || '')) {
         const otherWorkspace = await env.DB.prepare(
           "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
         ).bind(id, access.workspaceId).first();
-        if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถเปลี่ยนสถานะบัญชีรวมจาก Workspace นี้ได้' }, 409);
+        if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถแก้ไขชื่อหรือสถานะบัญชีรวมจาก Workspace นี้ได้' }, 409);
       }
       const now = new Date().toISOString();
       await env.DB.prepare('UPDATE users SET display_name = ?, account_status = ? WHERE id = ?').bind(displayName, accountStatus, id).run();
