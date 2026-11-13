@@ -544,6 +544,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
         .bind(id, access.workspaceId).first();
       if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      // Account status is global to the user, not scoped to one Workspace.
+      // Do not let one Workspace suspend an account that is also active elsewhere.
+      const otherWorkspace = await env.DB.prepare(
+        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).bind(id, access.workspaceId).first();
+      if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถระงับบัญชีรวมจาก Workspace นี้ได้' }, 409);
       const now = new Date().toISOString();
       await env.DB.prepare('UPDATE users SET display_name = ?, account_status = ? WHERE id = ?').bind(displayName, accountStatus, id).run();
       if (accountStatus === 'suspended') await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(id).run();
@@ -564,6 +570,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
         .bind(id, access.workspaceId).first();
       if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      // Password hashes and sessions are global to the user account.
+      // Prevent a Workspace Owner from resetting credentials used in another active Workspace.
+      const otherWorkspace = await env.DB.prepare(
+        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).bind(id, access.workspaceId).first();
+      if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถตั้งรหัสผ่านรวมจาก Workspace นี้ได้' }, 409);
       const encoded = await hashPassword(password);
       const now = new Date().toISOString();
       await env.DB.batch([
