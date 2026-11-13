@@ -132,7 +132,7 @@ export default function App() {
     } catch (e) { setBootstrapError(e instanceof Error ? e.message : 'ตั้งค่า Owner ไม่สำเร็จ'); }
     finally { setBootstrapBusy(false); }
   };
-  const logout = async () => { const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); if (!response.ok) { let message = 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง'; try { const payload = await response.json(); if (payload.error) message = payload.error; } catch {} throw new Error(message); } setUser(null); setUsername(''); setPassword(''); setError(''); };
+  const logout = async () => { const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } }); const payload = await response.json().catch(() => ({})); if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'เซิร์ฟเวอร์ยังไม่ยืนยันการออกจากระบบ กรุณาลองอีกครั้ง'); window.location.replace('/'); };
 
   if (!ready) return <main className="auth-screen"><p className="loading-copy">กำลังตรวจสอบการเข้าสู่ระบบ…</p></main>;
   if (user) return <Workspace user={user} logout={logout} />;
