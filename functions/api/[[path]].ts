@@ -345,7 +345,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
     if (path === '/api/auth/logout' && request.method === 'POST') {
       const token = getCookie(request, COOKIE_NAME);
       if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await digest(token)).run();
-      return json({ ok: true }, 200, { 'Set-Cookie': [`${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`, workspaceCookie('', 0)].join(', ') });
+      return json({ ok: true }, 200, [['Set-Cookie', `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`], ['Set-Cookie', workspaceCookie('', 0)]]);
     }
 
 
