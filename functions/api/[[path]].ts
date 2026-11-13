@@ -469,8 +469,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const id = randomToken(18);
       const now = new Date().toISOString();
       try {
-        await env.DB.prepare('INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId).run();
+        const inserted = await env.DB.prepare("INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+          .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.workspaceId, access.user.id, businessId).run();
+        if (Number(inserted.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
       } catch {
         return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
       }
@@ -497,8 +498,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
       }
       const now = new Date().toISOString();
-      await env.DB.prepare('UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?')
-        .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId).run();
+      const updated = await env.DB.prepare("UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active') AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+        .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.workspaceId, access.user.id, String(current.business_id)).run();
+      if (Number(updated.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
       await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'annual_task.updated', 'annual_task', ?, ?, ?)")
         .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ status, dueDate }), now).run();
       return json({ ok: true });
