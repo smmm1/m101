@@ -168,7 +168,7 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
   };
   const exportCsv=()=>{
     const cols=['sequenceNo','companyName','type','taxId','eFilingCode','ssoCode','auditorDate','status','isVerifiedDbd','remark'];
-    const csv=[cols.join(','),...filtered.map(r=>cols.map(k=>{const v=String((r as any)[k]??'');return '"'+v.replace(/"/g,'""')+'"';}).join(','))].join('\r\n');
+    const csv=[cols.join(','),...filtered.map(r=>cols.map(k=>csvCell((r as any)[k])).join(','))].join('\r\n');
     const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
     const a=document.createElement('a');a.href=url;a.download=`M101-businesses-${year}.csv`;a.click();URL.revokeObjectURL(url);
   };
@@ -293,6 +293,13 @@ const importFields: { key: keyof Business; label: string; hints: string[] }[] = 
   { key: 'status', label: 'สถานะ', hints: ['สถานะ','status'] },
   { key: 'remark', label: 'หมายเหตุ', hints: ['หมายเหตุ','remark','note'] },
 ];
+function csvCell(value: unknown): string {
+  const text = String(value ?? '');
+  // Prefix spreadsheet formula starters so exported user data is treated as text.
+  const safe = /^[\\u0000-\\u0020]*[=+\\-@]/.test(text) ? "'" + text : text;
+  return '"' + safe.replace(/"/g, '""') + '"';
+}
+
 function parseCsvRows(source: string): string[][] {
   const rows: string[][]=[]; let row:string[]=[]; let cell=''; let quoted=false;
   for(let i=0;i<source.length;i++){const ch=source[i];if(ch==='"'&&quoted&&source[i+1]==='"'){cell+='"';i++;}else if(ch==='"'){quoted=!quoted;}else if(ch===','&&!quoted){row.push(cell);cell='';}else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&source[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell='';}else cell+=ch;}
