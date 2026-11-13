@@ -107,6 +107,7 @@ async function getWorkspaceAccess(user: UserRow, env: Env, request?: Request): P
     : "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1";
   const statement = selectedWorkspaceId ? env.DB.prepare(query).bind(user.id, selectedWorkspaceId) : env.DB.prepare(query).bind(user.id);
   const row = await statement.first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
+  // A stale or forged selection must never silently fall back to another Workspace.
   if (!row?.workspace_id || !row.membership_type) return null;
   return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
 }
@@ -567,6 +568,31 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ไม่สามารถสร้างสมาชิกได้ อาจมี ID นี้อยู่แล้ว' }, 409);
       }
       return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', localPasswordSet: true, membershipType: 'collaborator' } }, 201);
+    }
+
+    if (path === '/api/admin/workspace-members' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่เพิ่มสมาชิกเข้า Workspace ได้' }, 403);
+      const body = await request.json() as { username?: string };
+      const username = String(body.username || '').trim();
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'กรุณาระบุ ID สมาชิกที่ถูกต้อง' }, 400);
+      const member = await env.DB.prepare("SELECT id, username, display_name, role, account_status FROM users WHERE username = ? COLLATE NOCASE LIMIT 1").bind(username).first() as { id?: string; username?: string; display_name?: string; role?: string; account_status?: string } | null;
+      if (!member || member.role !== 'member') return json({ error: 'ไม่พบบัญชีสมาชิกที่เพิ่มได้ กรุณาตรวจสอบ ID อีกครั้ง' }, 404);
+      if (member.account_status !== 'active') return json({ error: 'บัญชีสมาชิกนี้ถูกระงับอยู่ ต้องเปิดใช้งานบัญชีก่อน' }, 409);
+      const existing = await env.DB.prepare('SELECT id, membership_type, status FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? LIMIT 1').bind(access.workspaceId, member.id).first() as { id?: string; membership_type?: string; status?: string } | null;
+      if (existing?.membership_type === 'owner') return json({ error: 'บัญชีนี้เป็น Owner ของ Workspace นี้อยู่แล้ว' }, 409);
+      if (existing?.status === 'active') return json({ error: 'สมาชิกนี้อยู่ใน Workspace นี้อยู่แล้ว' }, 409);
+      const now = new Date().toISOString();
+      const membershipId = existing?.id || randomToken(18);
+      const write = existing
+        ? env.DB.prepare("UPDATE workspace_memberships SET membership_type = 'collaborator', status = 'active', updated_at = ? WHERE id = ? AND workspace_id = ? AND user_id = ? AND membership_type != 'owner'").bind(now, membershipId, access.workspaceId, member.id)
+        : env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, 'collaborator', 'active', ?, ?)").bind(membershipId, access.workspaceId, member.id, now, now);
+      try {
+        const result = await env.DB.batch([write, env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.added_to_workspace', 'user', ?, ?, ?)").bind(randomToken(18), access.workspaceId, access.user.id, member.id, JSON.stringify({ username: member.username, reactivated: Boolean(existing) }), now)]);
+        if (Number(result[0]?.meta?.changes || 0) !== 1) return json({ error: 'เพิ่มสมาชิกเข้า Workspace ไม่สำเร็จ' }, 409);
+      } catch { return json({ error: 'เพิ่มสมาชิกไม่สำเร็จ กรุณารีเฟรชแล้วลองอีกครั้ง' }, 409); }
+      return json({ ok: true, user: { id: member.id, username: member.username, displayName: member.display_name || '', membershipType: 'collaborator' } }, 201);
     }
 
     const adminUserMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)$/);
