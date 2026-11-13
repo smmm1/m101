@@ -409,7 +409,8 @@ export function ImportExport({ year = '69' }: { year?: string }) {
   const importPlan = matchedMapped.filter(({item,index})=>{
     const taxId=normalizeThaiTaxId(item.taxId||'');
     const name=(item.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH');
-    const key=taxId?'tax:'+taxId:'name:'+name;
+    const sourceId=String(item.id||'').trim();
+    const key=sourceId?'id:'+sourceId:taxId?'tax:'+taxId:'name:'+name;
     if(seenImportKeys.has(key)){duplicates++;return false;}
     seenImportKeys.add(key);
     if(index<0 && ((taxId&&records.some(r=>normalizeThaiTaxId(r.taxId||'')===taxId)) || records.some(r=>(r.companyName||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('th-TH')===name))){duplicates++;return false;}
