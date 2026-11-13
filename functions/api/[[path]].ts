@@ -597,6 +597,28 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, user: { id: member.id, username: member.username, displayName: member.display_name || '', membershipType: 'collaborator' } }, 201);
     }
 
+    const workspaceMemberMatch = path.match(/^\/api\/admin\/workspace-members\/([A-Za-z0-9_-]+)$/);
+    if (workspaceMemberMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่นำสมาชิกออกจาก Workspace ได้' }, 403);
+      const userId = workspaceMemberMatch[1];
+      if (userId === access.user.id) return json({ error: 'ไม่สามารถนำ Owner ที่กำลังใช้งานออกจาก Workspace ได้' }, 400);
+      const member = await env.DB.prepare("SELECT id FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active'")
+        .bind(access.workspaceId, userId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกที่ใช้งานอยู่ใน Workspace นี้' }, 404);
+      const now = new Date().toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare("UPDATE workspace_memberships SET status = 'revoked', updated_at = ? WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active' AND EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active')")
+          .bind(now, access.workspaceId, userId, access.workspaceId, access.user.id),
+        env.DB.prepare('DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(access.workspaceId, userId),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.removed_from_workspace', 'user', ?, '{}', ? WHERE EXISTS (SELECT 1 FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND status = 'revoked')")
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, now, access.workspaceId, userId),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'นำสมาชิกออกไม่สำเร็จ กรุณาโหลดข้อมูลใหม่' }, 409);
+      return json({ ok: true });
+    }
+
     const adminUserMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)$/);
     if (adminUserMatch && request.method === 'PUT') {
       const access = await requireWorkspaceAccess(request, env);
