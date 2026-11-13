@@ -16,6 +16,7 @@ type AnnualTask = {
 const statusText: Record<string, string> = { pending: 'รอดำเนินการ', in_progress: 'กำลังดำเนินการ', completed: 'เสร็จแล้ว' };
 const typeText: Record<string, string> = { company: 'บริษัทจำกัด', partnership: 'ห้างหุ้นส่วน', individual: 'บุคคลธรรมดา' };
 const makeId = () => typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `m101-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const localDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 async function apiJson(url: string, init?: RequestInit) {
   const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...init });
@@ -45,7 +46,7 @@ export function CommandCenter({ navigate, year = '69' }: { navigate: (page: 'bus
   const done = tasks.filter(t => t.status === 'completed').length;
   const active = tasks.filter(t => t.status === 'in_progress').length;
   const pending = tasks.length - done - active;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   const overdue = tasks.filter(t => t.status !== 'completed' && t.dueDate && t.dueDate < today);
   const upcoming = tasks.filter(t => t.status !== 'completed' && t.dueDate && t.dueDate >= today).sort((a,b) => a.dueDate.localeCompare(b.dueDate)).slice(0,5);
   const companyCount = businesses.filter(b => b.type === 'company').length;
