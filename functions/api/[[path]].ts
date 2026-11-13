@@ -699,15 +699,24 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
       const now = new Date().toISOString();
+      const ownerStillActive = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active')";
+      const memberStillActive = "EXISTS (SELECT 1 FROM workspace_memberships member_membership JOIN users u ON u.id = member_membership.user_id WHERE member_membership.workspace_id = ? AND member_membership.user_id = ? AND member_membership.membership_type = 'collaborator' AND member_membership.status = 'active' AND u.account_status = 'active')";
       const statements = [
-        env.DB.prepare('DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(access.workspaceId, userId),
-        ...businessIds.map(businessId => env.DB.prepare('INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(randomToken(18), access.workspaceId, businessId, userId, access.user.id, now)),
-        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'member.assignments_updated', 'user', ?, ?, ?)")
-          .bind(randomToken(18), access.workspaceId, access.user.id, userId, JSON.stringify({ businessCount: businessIds.length }), now),
+        // A no-op compare step makes the membership check part of the same D1 batch as the writes.
+        env.DB.prepare(`UPDATE workspace_memberships SET updated_at = updated_at WHERE workspace_id = ? AND user_id = ? AND membership_type = 'owner' AND status = 'active' AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND status = 'active')`)
+          .bind(access.workspaceId, access.user.id, access.workspaceId),
+        env.DB.prepare(`DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND ${ownerStillActive} AND ${memberStillActive}`)
+          .bind(access.workspaceId, userId, access.workspaceId, access.user.id, access.workspaceId, userId),
+        ...businessIds.map(businessId => env.DB.prepare(`INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE ${ownerStillActive} AND ${memberStillActive} AND EXISTS (SELECT 1 FROM workspace_directory_year_data d, json_each(d.records) item WHERE d.workspace_id = ? AND json_extract(item.value, '$.id') = ?)`)
+          .bind(randomToken(18), access.workspaceId, businessId, userId, access.user.id, now, access.workspaceId, access.user.id, access.workspaceId, userId, access.workspaceId, businessId)),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.assignments_updated', 'user', ?, ?, ? WHERE ${ownerStillActive} AND ${memberStillActive}`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, JSON.stringify({ businessCount: businessIds.length }), now, access.workspaceId, access.user.id, access.workspaceId, userId),
       ];
-      await env.DB.batch(statements);
-      return json({ ok: true, assignedCount: businessIds.length });
+      const results = await env.DB.batch(statements);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      const insertedCount = results.slice(2, 2 + businessIds.length).reduce((sum: number, item: { meta?: { changes?: number } }) => sum + Number(item.meta?.changes || 0), 0);
+      if (insertedCount !== businessIds.length) return json({ error: 'สถานะสมาชิกหรือการมอบหมายเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 409);
+      return json({ ok: true, assignedCount: insertedCount });
     }
 
 
