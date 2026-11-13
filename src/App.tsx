@@ -53,7 +53,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   return <div className="shell">
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
     <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
-      <div className="brand"><div className="brand-mark"><img src="/icons/m101-icons.svg" alt="" /></div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
+      <div className="brand"><div className="brand-mark"><img src="/logo-orange-3-badge-Photoroom.png" alt="M101" /></div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
       <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group && (user.role === 'admin' || !['groups', 'import', 'settings'].includes(p.id))).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><use href={`/icons/m101-icons.svg#${p.icon}`} /></svg><span>{p.label}</span></button>)}</div>)}</nav>
       <div className="sidebar-bottom"><div className="secure-note"><svg className="secure-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#lock" /></svg><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
     </aside>
