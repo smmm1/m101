@@ -12,15 +12,20 @@
 -- Expected at preparation time: 1 admin user, 480 records in fiscal year 69, 0 annual tasks.
 
 -- 1. Extend existing user accounts without changing password hashes or sessions.
+-- Legacy password hashes are retained for rollback, but are not assumed to be PBKDF2.
+-- Mark existing accounts as needing the new local-password bootstrap so the Owner
+-- can claim the legacy admin safely and set a password understood by the new API.
 ALTER TABLE users ADD COLUMN username TEXT;
 ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active'
   CHECK (account_status IN ('active', 'suspended'));
-ALTER TABLE users ADD COLUMN local_password_set INTEGER NOT NULL DEFAULT 1
+ALTER TABLE users ADD COLUMN local_password_set INTEGER NOT NULL DEFAULT 0
   CHECK (local_password_set IN (0, 1));
 
 UPDATE users
 SET username = lower(substr(email, 1, instr(email, '@') - 1))
 WHERE username IS NULL OR trim(username) = '';
+
+UPDATE users SET local_password_set = 0;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username
   ON users(username COLLATE NOCASE);
@@ -40,7 +45,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
 INSERT OR IGNORE INTO workspaces
   (id, name, owner_user_id, status, created_at, updated_at, directory_revision, directory_write_token)
 SELECT
-  'm101-main-workspace-v1', 'M101 Workspace', id, 'active',
+  'm101-primary-workspace', 'M101 Workspace', id, 'active',
   strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
   strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 1, NULL
 FROM users
