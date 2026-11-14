@@ -52,6 +52,28 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   const current = pages.find(p => p.id === page)!;
   const choose = (id: Page) => { setPage(id); setMobileMenu(false); setProfileMenuOpen(false); };
   useEffect(() => { if (!mobileMenu && !profileMenuOpen) return; const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMobileMenu(false); setProfileMenuOpen(false); } }; window.addEventListener('keydown', onKeyDown); return () => window.removeEventListener('keydown', onKeyDown); }, [mobileMenu, profileMenuOpen]);
+  useEffect(() => {
+    if (!mobileMenu) return;
+    const sidebar = document.getElementById('workspace-navigation');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const getFocusable = () => sidebar?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [];
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+    const containFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const items = getFocusable();
+      if (!items.length) { event.preventDefault(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    sidebar?.addEventListener('keydown', containFocus);
+    return () => {
+      sidebar?.removeEventListener('keydown', containFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [mobileMenu]);
   const signOut = async () => { if (busy) return; setBusy(true); setWorkspaceError(''); try { await logout(); } catch (e) { setWorkspaceError(e instanceof Error ? e.message : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง'); } finally { setBusy(false); } };
   const groups = ['WORKSPACE', 'OPERATIONS', 'INTELLIGENCE', 'SYSTEM'];
   return <div className={'shell ' + (sidebarCollapsed ? 'shell-sidebar-collapsed' : '')}>
@@ -67,7 +89,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
         <div className="workspace-breadcrumb"><span>Workspace</span><i>/</i><b>{current.label}</b></div>
         <button className="menu-toggle" type="button" aria-label="เปิดเมนู" aria-controls="workspace-navigation" aria-expanded={mobileMenu} onClick={() => setMobileMenu(true)}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#menu" /></svg></button>
         <div className="global-search"><svg className="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#search" /></svg><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><button className="refresh-button" type="button" onClick={() => window.location.reload()} aria-label="รีเฟรชหน้า" title="รีเฟรชหน้า"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg></button><div className="profile-menu-wrap"><button className="profile-trigger" type="button" aria-label="เมนูบัญชีผู้ใช้" aria-haspopup="menu" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen(open => !open)}><span className="avatar">{(user.displayName || user.username || 'U').trim().charAt(0).toUpperCase()}</span><span className="profile-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg></span></button>{profileMenuOpen && <div className="profile-dropdown" role="menu"><div className="profile-dropdown-identity"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); window.location.reload(); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg>รีเฟรชหน้า</button><div className="profile-dropdown-divider" /><button className="profile-signout" type="button" role="menuitem" onClick={signOut} disabled={busy}>{busy ? 'กำลังออกจากระบบ…' : 'ออกจากระบบ'}</button></div>}</div></div>
+        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><button className="refresh-button" type="button" onClick={() => window.location.reload()} aria-label="รีเฟรชหน้า" title="รีเฟรชหน้า"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg></button><div className="profile-menu-wrap"><button className="profile-trigger" type="button" aria-label="เมนูบัญชีผู้ใช้" aria-controls="profile-dropdown" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen(open => !open)}><span className="avatar">{(user.displayName || user.username || 'U').trim().charAt(0).toUpperCase()}</span><span className="profile-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg></span></button>{profileMenuOpen && <div className="profile-dropdown" id="profile-dropdown" aria-label="การดำเนินการบัญชี"><div className="profile-dropdown-identity"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button type="button" onClick={() => { setProfileMenuOpen(false); window.location.reload(); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg>รีเฟรชหน้า</button><div className="profile-dropdown-divider" /><button className="profile-signout" type="button" onClick={signOut} disabled={busy}>{busy ? 'กำลังออกจากระบบ…' : 'ออกจากระบบ'}</button></div>}</div></div>
         {workspaceError && <span className="auth-error" role="alert">{workspaceError}</span>}
       </header>
       <main className="content">
