@@ -70,3 +70,43 @@
 .cc-empty button{margin-top:7px;padding:8px 12px;border:1px solid #dedbd2;border-radius:5px;background:#faf9f6;color:#624b36;font-size:11px;font-weight:650}
 @media(max-width:1000px){.cc-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.cc-overview article:nth-child(2){border-right:0}.cc-overview article:nth-child(-n+2){border-bottom:1px solid #e9e6df}.cc-workspace-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.cc-heading{align-items:flex-start;flex-direction:column;padding-bottom:20px}.cc-heading h1{font-size:29px}.cc-primary-action{width:100%;justify-content:space-between}.cc-overview{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:17px}.cc-overview article{min-height:128px;padding:14px 13px}.cc-metric-value{font-size:29px}.cc-metric-foot{font-size:9px}.cc-section{padding:17px 14px}.cc-section-head{gap:8px}.cc-section-head h2{font-size:15px}.cc-section-head p{font-size:11px}.cc-link-action{font-size:10px}.cc-progress-main>strong{font-size:37px}.cc-progress-breakdown{gap:5px}.cc-progress-breakdown span{font-size:9px}.cc-progress-breakdown b{font-size:14px}.cc-portfolio-table th,.cc-portfolio-table td{padding:11px 9px}}
+
+
+/* Phase 3 — Command Center */
+.m101-command-center{max-width:1600px}
+.cc-heading{padding:4px 0 22px}
+.cc-heading h1{font-size:clamp(27px,2.5vw,34px);letter-spacing:-.035em}
+.cc-primary-action{min-height:40px;padding:0 14px;gap:14px;border-radius:6px;font-size:12px}
+.cc-overview{grid-template-columns:repeat(4,minmax(0,1fr));margin:20px 0 16px;border-radius:8px}
+.cc-overview article{min-height:132px;padding:17px 18px}
+.cc-metric-value{margin:13px 0 4px;font-size:32px}
+.cc-metric-label{font-size:13px}
+.cc-metric-foot{font-size:11px}
+.cc-workspace-grid{grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:14px;margin-bottom:14px}
+.cc-section{padding:19px 20px;border-radius:8px}
+.cc-section-head{margin-bottom:17px}
+.cc-section-head h2{font-size:16px}
+.cc-section-head p{font-size:12px}
+.cc-progress-main>strong{font-size:40px}
+.cc-progress-track{height:9px}
+.cc-progress-breakdown{margin-top:18px}
+.cc-progress-breakdown span{font-size:11px}
+.cc-follow-row{min-height:50px}
+.cc-follow-copy b{font-size:12px}
+.cc-follow-copy span{font-size:11px}
+.cc-follow-row time,.cc-late-label{font-size:11px}
+.cc-portfolio-table{min-width:680px}
+.cc-portfolio-table th{padding:11px 13px;font-size:10px}
+.cc-portfolio-table td{padding:12px 13px;font-size:12px}
+.cc-primary-action:focus-visible,.cc-link-action:focus-visible,.cc-empty button:focus-visible{outline:2px solid #a9977e;outline-offset:3px}
+@media(max-width:1050px){.cc-workspace-grid{grid-template-columns:1fr}}
+@media(max-width:700px){
+ .cc-heading{gap:14px}.cc-heading h1{font-size:26px}
+ .cc-overview{grid-template-columns:repeat(2,minmax(0,1fr));margin:16px 0 13px}
+ .cc-overview article{min-height:118px;padding:14px 13px}
+ .cc-metric-value{font-size:29px}.cc-metric-foot{font-size:10px}
+ .cc-section{padding:16px 14px}.cc-section-head{gap:10px}
+ .cc-section-head h2{font-size:15px}.cc-section-head p{font-size:11px}
+ .cc-progress-breakdown{gap:7px}.cc-progress-breakdown span{font-size:10px}
+}
+@media(max-width:380px){.cc-progress-breakdown{grid-template-columns:1fr}}
