@@ -194,8 +194,8 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         <p>จัดการข้อมูลนิติบุคคลและติดตามสถานะในพื้นที่ทำงานเดียว</p>
       </div>
       <div className="registry-hero-actions">
-        <button className="registry-action secondary" onClick={exportCsv}>ส่งออก CSV</button>
-        {canManage&&<><label className="registry-action secondary registry-file-action">นำเข้าเดิม<input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readLegacyImport(file);e.currentTarget.value='';}}/></label><button className="registry-action secondary" onClick={onOpenImport}>จับคู่ไฟล์</button><button className="registry-action primary" onClick={()=>setEditor(blankBusiness())}>เพิ่มกิจการ</button></>}
+        <button className="registry-action secondary" onClick={exportCsv}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3"/></svg><span>ส่งออก CSV</span></button>
+        {canManage&&<><label className="registry-action secondary registry-file-action"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4M3 13v4h14v-4"/></svg><span>นำเข้าเดิม</span><input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readLegacyImport(file);e.currentTarget.value='';}}/></label><button className="registry-action secondary" onClick={onOpenImport}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 10h14M3 16h14M7 2v4m6 2v4m-6 2v4"/></svg><span>จับคู่ไฟล์</span></button><button className="registry-action primary" onClick={()=>setEditor(blankBusiness())}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg><span>เพิ่มกิจการ</span></button></>}
       </div>
     </header>
     <div className="registry-overview">
