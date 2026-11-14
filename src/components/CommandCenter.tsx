@@ -66,12 +66,12 @@ export default function CommandCenter({ navigate, year = '69' }: Props) {
         <h1>ศูนย์บัญชาการ</h1>
         <p>ภาพรวมกิจการและงานสำคัญที่ต้องติดตามในพื้นที่ทำงาน</p>
       </div>
-      <button className="cc-primary-action" onClick={() => navigate('businesses')}>เปิดทะเบียนกิจการ <span aria-hidden="true">↗</span></button>
+      <button type="button" className="cc-primary-action" onClick={() => navigate('businesses')}>เปิดทะเบียนกิจการ <span aria-hidden="true">↗</span></button>
     </header>
 
     {error && <div className="cc-error" role="alert"><span>{error}</span><button onClick={() => void load()}>ลองโหลดอีกครั้ง</button></div>}
 
-    <section className="cc-overview" aria-label="ตัวชี้วัดภาพรวม">
+    <section className="cc-overview" aria-label="ตัวชี้วัดภาพรวม" aria-busy={loading}>
       <article className="cc-lead-metric">
         <div className="cc-metric-top"><span>PORTFOLIO SIZE</span><span className="cc-metric-mark">01</span></div>
         <div className="cc-metric-value">{loading ? '—' : number(businesses.length)}</div>
