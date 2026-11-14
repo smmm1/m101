@@ -106,7 +106,7 @@ export default function CommandCenter({ navigate, year = '69' }: Props) {
         </div>
         {loading ? <div className="cc-state">กำลังรวบรวมข้อมูล…</div> : tasks.length ? <>
           <div className="cc-progress-main"><strong>{metrics.percent}<small>%</small></strong><div><b>ดำเนินการเสร็จแล้ว</b><span>{number(metrics.done)} จาก {number(tasks.length)} รายการ</span></div></div>
-          <div className="cc-progress-track" role="progressbar" aria-valuenow={metrics.percent} aria-valuemin={0} aria-valuemax={100}><span style={{ width: metrics.percent + '%' }} /></div>
+          <div className="cc-progress-track" role="progressbar" aria-label="ความคืบหน้างานประจำปี" aria-valuenow={metrics.percent} aria-valuemin={0} aria-valuemax={100}><span style={{ width: metrics.percent + '%' }} /></div>
           <div className="cc-progress-breakdown">
             <div><i className="cc-dot cc-dot-done" /><span>เสร็จแล้ว</span><b>{number(metrics.done)}</b></div>
             <div><i className="cc-dot cc-dot-active" /><span>กำลังดำเนินการ</span><b>{number(metrics.active)}</b></div>
