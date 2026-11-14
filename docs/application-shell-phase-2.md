@@ -28,3 +28,11 @@ Establish one consistent navigation and workspace frame around the existing M101
 - Inspect expanded/collapsed desktop shell and mobile off-canvas navigation in Preview.
 - Verify workspace/year selection, page navigation, global search handoff to the directory, profile menu, and sign-out remain operational.
 - No Production deployment or Production D1 changes without explicit user approval.
+
+
+## Preview deployment record
+- Cloudflare Pages Preview deployment: https://4a99051e.m101-directory.pages.dev
+- Deployment ID: `4a99051e-7a49-436b-9ecf-a9061c5d3dc4`
+- Commit: `c04448251aed3212ad5d0884ac68c83dfd019ee4`
+- Cloudflare queued, initialize, clone, build, and deploy stages all completed successfully on 2026-11-14.
+- Cross-device visual and authenticated workflow QA still requires a real browser session; this is not represented as passed by the deployment status.
