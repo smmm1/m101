@@ -71,6 +71,12 @@ function AppContent() {
   const pendingDatabaseWriteRef = React.useRef(false);
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const directoryRevisionRef = React.useRef<number | null>(null);
+  const lastSavedSnapshotRef = React.useRef<string | null>(null);
+  const saveInFlightRef = React.useRef(false);
+  const saveRequestedRef = React.useRef(false);
+  const saveBlockedRef = React.useRef(false);
+  const [dataSaveCycle, setDataSaveCycle] = useState(0);
   type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
   const undoStackRef = React.useRef<UndoSnapshot[]>([]);
   const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -213,6 +219,10 @@ function AppContent() {
       setUserRole('member');
       setAccessReady(true);
       setDataReady(false);
+      directoryRevisionRef.current = null;
+      lastSavedSnapshotRef.current = null;
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
       return () => { active = false; };
     }
 
@@ -235,6 +245,10 @@ function AppContent() {
           : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+        lastSavedSnapshotRef.current = JSON.stringify({ availableYears: years.length ? years : ['69'], recordsByYear: nextRecords });
+        saveBlockedRef.current = false;
+        saveRequestedRef.current = false;
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
@@ -270,6 +284,8 @@ function AppContent() {
         const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = null;
+        lastSavedSnapshotRef.current = null;
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
         setUserName('ผู้เยี่ยมชม');
@@ -283,21 +299,50 @@ function AppContent() {
     return () => { active = false; };
   }, [isVisitor, sessionUser, dataReloadKey]);
 
-  // Save changes to the isolated M101 D1 database.
+  // Save only against the exact D1 snapshot revision loaded by this client.
+  // Requests are serialized; a stale snapshot is blocked rather than auto-overwritten.
   useEffect(() => {
-    if (!dataReady || !isLoggedIn || !sessionUser) return;
+    if (!dataReady || !isLoggedIn || !sessionUser || saveBlockedRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      if (saveBlockedRef.current) return;
+      if (saveInFlightRef.current) {
+        saveRequestedRef.current = true;
+        return;
+      }
+      const snapshotKey = JSON.stringify({ availableYears, recordsByYear });
+      if (snapshotKey === lastSavedSnapshotRef.current) {
+        pendingDatabaseWriteRef.current = false;
+        return;
+      }
+      const expectedDirectoryRevision = directoryRevisionRef.current;
+      if (expectedDirectoryRevision === null) {
+        saveBlockedRef.current = true;
+        pendingDatabaseWriteRef.current = false;
+        showToast('ไม่พบเวอร์ชันข้อมูลจากเซิร์ฟเวอร์ จึงหยุดบันทึกเพื่อป้องกันข้อมูลสูญหาย กรุณาโหลดข้อมูลใหม่', 'ยังไม่ได้บันทึก', 'error');
+        return;
+      }
+
+      saveInFlightRef.current = true;
       void (async () => {
         try {
           const response = await fetch('/api/data', {
             method: 'PUT',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ availableYears, recordsByYear }),
+            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision }),
           });
           const payload = await response.json();
+          if (response.status === 409 || payload.conflict) {
+            saveBlockedRef.current = true;
+            pendingDatabaseWriteRef.current = false;
+            pendingSuccessToastsRef.current = [];
+            showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
+            return;
+          }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
+          directoryRevisionRef.current = Number(payload.directoryRevision);
+          lastSavedSnapshotRef.current = snapshotKey;
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
@@ -309,13 +354,19 @@ function AppContent() {
             'ข้อมูลยังไม่ซิงก์',
             'error'
           );
+        } finally {
+          saveInFlightRef.current = false;
+          if (saveRequestedRef.current && !saveBlockedRef.current) {
+            saveRequestedRef.current = false;
+            setDataSaveCycle((cycle) => cycle + 1);
+          }
         }
       })();
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears]);
+  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears, dataSaveCycle]);
 
   // Modals state
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
@@ -693,9 +744,9 @@ function AppContent() {
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
-      <main className="min-h-screen bg-[#f8f8f8] text-slate-900">
-        <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
-          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
+      <main className="m101-login-root min-h-screen bg-[#f8f8f8] text-slate-900">
+        <div className="m101-login-layout grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
+          <section className="m101-login-brand relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
             <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
             <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
@@ -745,7 +796,7 @@ function AppContent() {
             </div>
           </section>
 
-          <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
+          <section className="m101-login-panel flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
             <div className="w-full max-w-[420px]">
               <div className="mb-8">
                 <p className="text-xs font-semibold tracking-[0.16em] text-[#686868]">ยินดีต้อนรับกลับ</p>
@@ -753,7 +804,7 @@ function AppContent() {
                 <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
               </div>
 
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
+              <form onSubmit={handleLoginSubmit} className="m101-login-form space-y-5">
                 <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
                   <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
                   <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>

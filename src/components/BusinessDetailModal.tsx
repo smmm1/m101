@@ -27,9 +27,11 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [record, setRecord] = useState<BusinessRecord | null>(initialRecord);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSensitiveData, setShowSensitiveData] = useState(false);
 
   useEffect(() => {
     setRecord(initialRecord);
+    setShowSensitiveData(false);
   }, [initialRecord]);
 
   if (!record) return null;
@@ -211,11 +213,28 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
 
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="bg-slate-50/70 dark:bg-slate-900/50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-zinc-500">key</span>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
-                รหัสผ่านและข้อมูลการยื่นแบบ
-              </h3>
+            <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-[18px] text-zinc-500">key</span>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 font-headline">
+                  รหัสผ่านและข้อมูลการยื่นแบบ
+                </h3>
+              </div>
+              {isLoggedIn && (
+                <DSButton
+                  type="button"
+                  onClick={() => setShowSensitiveData((visible) => !visible)}
+                  variant="secondary"
+                  className="m101-credential-toggle shrink-0"
+                  aria-label={showSensitiveData ? 'ซ่อนข้อมูลลับ' : 'แสดงข้อมูลลับ'}
+                  aria-pressed={showSensitiveData}
+                >
+                  <span className="material-symbols-outlined text-[15px]">
+                    {showSensitiveData ? 'visibility_off' : 'visibility'}
+                  </span>
+                  <span>{showSensitiveData ? 'ซ่อนข้อมูล' : 'แสดงข้อมูล'}</span>
+                </DSButton>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -226,7 +245,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 </span>
                 <div className="flex items-center justify-between gap-1.5">
                   <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono truncate">
-                    {isLoggedIn ? (record.password || '-') : '********'}
+                    {isLoggedIn ? (record.password ? (showSensitiveData ? record.password : '••••••••') : '-') : '********'}
                   </span>
                   {isLoggedIn && record.password && (
                     <DSButton
@@ -250,7 +269,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 </span>
                 <div className="flex items-center justify-between gap-1.5">
                   <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono truncate">
-                    {isLoggedIn ? (record.eFilingCode || '-') : '********'}
+                    {isLoggedIn ? (record.eFilingCode ? (showSensitiveData ? record.eFilingCode : '••••••••') : '-') : '********'}
                   </span>
                   {isLoggedIn && record.eFilingCode && (
                     <DSButton
@@ -274,7 +293,7 @@ export const BusinessDetailModal: React.FC<BusinessDetailModalProps> = ({
                 </span>
                 <div className="flex items-center justify-between gap-1.5">
                   <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono truncate">
-                    {isLoggedIn ? (record.ssoCode || '-') : '********'}
+                    {isLoggedIn ? (record.ssoCode ? (showSensitiveData ? record.ssoCode : '••••••••') : '-') : '********'}
                   </span>
                   {isLoggedIn && record.ssoCode && (
                     <DSButton

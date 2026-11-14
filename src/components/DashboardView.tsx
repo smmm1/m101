@@ -167,6 +167,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Filter tab: 'all' | 'has_efiling' | 'no_efiling'
   const [filterTab, setFilterTab] = useState<'all' | 'has_efiling' | 'no_efiling'>('all');
+  const [showDirectoryCredentials, setShowDirectoryCredentials] = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn || activeTab !== 'directory') setShowDirectoryCredentials(false);
+  }, [isLoggedIn, activeTab]);
 
   // Selected record for Detail Card View
   const [selectedId, setSelectedId] = useState<string>(() => (records.length > 0 ? records[0].id : ''));
@@ -470,7 +475,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
         <div className="m101-global-search" role="search">
           <Search size={17} aria-hidden="true" />
-          <input type="search" aria-label="ค้นหาทะเบียนกิจการ" placeholder="ค้นหากิจการ…" value={searchQuery} onChange={(event) => onSearchChange?.(event.target.value)} />
+          <input type="search" aria-label="ค้นหาทะเบียนกิจการ" placeholder="ค้นหากิจการ…" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
           <kbd>⌘ K</kbd>
         </div>
         <div className="mobile-utility-nav m101-topbar-actions flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -725,9 +730,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><span className="material-symbols-outlined text-[19px]">search</span></span>
                     <DSInput type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน เลขภาษี E-Filing หรือ SSO" aria-label="ค้นหาทะเบียนกิจการ" className="ds-directory-search" />
                   </div>
-                  <DSButton type="button" variant="secondary" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="inline-flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">swap_vert</span> ลำดับ {sortOrder === 'asc' ? 'น้อย → มาก' : 'มาก → น้อย'}
-                  </DSButton>
+                  <div className="m101-directory-view-actions">
+                    {isLoggedIn && (
+                      <DSButton
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setShowDirectoryCredentials((visible) => !visible)}
+                        className="m101-directory-credential-toggle"
+                        aria-pressed={showDirectoryCredentials}
+                        aria-label={showDirectoryCredentials ? 'ซ่อนรหัส E-Filing และประกันสังคม' : 'แสดงรหัส E-Filing และประกันสังคม'}
+                      >
+                        <span className="material-symbols-outlined text-[17px]">
+                          {showDirectoryCredentials ? 'visibility_off' : 'visibility'}
+                        </span>
+                        <span>{showDirectoryCredentials ? 'ซ่อนรหัส' : 'แสดงรหัส'}</span>
+                      </DSButton>
+                    )}
+                    <DSButton type="button" variant="secondary" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="inline-flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px]">swap_vert</span> ลำดับ {sortOrder === 'asc' ? 'น้อย → มาก' : 'มาก → น้อย'}
+                    </DSButton>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2" role="group" aria-label="กรองรายการ">
@@ -774,8 +796,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             onClick={() => setSelectedId(r.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id); } }} tabIndex={0} aria-selected={isSelected} className={`group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors focus:outline-none focus:bg-zinc-50 dark:focus:bg-zinc-950/30 ${isSelected ? 'bg-zinc-50/80 dark:bg-zinc-950/25' : 'hover:bg-slate-50 dark:hover:bg-slate-900/70'} ${draggedRecordId === r.id ? 'opacity-40' : ''} ${dragOverRecordId === r.id ? 'border-t-2 border-t-zinc-500' : ''}`}>
                             <td className="px-4 py-4 align-middle"><span className={`font-mono text-xs font-bold ${isSelected ? 'text-zinc-700 dark:text-zinc-300' : 'text-slate-400'}`}>{seqNum}</span></td>
                             <td className="px-4 py-4 align-middle"><div className="flex items-center gap-3 min-w-0"><span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${r.type === 'partnership' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : r.type === 'individual' ? 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300' : 'bg-zinc-50 text-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-300'}`}>{r.type === 'partnership' ? 'ห.' : 'บ.'}</span><div className="min-w-0"><div className={`text-sm font-bold truncate max-w-[360px] ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-slate-800 dark:text-slate-100'}`}>{r.companyName}</div><div className="mt-1 text-[11px] text-slate-400 font-mono">{isLoggedIn ? (r.taxId || '—') : (r.taxId ? `${r.taxId.slice(0,4)}*********` : '—')}</div></div></div></td>
-                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode || '—'}</span></td>
-                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode || '—'}</span></td>
+                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.eFilingCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.eFilingCode ? (isLoggedIn && showDirectoryCredentials ? r.eFilingCode : '••••••••') : '—'}</span></td>
+                            <td className="px-4 py-4 align-middle"><span className={`text-xs font-mono ${r.ssoCode ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}`}>{r.ssoCode ? (isLoggedIn && showDirectoryCredentials ? r.ssoCode : '••••••••') : '—'}</span></td>
                             <td className="px-4 py-4 align-middle"><DSBadge variant={r.status === 'completed' ? 'success' : r.status === 'in_progress' ? 'info' : 'warning'}>{statusLabel}</DSBadge></td>
                             <td className="px-4 py-4 align-middle text-right">{isLoggedIn ? <DSButton type="button" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingRecord(r); }} className="ds-table-action" title="แก้ไขกิจการ" aria-label={`แก้ไขกิจการ ${r.companyName}`}><span className="material-symbols-outlined text-[18px]">edit</span></DSButton> : <span className="text-slate-300">›</span>}</td>
                           </tr>

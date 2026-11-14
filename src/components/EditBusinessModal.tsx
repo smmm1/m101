@@ -30,6 +30,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
   const [topic, setTopic] = useState('');
   const [status, setStatus] = useState<BusinessStatus>('pending');
   const [formError, setFormError] = useState('');
+  const [showCredentialFields, setShowCredentialFields] = useState(false);
 
   useEffect(() => {
     if (record) {
@@ -45,6 +46,7 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
       setTopic(record.topic || record.sourceFileName || '');
       setStatus(record.status || 'pending');
       setFormError('');
+      setShowCredentialFields(false);
     }
   }, [record]);
 
@@ -261,11 +263,26 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
 
           {/* 3. Credentials & Filing Codes (e-Filing, Password, SSO) */}
           <div className="ds-form-section p-4 sm:p-5 space-y-4">
-            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
-              <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">key</span>
-              <h3 className="ds-form-section__title">
-                รหัสผ่านและข้อมูลการยื่นแบบ
-              </h3>
+            <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-[18px] text-zinc-700 dark:text-zinc-300">key</span>
+                <h3 className="ds-form-section__title">
+                  รหัสผ่านและข้อมูลการยื่นแบบ
+                </h3>
+              </div>
+              <DSButton
+                type="button"
+                onClick={() => setShowCredentialFields((visible) => !visible)}
+                variant="secondary"
+                className="m101-credential-toggle shrink-0"
+                aria-label={showCredentialFields ? 'ซ่อนข้อมูลลับ' : 'แสดงข้อมูลลับ'}
+                aria-pressed={showCredentialFields}
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  {showCredentialFields ? 'visibility_off' : 'visibility'}
+                </span>
+                <span>{showCredentialFields ? 'ซ่อนข้อมูล' : 'แสดงข้อมูล'}</span>
+              </DSButton>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -275,7 +292,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   รหัสผ่าน (Password)
                 </label>
                 <DSInput
-                  type="text"
+                  type={showCredentialFields ? 'text' : 'password'}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="ระบุรหัสผ่าน e-Filing"
@@ -289,7 +307,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   รหัสยื่น e-Filing
                 </label>
                 <DSInput
-                  type="text"
+                  type={showCredentialFields ? 'text' : 'password'}
+                  autoComplete="off"
                   value={eFilingCode}
                   onChange={(e) => setEFilingCode(e.target.value)}
                   placeholder="ระบุรหัสยื่น"
@@ -303,7 +322,8 @@ export const EditBusinessModal: React.FC<EditBusinessModalProps> = ({
                   รหัสประกันสังคม (สปส.)
                 </label>
                 <DSInput
-                  type="text"
+                  type={showCredentialFields ? 'text' : 'password'}
+                  autoComplete="off"
                   value={ssoCode}
                   onChange={(e) => setSsoCode(e.target.value)}
                   placeholder="ระบุรหัส สปส."

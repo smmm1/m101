@@ -1,4 +1,4 @@
-type Env = { DB: any; MONEY102_AUTH: Fetcher };
+type Env = { DB: any; MONEY102_AUTH: { fetch(request: Request): Promise<Response> } };
 type UserRow = { id: string; email: string; display_name: string; role: 'admin' | 'member'; password_hash: string; password_salt: string; pin_hash?: string | null; pin_salt?: string | null };
 
 const COOKIE_NAME = 'm101_session';
@@ -74,6 +74,23 @@ async function getUser(request: Request, env: Env): Promise<UserRow | null> {
 
 function publicUser(user: UserRow) {
   return { id: user.id, email: user.email, displayName: user.display_name, role: user.role };
+}
+
+
+type WorkspaceAccess = { user: UserRow; workspaceId: string; membershipType: 'owner' | 'collaborator' };
+
+async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAccess | null> {
+  const row = await env.DB.prepare(
+    "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1"
+  ).bind(user.id).first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
+  if (!row?.workspace_id || !row.membership_type) return null;
+  return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
+}
+
+async function requireWorkspaceAccess(request: Request, env: Env): Promise<WorkspaceAccess | null> {
+  const user = await getUser(request, env);
+  if (!user) return null;
+  return getWorkspaceAccess(user, env);
 }
 
 async function requireUser(request: Request, env: Env) {
@@ -174,21 +191,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ยืนยันบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 502);
       }
 
-      // Provision the corresponding M101 identity only after Money102 has
-      // verified the password. No Money102 token or business data is copied.
-      let user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
-      if (!user) {
-        const countRow = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first() as { count?: number } | null;
-        const role = Number(countRow?.count || 0) === 0 ? 'admin' : 'member';
-        // M101 does not store or derive any credential from the Money102 password.
-        // These legacy NOT NULL columns receive random unusable placeholders only;
-        // every login is verified against Money102 before an M101 session is issued.
-        const id = randomToken(16);
-        await env.DB.prepare('INSERT OR IGNORE INTO users (id, email, display_name, role, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .bind(id, email, email.split('@')[0], role, randomToken(32), randomToken(16), new Date().toISOString()).run();
-        user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
-      }
-      if (!user) return json({ error: 'สร้างบัญชีใน M101 ไม่สำเร็จ กรุณาลองใหม่' }, 500);
+      // Money102 proves identity, but it does not grant M101 workspace access.
+      // New accounts must be admitted through an owner-issued M101 invitation.
+      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
+      if (!user) return json({ error: 'บัญชีนี้ยังไม่ได้รับคำเชิญเข้า M101 กรุณาติดต่อ Owner' }, 403);
+      const workspaceAccess = await getWorkspaceAccess(user, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
 
       const token = randomToken();
       const createdAt = new Date().toISOString();
@@ -198,15 +206,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/auth/pin/status' && request.method === 'GET') {
-      const user = await requireUser(request, env);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const user = workspaceAccess.user;
       const row = await env.DB.prepare('SELECT pin_hash FROM users WHERE id = ?').bind(user.id).first() as { pin_hash?: string | null } | null;
       return json({ enabled: Boolean(row?.pin_hash) });
     }
 
     if (path === '/api/auth/pin/setup' && request.method === 'POST') {
-      const user = await requireUser(request, env);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const user = workspaceAccess.user;
       const body = await request.json() as { pin?: string };
       const pin = String(body.pin || '');
       if (!/^\d{6}$/.test(pin)) return json({ error: 'PIN ต้องเป็นตัวเลข 6 หลัก' }, 400);
@@ -255,6 +265,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'PIN ไม่ถูกต้อง' }, 401);
       }
 
+      const pinWorkspaceAccess = matchedUser ? await getWorkspaceAccess(matchedUser, env) : null;
+      if (!pinWorkspaceAccess) {
+        await env.DB.prepare('INSERT INTO pin_login_attempts (email, attempted_at) VALUES (?, ?)')
+          .bind(attemptKey, now).run();
+        return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาเข้าสู่ระบบด้วยรหัสผ่านหรือติดต่อ Owner' }, 403);
+      }
+
       await env.DB.prepare('DELETE FROM pin_login_attempts WHERE email = ?').bind(attemptKey).run();
       const token = randomToken();
       const createdAt = new Date().toISOString();
@@ -275,7 +292,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/public/data' && request.method === 'GET') {
-      const result = await env.DB.prepare('SELECT fiscal_year, records FROM directory_year_data ORDER BY fiscal_year').all();
+      // Visitor mode is intentionally limited to the explicitly bootstrapped primary workspace.
+      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind('m101-primary-workspace').all();
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) {
         const parsed = JSON.parse(String(row.records || '[]')) as Record<string, unknown>[];
@@ -286,9 +304,15 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/data' && request.method === 'GET') {
-      const user = await requireUser(request, env);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const result = await env.DB.prepare('SELECT fiscal_year, records FROM directory_year_data ORDER BY fiscal_year').all();
+
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
+      if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
+      const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
+      const workspaceState = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(workspaceAccess.workspaceId).first();
+      if (!workspaceState) return json({ error: 'ไม่พบ Workspace ที่ใช้งานอยู่' }, 404);
+      const directoryRevision = Number((workspaceState as { directory_revision?: number }).directory_revision || 1);
       const recordsByYear: Record<string, unknown[]> = {};
       for (const row of result.results || []) recordsByYear[String(row.fiscal_year)] = JSON.parse(String(row.records || '[]'));
       const availableYears = Object.keys(recordsByYear);
@@ -296,13 +320,27 @@ export async function onRequest(context: { request: Request; env: Env }) {
         recordsByYear['69'] = [];
         availableYears.push('69');
       }
-      return json({ recordsByYear, availableYears });
+      return json({ recordsByYear, availableYears, directoryRevision });
     }
 
     if (path === '/api/data' && request.method === 'PUT') {
-      const user = await requireUser(request, env);
+
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
+      if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const body = await request.json() as { availableYears?: string[]; recordsByYear?: Record<string, unknown[]> };
+
+      const body = await request.json() as {
+        availableYears?: string[];
+        recordsByYear?: Record<string, unknown[]>;
+        expectedDirectoryRevision?: number;
+      };
+      const expectedRevision = Number(body.expectedDirectoryRevision);
+      if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+        return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
+      }
+
       const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
@@ -311,27 +349,51 @@ export async function onRequest(context: { request: Request; env: Env }) {
         const rows = Array.isArray(records[year]) ? records[year] : [];
         if (rows.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
       }
-      const existing = await env.DB.prepare('SELECT fiscal_year FROM directory_year_data').all();
+
+      // The first statement claims the exact snapshot revision using a unique
+      // write token. Revision alone is insufficient: a stale competing batch could
+      // observe the winner's incremented revision and otherwise pass its own gate.
+      const nextRevision = expectedRevision + 1;
+      const writeToken = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const statements = [
+        env.DB.prepare('UPDATE workspaces SET directory_revision = directory_revision + 1, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ?')
+          .bind(writeToken, now, workspaceAccess.workspaceId, expectedRevision),
+        ...years.map((year: string) => env.DB.prepare(
+          'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
+        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, workspaceAccess.workspaceId, nextRevision, writeToken)),
+      ];
+
+      const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?')
+        .bind(workspaceAccess.workspaceId).all();
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
-      const statements = years.map((year) => env.DB.prepare(
-        'INSERT INTO directory_year_data (fiscal_year, records, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(fiscal_year) DO UPDATE SET records = excluded.records, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
-      ).bind(year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, new Date().toISOString()));
-      for (const removed of existingYears.filter((year) => !years.includes(year))) {
-        statements.push(env.DB.prepare('DELETE FROM directory_year_data WHERE fiscal_year = ?').bind(removed));
+      for (const removed of existingYears.filter((year: string) => !years.includes(year))) {
+        statements.push(env.DB.prepare(
+          'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)'
+        ).bind(workspaceAccess.workspaceId, removed, workspaceAccess.workspaceId, nextRevision, writeToken));
       }
-      await env.DB.batch(statements);
-      return json({ ok: true, savedYears: years.length });
+
+      const results = await env.DB.batch(statements);
+      const claimedRevision = Number(results[0]?.meta?.changes || 0);
+      if (claimedRevision !== 1) {
+        return json({
+          error: 'ข้อมูลถูกบันทึกจากอุปกรณ์อื่นก่อนแล้ว ระบบจึงยังไม่บันทึกข้อมูลชุดเก่านี้ เพื่อป้องกันข้อมูลใหม่สูญหาย กรุณาโหลดข้อมูลล่าสุดก่อนแก้ไขต่อ',
+          conflict: true,
+        }, 409);
+      }
+      return json({ ok: true, savedYears: years.length, directoryRevision: nextRevision });
     }
 
     // Annual work tracking is stored in its own D1 table, separate from directory JSON.
     if (path === '/api/annual-tasks' && request.method === 'GET') {
-      const user = await requireUser(request, env);
-      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       const fiscalYear = String(url.searchParams.get('year') || '').trim();
       if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
       const result = await env.DB.prepare(
-        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE fiscal_year = ? ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
-      ).bind(fiscalYear).all();
+        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? AND ( ? = ? OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = annual_tasks.workspace_id AND ba.business_id = annual_tasks.business_id AND ba.user_id = ?) ) ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
+      ).bind(workspaceAccess.workspaceId, fiscalYear, workspaceAccess.membershipType, 'owner', user.id).all();
       const tasks = (result.results || []).map((row: Record<string, unknown>) => ({
         id: String(row.id),
         fiscalYear: String(row.fiscal_year),
@@ -349,7 +411,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (path === '/api/annual-tasks' && request.method === 'POST') {
-      const user = await requireUser(request, env);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const body = await request.json() as {
         fiscalYear?: string; businessId?: string; businessName?: string;
@@ -369,12 +433,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
       if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
       if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
+      if (workspaceAccess.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS allowed FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?')
+          .bind(workspaceAccess.workspaceId, businessId, user.id).first();
+        if (!assigned) return json({ error: 'กิจการนี้ยังไม่ได้รับมอบหมายให้คุณ' }, 403);
+      }
       const id = randomToken(18);
       const now = new Date().toISOString();
       try {
         await env.DB.prepare(
-          'INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(id, fiscalYear, businessId, businessName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now).run();
+          'INSERT INTO annual_tasks (id, workspace_id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(id, workspaceAccess.workspaceId, fiscalYear, businessId, businessName, taskCode, taskName, status, dueDate || null, note, user.id, user.id, now, now).run();
       } catch (error) {
         const existing = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ?').bind(fiscalYear, businessId, taskCode).first();
         if (existing) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
@@ -385,9 +454,19 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
     if (annualTaskMatch && request.method === 'PUT') {
-      const user = await requireUser(request, env);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       const id = annualTaskMatch[1];
+      const currentTask = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?')
+        .bind(id, workspaceAccess.workspaceId).first() as { business_id?: string } | null;
+      if (!currentTask) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      if (workspaceAccess.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS allowed FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?')
+          .bind(workspaceAccess.workspaceId, String(currentTask.business_id || ''), user.id).first();
+        if (!assigned) return json({ error: 'คุณไม่มีสิทธิ์แก้ไขงานของกิจการนี้' }, 403);
+      }
       const body = await request.json() as {
         businessName?: string; taskCode?: string; taskName?: string;
         status?: string; dueDate?: string; note?: string;
@@ -405,12 +484,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       let result;
       try {
         result = await env.DB.prepare(
-          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ?'
-        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id).run();
+          'UPDATE annual_tasks SET business_name = ?, task_code = ?, task_name = ?, status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ?'
+        ).bind(businessName, taskCode, taskName, status, dueDate || null, note, user.id, new Date().toISOString(), id, workspaceAccess.workspaceId).run();
       } catch (error) {
-        const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ?').bind(id).first() as { fiscal_year?: string; business_id?: string } | null;
+        const current = await env.DB.prepare('SELECT fiscal_year, business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, workspaceAccess.workspaceId).first() as { fiscal_year?: string; business_id?: string } | null;
         if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
-        const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(current.fiscal_year, current.business_id, taskCode, id).first();
+        const duplicate = await env.DB.prepare('SELECT id FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? AND business_id = ? AND task_code = ? AND id != ?').bind(workspaceAccess.workspaceId, current.fiscal_year, current.business_id, taskCode, id).first();
         if (duplicate) return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
         throw error;
       }
@@ -419,10 +498,178 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
 
     if (annualTaskMatch && request.method === 'DELETE') {
-      const user = await requireUser(request, env);
+      const workspaceAccess = await requireWorkspaceAccess(request, env);
+      if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
+      const user = workspaceAccess.user;
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
-      const result = await env.DB.prepare('DELETE FROM annual_tasks WHERE id = ?').bind(annualTaskMatch[1]).run();
+      const task = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], workspaceAccess.workspaceId).first() as { business_id?: string } | null;
+      if (!task) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      if (workspaceAccess.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS allowed FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?')
+          .bind(workspaceAccess.workspaceId, String(task.business_id || ''), user.id).first();
+        if (!assigned) return json({ error: 'คุณไม่มีสิทธิ์ลบงานของกิจการนี้' }, 403);
+      }
+      const result = await env.DB.prepare('DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], workspaceAccess.workspaceId).run();
       if (!result.meta?.changes) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      return json({ ok: true });
+    }
+
+
+
+    if (path === '/api/workspace/invitations/accept' && request.method === 'POST') {
+      const body = await request.json() as { email?: string; password?: string; token?: string };
+      const email = String(body.email || '').trim().toLowerCase();
+      const password = String(body.password || '');
+      const inviteToken = String(body.token || '').trim();
+      if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password || password.length > 1024 || !inviteToken || inviteToken.length > 256) {
+        return json({ error: 'กรุณาตรวจสอบอีเมล รหัสผ่าน และรหัสคำเชิญ' }, 400);
+      }
+
+      // Verify the Money102 identity in this request. A normal M101 session cannot
+      // be obtained yet because the invited account has no active workspace membership.
+      let remoteResponse: Response;
+      try {
+        remoteResponse = await env.MONEY102_AUTH.fetch(new Request('https://money102-auth.internal/api/auth/signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }));
+      } catch (error) {
+        console.error('M101 invitation identity verification failed', error);
+        return json({ error: 'เชื่อมต่อระบบบัญชี Money102 ไม่สำเร็จ กรุณาลองใหม่' }, 503);
+      }
+      if (remoteResponse.status === 401) return json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' }, 401);
+      if (!remoteResponse.ok) return json({ error: 'ระบบบัญชี Money102 ยังไม่พร้อม กรุณาลองใหม่' }, remoteResponse.status === 429 ? 429 : 503);
+      let remote: { user?: { id?: string; email?: string }; token?: string };
+      try { remote = await remoteResponse.json() as typeof remote; } catch {
+        return json({ error: 'ระบบบัญชี Money102 ส่งข้อมูลกลับมาไม่ถูกต้อง' }, 502);
+      }
+      if (!remote.token || !remote.user?.id || String(remote.user.email || '').trim().toLowerCase() !== email) {
+        return json({ error: 'ยืนยันบัญชี Money102 ไม่สำเร็จ' }, 502);
+      }
+
+      const user = await env.DB.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first() as UserRow | null;
+      if (!user) return json({ error: 'บัญชีนี้ยังไม่มีข้อมูลผู้ใช้ M101 ที่เตรียมไว้ กรุณาติดต่อ Owner ให้ตรวจสอบการเตรียมบัญชีก่อนรับคำเชิญ' }, 403);
+      const tokenHash = await digest(inviteToken);
+      const invitation = await env.DB.prepare(
+        `SELECT wi.id, wi.workspace_id FROM workspace_invitations wi JOIN workspaces w ON w.id = wi.workspace_id AND w.status = 'active' JOIN workspace_memberships owner_membership ON owner_membership.workspace_id = w.id AND owner_membership.user_id = w.owner_user_id AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' WHERE wi.token_hash = ? AND lower(wi.email) = ? AND wi.accepted_at IS NULL AND wi.revoked_at IS NULL AND wi.expires_at > ?`
+      ).bind(tokenHash, email, Math.floor(Date.now() / 1000)).first() as { id?: string; workspace_id?: string } | null;
+      if (!invitation?.id || !invitation.workspace_id) return json({ error: 'คำเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' }, 403);
+
+      const priorMembership = await env.DB.prepare('SELECT status FROM workspace_memberships WHERE workspace_id = ? AND user_id = ?')
+        .bind(invitation.workspace_id, user.id).first() as { status?: string } | null;
+      if (priorMembership && priorMembership.status !== 'revoked') {
+        return json({ error: 'บัญชีนี้มีสถานะสมาชิกใน Workspace อยู่แล้ว กรุณาติดต่อ Owner' }, 409);
+      }
+
+      const now = new Date().toISOString();
+      const sessionToken = randomToken();
+      const sessionHash = await digest(sessionToken);
+      const expiresAt = Math.floor(Date.now() / 1000) + SESSION_SECONDS;
+      const membershipId = randomToken(18);
+      const auditId = randomToken(18);
+      const consumed = await env.DB.batch([
+        env.DB.prepare("UPDATE workspace_invitations SET accepted_by = ?, accepted_at = ? WHERE id = ? AND token_hash = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ? AND EXISTS (SELECT 1 FROM workspaces w JOIN workspace_memberships om ON om.workspace_id = w.id AND om.user_id = w.owner_user_id AND om.membership_type = 'owner' AND om.status = 'active' WHERE w.id = workspace_invitations.workspace_id AND w.status = 'active')")
+          .bind(user.id, now, invitation.id, tokenHash, email, Math.floor(Date.now() / 1000)),
+        env.DB.prepare("INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, workspace_id, ?, 'collaborator', 'active', ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ? ON CONFLICT(workspace_id, user_id) DO UPDATE SET membership_type = 'collaborator', status = 'active', updated_at = excluded.updated_at WHERE workspace_memberships.status = 'revoked'")
+          .bind(membershipId, user.id, now, now, invitation.id, user.id, now),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, workspace_id, ?, 'invitation.accepted', 'workspace_invitation', id, ?, ? FROM workspace_invitations WHERE id = ? AND accepted_by = ? AND accepted_at = ?")
+          .bind(auditId, user.id, JSON.stringify({ email }), now, invitation.id, user.id, now),
+        env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_invitations wi JOIN workspace_memberships wm ON wm.workspace_id = wi.workspace_id AND wm.user_id = wi.accepted_by AND wm.status = 'active' AND wm.membership_type = 'collaborator' WHERE wi.id = ? AND wi.accepted_by = ? AND wi.accepted_at = ?)")
+          .bind(sessionHash, user.id, expiresAt, now, invitation.id, user.id, now),
+      ]);
+      if (!consumed[0]?.meta?.changes || !consumed[1]?.meta?.changes || !consumed[2]?.meta?.changes || !consumed[3]?.meta?.changes) {
+        return json({ error: 'คำเชิญถูกใช้หรือเปลี่ยนสถานะไปแล้ว กรุณาขอคำเชิญใหม่' }, 409);
+      }
+      return json({ ok: true, user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(sessionToken) });
+    }
+
+    if (path === '/api/workspace/invitations' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการคำเชิญได้' }, 403);
+      const result = await env.DB.prepare('SELECT id, email, expires_at, accepted_at, revoked_at, created_at FROM workspace_invitations WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 100').bind(access.workspaceId).all();
+      return json({ invitations: result.results || [] });
+    }
+
+    if (path === '/api/workspace/invitations' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ส่งคำเชิญได้' }, 403);
+      const body = await request.json() as { email?: string; expiresInHours?: number };
+      const email = String(body.email || '').trim().toLowerCase();
+      const expiresInHours = Number(body.expiresInHours ?? 72);
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'อีเมลไม่ถูกต้อง' }, 400);
+      if (!Number.isInteger(expiresInHours) || expiresInHours < 1 || expiresInHours > 168) return json({ error: 'อายุคำเชิญต้องอยู่ระหว่าง 1–168 ชั่วโมง' }, 400);
+      const existing = await env.DB.prepare("SELECT wm.id FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND lower(u.email) = ? AND wm.status = 'active'").bind(access.workspaceId, email).first();
+      if (existing) return json({ error: 'อีเมลนี้เป็นสมาชิก Workspace อยู่แล้ว' }, 409);
+      const pending = await env.DB.prepare("SELECT id FROM workspace_invitations WHERE workspace_id = ? AND lower(email) = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?").bind(access.workspaceId, email, Math.floor(Date.now() / 1000)).first();
+      if (pending) return json({ error: 'มีคำเชิญที่ยังใช้งานได้สำหรับอีเมลนี้แล้ว' }, 409);
+      const id = randomToken(18), token = randomToken(32), tokenHash = await digest(token);
+      const now = new Date().toISOString(), expiresAt = Math.floor(Date.now() / 1000) + expiresInHours * 3600;
+      await env.DB.batch([
+        env.DB.prepare('INSERT INTO workspace_invitations (id, workspace_id, email, token_hash, expires_at, invited_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, access.workspaceId, email, tokenHash, expiresAt, access.user.id, now),
+        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'invitation.created', 'workspace_invitation', id, JSON.stringify({ email, expiresAt }), now)
+      ]);
+      return json({ ok: true, invitation: { id, email, expiresAt, token } }, 201);
+    }
+
+    const invitationRevokeMatch = path.match(/^\/api\/workspace\/invitations\/([A-Za-z0-9_-]+)\/revoke$/);
+    if (invitationRevokeMatch && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ยกเลิกคำเชิญได้' }, 403);
+      const id = invitationRevokeMatch[1], now = new Date().toISOString();
+      const invitation = await env.DB.prepare('SELECT email FROM workspace_invitations WHERE id = ? AND workspace_id = ? AND accepted_at IS NULL AND revoked_at IS NULL').bind(id, access.workspaceId).first() as { email?: string } | null;
+      if (!invitation) return json({ error: 'ไม่พบคำเชิญที่ยังยกเลิกได้' }, 404);
+      const result = await env.DB.batch([
+        env.DB.prepare('UPDATE workspace_invitations SET revoked_at = ? WHERE id = ? AND workspace_id = ? AND accepted_at IS NULL AND revoked_at IS NULL').bind(now, id, access.workspaceId),
+        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'invitation.revoked', 'workspace_invitation', id, JSON.stringify({ email: invitation.email || '' }), now)
+      ]);
+      if (!result[0]?.meta?.changes) return json({ error: 'คำเชิญถูกเปลี่ยนสถานะไปแล้ว' }, 409);
+      return json({ ok: true });
+    }
+
+    if (path === '/api/workspace/assignments' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ดูแลการมอบหมายได้' }, 403);
+      const result = await env.DB.prepare("SELECT ba.id, ba.business_id, ba.user_id, u.email, u.display_name, ba.assigned_by, ba.created_at FROM business_assignments ba JOIN users u ON u.id = ba.user_id JOIN workspace_memberships wm ON wm.workspace_id = ba.workspace_id AND wm.user_id = ba.user_id WHERE ba.workspace_id = ? AND wm.status = 'active' AND wm.membership_type = 'collaborator' ORDER BY ba.created_at DESC").bind(access.workspaceId).all();
+      return json({ assignments: result.results || [] });
+    }
+
+    if (path === '/api/workspace/assignments' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่มอบหมายกิจการได้' }, 403);
+      const body = await request.json() as { businessId?: string; userId?: string };
+      const businessId = String(body.businessId || '').trim(), userId = String(body.userId || '').trim();
+      if (!businessId || businessId.length > 160 || !userId || userId.length > 160) return json({ error: 'รหัสกิจการหรือสมาชิกไม่ถูกต้อง' }, 400);
+      const collaborator = await env.DB.prepare("SELECT user_id FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active'").bind(access.workspaceId, userId).first();
+      if (!collaborator) return json({ error: 'ไม่พบสมาชิกที่มีสถานะ Collaborator ใน Workspace นี้' }, 404);
+      const existing = await env.DB.prepare('SELECT id FROM business_assignments WHERE workspace_id = ? AND business_id = ? AND user_id = ?').bind(access.workspaceId, businessId, userId).first();
+      if (existing) return json({ ok: true, alreadyAssigned: true });
+      const id = randomToken(18), now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, access.workspaceId, businessId, userId, access.user.id, now),
+        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.created', 'business_assignment', id, JSON.stringify({ businessId, collaboratorUserId: userId }), now)
+      ]);
+      return json({ ok: true, id }, 201);
+    }
+
+    const assignmentDeleteMatch = path.match(/^\/api\/workspace\/assignments\/([A-Za-z0-9_-]+)$/);
+    if (assignmentDeleteMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่ยกเลิกการมอบหมายได้' }, 403);
+      const id = assignmentDeleteMatch[1];
+      const assignment = await env.DB.prepare('SELECT business_id, user_id FROM business_assignments WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string; user_id?: string } | null;
+      if (!assignment) return json({ error: 'ไม่พบรายการมอบหมายนี้' }, 404);
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM business_assignments WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId),
+        env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(randomToken(18), access.workspaceId, access.user.id, 'business.assignment.revoked', 'business_assignment', id, JSON.stringify({ businessId: assignment.business_id || '', collaboratorUserId: assignment.user_id || '' }), now)
+      ]);
       return json({ ok: true });
     }
 

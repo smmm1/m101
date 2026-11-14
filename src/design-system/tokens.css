@@ -1,29 +1,29 @@
-/* M101 Design System — single source of truth */
+/* M101 Modern Navy Design System — single source of truth */
 :root {
   color-scheme: light;
 
   /* Color: foundation */
-  --ds-color-canvas: #FAFAFA;
+  --ds-color-canvas: #F4F7FB;
   --ds-color-surface: #FFFFFF;
-  --ds-color-surface-subtle: #F4F4F5;
-  --ds-color-border: #E4E4E7;
-  --ds-color-border-strong: #A1A1AA;
-  --ds-color-text: #18181B;
-  --ds-color-text-secondary: #52525B;
-  --ds-color-text-muted: #A1A1AA;
-  --ds-color-primary: #18181B;
-  --ds-color-primary-hover: #09090B;
-  --ds-color-primary-soft: #F4F4F5;
+  --ds-color-surface-subtle: #EDF2F8;
+  --ds-color-border: #DCE4EE;
+  --ds-color-border-strong: #AAB8C9;
+  --ds-color-text: #17263B;
+  --ds-color-text-secondary: #52647C;
+  --ds-color-text-muted: #8190A4;
+  --ds-color-primary: #183B63;
+  --ds-color-primary-hover: #102D4D;
+  --ds-color-primary-soft: #E8EFF7;
 
-  /* Color: semantic */
-  --ds-color-success: #3F3F46;
-  --ds-color-success-soft: #F4F4F5;
-  --ds-color-warning: #52525B;
-  --ds-color-warning-soft: #F4F4F5;
-  --ds-color-danger: #27272A;
-  --ds-color-danger-soft: #F4F4F5;
-  --ds-color-info: #52525B;
-  --ds-color-info-soft: #F4F4F5;
+  /* Color: semantic — reserve color for meaningful status */
+  --ds-color-success: #18794E;
+  --ds-color-success-soft: #E8F5EE;
+  --ds-color-warning: #986316;
+  --ds-color-warning-soft: #FFF4DE;
+  --ds-color-danger: #B42332;
+  --ds-color-danger-soft: #FDECEE;
+  --ds-color-info: #245B91;
+  --ds-color-info-soft: #EAF2FA;
 
   /* Typography */
   --ds-font-sans: 'Inter', 'Noto Sans Thai', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -51,18 +51,18 @@
 
   /* Shape, elevation, layout */
   --ds-radius-sm: 4px;
-  --ds-radius-md: 6px;
-  --ds-radius-lg: 8px;
-  --ds-radius-xl: 12px;
+  --ds-radius-md: 7px;
+  --ds-radius-lg: 10px;
+  --ds-radius-xl: 14px;
   --ds-radius-full: 9999px;
-  --ds-shadow-sm: 0 1px 2px rgba(15, 23, 42, .04);
-  --ds-shadow-dialog: 0 16px 48px rgba(15, 23, 42, .14);
+  --ds-shadow-sm: 0 1px 3px rgba(24, 47, 76, .06);
+  --ds-shadow-dialog: 0 18px 52px rgba(18, 39, 65, .18);
   --ds-header-height: 64px;
   --ds-content-max: 1440px;
-  --ds-focus-ring: 0 0 0 3px rgba(24, 24, 27, .12);
+  --ds-focus-ring: 0 0 0 3px rgba(24, 59, 99, .18);
 
-  /* Compatibility aliases for the existing M101 shell.
-     Keep these aliases; feature styles must migrate to --ds-* tokens. */
+  /* Compatibility aliases for existing M101 screens.
+     Keep these aliases while migrating feature styles to --ds-* tokens. */
   --m101-bg: var(--ds-color-canvas);
   --m101-surface: var(--ds-color-surface);
   --m101-text: var(--ds-color-text);
@@ -77,7 +77,7 @@
   --m101-shadow: var(--ds-shadow-sm);
 }
 
-/* The initial product standard is light-only. */
+/* The existing M101 application remains light-first. */
 html, body {
   font-family: var(--ds-font-sans);
   color: var(--ds-color-text);
