@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import './components/BusinessRegistry.css';
 import './premium-minimal.css';
+import './design-system.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
