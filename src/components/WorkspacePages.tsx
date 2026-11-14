@@ -199,8 +199,8 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
         <p>จัดการข้อมูลนิติบุคคลและติดตามสถานะในพื้นที่ทำงานเดียว</p>
       </div>
       <div className="registry-hero-actions">
-        <button className="registry-action secondary" onClick={exportCsv}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3"/></svg><span>ส่งออก CSV</span></button>
-        {canManage&&<><label className="registry-action secondary registry-file-action"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4M3 13v4h14v-4"/></svg><span>นำเข้าเดิม</span><input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readLegacyImport(file);e.currentTarget.value='';}}/></label><button className="registry-action secondary" onClick={onOpenImport}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 10h14M3 16h14M7 2v4m6 2v4m-6 2v4"/></svg><span>จับคู่ไฟล์</span></button><button className="registry-action primary" onClick={()=>setEditor(blankBusiness())}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg><span>เพิ่มกิจการ</span></button></>}
+        <button type="button" className="registry-action secondary" onClick={exportCsv}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3"/></svg><span>ส่งออก CSV</span></button>
+        {canManage&&<><label className="registry-action secondary registry-file-action"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4M3 13v4h14v-4"/></svg><span>นำเข้าเดิม</span><input type="file" accept=".xlsx,.xls,.xlsm,.csv,text/csv" onChange={e=>{const file=e.target.files?.[0];if(file)void readLegacyImport(file);e.currentTarget.value='';}}/></label><button type="button" className="registry-action secondary" onClick={onOpenImport}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M3 10h14M3 16h14M7 2v4m6 2v4m-6 2v4"/></svg><span>จับคู่ไฟล์</span></button><button type="button" className="registry-action primary" onClick={()=>setEditor(blankBusiness())}><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"/></svg><span>เพิ่มกิจการ</span></button></>}
       </div>
     </header>
     <div className="registry-overview">
@@ -208,16 +208,16 @@ export function BusinessRegistry({ year: initialYear = '69', globalSearch = '', 
       <div className="registry-metric"><span>ผลการค้นหา</span><strong>{filtered.length.toLocaleString('th-TH')}</strong><small>{search?'ตรงกับคำค้นหา':'แสดงทุกรายการ'}</small></div>
       <div className="registry-metric"><span>บริษัทจำกัด</span><strong>{records.filter(r=>r.type==='company').length.toLocaleString('th-TH')}</strong><small>ประเภทนิติบุคคล</small></div>
       <div className="registry-metric"><span>ห้างหุ้นส่วน</span><strong>{records.filter(r=>r.type==='partnership').length.toLocaleString('th-TH')}</strong><small>ประเภทนิติบุคคล</small></div>
-      <div className="registry-year-control"><label htmlFor="registry-year">รอบปีบัญชี</label><select id="registry-year" value={year} onChange={e=>{setYear(e.target.value);onYearChange?.(e.target.value);}}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>{canManage&&<div className="registry-add-year"><input aria-label="รอบปีใหม่" value={newYear} onChange={e=>setNewYear(e.target.value)} placeholder="ปีใหม่"/><button onClick={()=>void startNewYear()}>เพิ่มปี</button></div>}</div>
+      <div className="registry-year-control"><label htmlFor="registry-year">รอบปีบัญชี</label><select id="registry-year" value={year} onChange={e=>{setYear(e.target.value);onYearChange?.(e.target.value);}}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>{canManage&&<div className="registry-add-year"><input aria-label="รอบปีใหม่" value={newYear} onChange={e=>setNewYear(e.target.value)} placeholder="ปีใหม่"/><button type="button" onClick={()=>void startNewYear()} disabled={saving||!newYear.trim()}>{saving?'กำลังบันทึก…':'เพิ่มปี'}</button></div>}</div>
     </div>
     <div className="registry-workspace-bar">
-      <div><span className="registry-section-label">DIRECTORY RECORDS</span><h2>รายการกิจการ <span>{filtered.length.toLocaleString('th-TH')}</span></h2></div>
-      <div className="registry-tools"><label className="registry-search"><span>ค้นหา</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ชื่อกิจการ เลขทะเบียน หรือรหัส..."/></label><button className="registry-refresh" onClick={()=>void load(year)} disabled={loading}>{loading?'กำลังโหลด':'โหลดข้อมูลใหม่'}</button></div>
+      <div><span className="registry-section-label">DIRECTORY RECORDS</span><h2>รายการกิจการ <span aria-live="polite" aria-atomic="true">{filtered.length.toLocaleString('th-TH')}</span></h2></div>
+      <div className="registry-tools"><label className="registry-search"><span>ค้นหา</span><input type="search" aria-label="ค้นหาทะเบียนกิจการ" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ชื่อกิจการ เลขทะเบียน หรือรหัส..."/></label><button type="button" className="registry-refresh" onClick={()=>void load(year)} disabled={loading}>{loading?'กำลังโหลด':'โหลดข้อมูลใหม่'}</button></div>
     </div>
     {error&&<div className="m101-alert" role="alert">{error}<button onClick={()=>void load(year)}>โหลดข้อมูลล่าสุด</button></div>}
     <div className="registry-sheet-frame">
       <div className="registry-sheet-scroll">
-        <table className="registry-table" aria-label="ทะเบียนกิจการ">
+        <table className="registry-table" aria-label="ทะเบียนกิจการ" aria-busy={loading}>
           <thead><tr>
             <th scope="col">ลำดับ</th><th scope="col">ชื่อกิจการ / รายละเอียด</th><th scope="col">รูปแบบ</th><th scope="col">เลขทะเบียน / ผู้เสียภาษี</th><th scope="col">e-Filing</th><th scope="col">ประกันสังคม</th><th scope="col">วันที่ผู้สอบบัญชี</th><th scope="col">สถานะงาน</th><th scope="col">DBD</th><th scope="col">หมายเหตุ</th>{canManage&&<th scope="col">จัดการ</th>}
           </tr></thead>
