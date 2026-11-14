@@ -392,3 +392,30 @@
   .m101-registry-redesign .registry-table td.registry-cell-business b{font-size:10px}
   .m101-registry-redesign .registry-table td.registry-cell-business small{font-size:8px}
 }
+
+
+/* Phase 3 — compact directory actions and complete, readable data table */
+.m101-registry-redesign .registry-hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.m101-registry-redesign .registry-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 10px;font-size:11px;line-height:1;white-space:nowrap}
+.m101-registry-redesign .registry-action svg{width:15px;height:15px;flex:0 0 15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.m101-registry-redesign .registry-file-action{cursor:pointer}
+.m101-registry-redesign .registry-file-action input{display:none}
+.m101-registry-redesign .registry-sheet-scroll{max-width:100%;overflow:auto;overscroll-behavior-inline:contain}
+.m101-registry-redesign .registry-table{min-width:1460px;width:100%;border-collapse:separate;border-spacing:0}
+.m101-registry-redesign .registry-table thead th{position:sticky;top:0;z-index:2;padding:12px 11px;background:#f3f1eb;color:#716e64;font-size:11px;font-weight:650;white-space:nowrap}
+.m101-registry-redesign .registry-table tbody td{padding:12px 11px;font-size:12px;line-height:1.5;vertical-align:middle}
+.m101-registry-redesign .registry-table tbody tr:hover td{background:#faf9f6}
+.m101-registry-redesign .registry-cell-business{min-width:230px}
+.m101-registry-redesign .registry-cell-business b{font-size:13px;line-height:1.45}
+.m101-registry-redesign .registry-cell-business small{max-width:300px;font-size:11px}
+.m101-registry-redesign .registry-cell-mono{font-variant-numeric:tabular-nums;letter-spacing:.015em}
+.m101-registry-redesign .registry-cell-remark{min-width:150px;max-width:240px;white-space:normal}
+.m101-registry-redesign .registry-cell-actions{white-space:nowrap}
+.m101-registry-redesign .registry-cell-actions button{min-height:30px;padding:0 9px;font-size:11px}
+.m101-registry-redesign .registry-sheet-footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:620px){
+ .m101-registry-redesign .registry-hero-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+ .m101-registry-redesign .registry-action{min-height:36px;padding:0 8px}
+ .m101-registry-redesign .registry-action svg{width:14px;height:14px}
+ .m101-registry-redesign .registry-sheet-footer{align-items:flex-start;flex-direction:column}
+}
