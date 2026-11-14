@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './CommandCenter.css';
 
 type Business = { id: string; sequenceNo?: string; companyName?: string; taxId?: string; type?: string; status?: string };
@@ -22,8 +22,10 @@ export default function CommandCenter({ navigate, year = '69' }: Props) {
   const [tasks, setTasks] = useState<AnnualTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const requestVersion = useRef(0);
 
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
     setError('');
     try {
@@ -31,16 +33,21 @@ export default function CommandCenter({ navigate, year = '69' }: Props) {
         getJson(`/api/directory?year=${encodeURIComponent(year)}`),
         getJson(`/api/annual-tasks?year=${encodeURIComponent(year)}`),
       ]);
+      if (version !== requestVersion.current) return;
       setBusinesses(Array.isArray(directory.records) ? directory.records : []);
       setTasks(Array.isArray(work.tasks) ? work.tasks : []);
     } catch (cause) {
+      if (version !== requestVersion.current) return;
       setError(cause instanceof Error ? cause.message : 'โหลดข้อมูลภาพรวมไม่สำเร็จ');
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }, [year]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    return () => { requestVersion.current += 1; };
+  }, [load]);
 
   const metrics = useMemo(() => {
     const done = tasks.filter(task => task.status === 'completed').length;
