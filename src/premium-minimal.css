@@ -349,3 +349,27 @@ button{transition:background-color .14s ease,border-color .14s ease,color .14s e
  .m101-assignment-summary{justify-self:start}
  .m101-assignment-list{grid-template-columns:1fr;max-height:340px}
 }
+
+
+/* Phase 3 follow-up — business detail form and safer fiscal-year actions */
+.m101-business-detail-editor{width:min(760px,calc(100vw - 32px));max-height:min(88vh,860px);overflow:auto;overscroll-behavior:contain}
+.m101-business-detail-editor .m101-editor-head{position:sticky;top:0;z-index:3;background:#fff;padding-bottom:14px;border-bottom:1px solid var(--m101-line)}
+.m101-business-detail-editor .m101-editor-head h2{font-size:20px;letter-spacing:-.025em}
+.m101-business-detail-editor .m101-editor-head p{margin:5px 0 0;color:var(--m101-muted);font-size:12px}
+.m101-business-detail-editor .m101-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;padding:18px 0}
+.m101-business-detail-editor .m101-form-grid>label{min-width:0;display:flex;flex-direction:column;gap:7px;color:var(--m101-ink-soft);font-size:12px;font-weight:550}
+.m101-business-detail-editor .m101-form-grid input:not([type=checkbox]),.m101-business-detail-editor .m101-form-grid select,.m101-business-detail-editor .m101-form-grid textarea{width:100%;min-width:0;min-height:40px;padding:9px 11px;border:1px solid var(--m101-line-strong);border-radius:5px;background:#fff;color:var(--m101-ink);font:inherit;font-size:13px}
+.m101-business-detail-editor .m101-form-grid textarea{min-height:88px;resize:vertical}
+.m101-business-detail-editor .m101-form-grid .m101-field-primary{grid-column:1/-1}
+.m101-business-detail-editor .m101-password-field{position:relative}
+.m101-business-detail-editor .m101-password-field button{align-self:flex-end;margin-top:-37px;margin-right:5px;min-height:30px;padding:0 9px;border:0;border-radius:4px;background:#f3f1eb;color:var(--m101-ink-soft);font-size:11px}
+.m101-business-detail-editor .m101-check-field{grid-column:1/-1;display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid var(--m101-line);border-radius:5px;background:#faf9f6}
+.m101-business-detail-editor .m101-check-field input{width:16px;height:16px;accent-color:var(--m101-accent)}
+.m101-business-detail-editor input:focus-visible,.m101-business-detail-editor select:focus-visible,.m101-business-detail-editor textarea:focus-visible,.m101-business-detail-editor button:focus-visible{outline:2px solid var(--ds-focus);outline-offset:2px}
+.m101-business-detail-editor .m101-editor-actions{position:sticky;bottom:-1px;z-index:3;margin:0 -20px -20px;padding:13px 20px;background:#fff;border-top:1px solid var(--m101-line)}
+@media(max-width:620px){
+ .m101-business-detail-editor{width:calc(100vw - 20px);max-height:92vh;padding:16px}
+ .m101-business-detail-editor .m101-form-grid{grid-template-columns:1fr;gap:12px}
+ .m101-business-detail-editor .m101-form-grid .m101-field-primary,.m101-business-detail-editor .m101-check-field{grid-column:auto}
+ .m101-business-detail-editor .m101-editor-actions{margin:0 -16px -16px;padding:12px 16px}
+}
