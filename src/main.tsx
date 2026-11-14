@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import './components/BusinessRegistry.css';
+import './premium-minimal.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
