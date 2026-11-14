@@ -273,8 +273,9 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       }
       return record;
     });
+    // The parent owns duplicate resolution and persistence feedback. Do not
+    // announce success here: the import may still be awaiting user resolution.
     onImportRecords(output);
-    onShowToast(`นำเข้าข้อมูล ${output.length} รายการ จาก ${sheetName} สำเร็จ`, 'นำเข้าสำเร็จ', 'success');
     close();
   };
 
