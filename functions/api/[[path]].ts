@@ -6,6 +6,13 @@ const SESSION_SECONDS = 60 * 60 * 24 * 30;
 // Cloudflare Workers WebCrypto rejects PBKDF2 iteration counts above 100,000.
 const PBKDF2_ITERATIONS = 100000;
 
+function isValidDateOnly(value: string) {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   const responseHeaders = new Headers(headers);
   responseHeaders.set('Content-Type', 'application/json; charset=utf-8');
@@ -83,10 +90,24 @@ function publicUser(user: UserRow) {
 
 type WorkspaceAccess = { user: UserRow; workspaceId: string; membershipType: 'owner' | 'collaborator' };
 
-async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAccess | null> {
-  const row = await env.DB.prepare(
-    "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1"
-  ).bind(user.id).first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
+const WORKSPACE_COOKIE = 'm101_workspace';
+
+function getWorkspaceCookie(request: Request): string {
+  return getCookie(request, WORKSPACE_COOKIE) || '';
+}
+
+function workspaceCookie(value: string, maxAge = SESSION_SECONDS): string {
+  return WORKSPACE_COOKIE + '=' + value + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + maxAge;
+}
+
+async function getWorkspaceAccess(user: UserRow, env: Env, request?: Request): Promise<WorkspaceAccess | null> {
+  const selectedWorkspaceId = request ? getWorkspaceCookie(request) : '';
+  const query = selectedWorkspaceId
+    ? "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+    : "SELECT wm.workspace_id, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END LIMIT 1";
+  const statement = selectedWorkspaceId ? env.DB.prepare(query).bind(user.id, selectedWorkspaceId) : env.DB.prepare(query).bind(user.id);
+  const row = await statement.first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
+  // A stale or forged selection must never silently fall back to another Workspace.
   if (!row?.workspace_id || !row.membership_type) return null;
   return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
 }
@@ -113,7 +134,7 @@ async function findWorkspaceBusiness(workspaceId: string, businessId: string, en
 async function requireWorkspaceAccess(request: Request, env: Env): Promise<WorkspaceAccess | null> {
   const user = await getUser(request, env);
   if (!user) return null;
-  return getWorkspaceAccess(user, env);
+  return getWorkspaceAccess(user, env, request);
 }
 
 async function requireUser(request: Request, env: Env) {
@@ -260,7 +281,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
       }
       // Valid credentials clear this IP+username window before workspace checks.
       await env.DB.prepare('DELETE FROM auth_rate_limit_attempts WHERE attempt_key = ?').bind(attemptKey).run();
-      const workspaceAccess = await getWorkspaceAccess(user, env);
+      const workspaceAccess = await getWorkspaceAccess(user, env, request);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
       const token = randomToken();
       const createdAt = new Date().toISOString();
@@ -292,15 +313,592 @@ export async function onRequest(context: { request: Request; env: Env }) {
       return json({ ok: true, message: 'เปลี่ยนรหัสผ่านแล้ว' });
     }
 
+    if (path === '/api/workspaces' && request.method === 'GET') {
+      const user = await getUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const result = await env.DB.prepare(
+        "SELECT w.id, w.name, wm.membership_type FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.status = 'active' AND w.status = 'active' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END, w.name COLLATE NOCASE"
+      ).bind(user.id).all();
+      const workspaces = (result.results || []).map((row: Record<string, unknown>) => ({ id: String(row.id), name: String(row.name), membershipType: String(row.membership_type) }));
+      const access = await getWorkspaceAccess(user, env, request);
+      return json({ workspaces, activeWorkspaceId: access?.workspaceId || '' });
+    }
+
+    if (path === '/api/workspaces/select' && request.method === 'POST') {
+      const user = await getUser(request, env);
+      if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { workspaceId?: string };
+      const workspaceId = String(body.workspaceId || '').trim();
+      if (!workspaceId || workspaceId.length > 128) return json({ error: 'Workspace ที่เลือกไม่ถูกต้อง' }, 400);
+      const membership = await env.DB.prepare(
+        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id = ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).bind(user.id, workspaceId).first();
+      if (!membership) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้าถึง Workspace ที่เลือก' }, 403);
+      return json({ ok: true }, 200, { 'Set-Cookie': workspaceCookie(workspaceId) });
+    }
+
     if (path === '/api/auth/me' && request.method === 'GET') {
       const user = await getUser(request, env);
-      return json({ user: user ? publicUser(user) : null });
+      const access = user ? await getWorkspaceAccess(user, env, request) : null;
+      return json({ user: user ? publicUser(user) : null, activeWorkspaceId: access?.workspaceId || '' });
     }
 
     if (path === '/api/auth/logout' && request.method === 'POST') {
       const token = getCookie(request, COOKIE_NAME);
       if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await digest(token)).run();
+      // Clear the authentication cookie explicitly; the workspace preference cookie is non-auth state.
       return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
+    }
+
+
+    // Workspace-scoped directory API. Reads use the authenticated workspace;
+    // full-snapshot writes are Owner-only and guarded by a workspace CAS revision.
+    if (path === '/api/directory' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const fiscalYear = String(url.searchParams.get('year') || '').trim();
+      if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      const snapshot = await env.DB.batch([
+        env.DB.prepare("SELECT w.directory_revision FROM workspaces w JOIN workspace_memberships wm ON wm.workspace_id = w.id WHERE w.id = ? AND w.status = 'active' AND wm.user_id = ? AND wm.status = 'active' AND wm.membership_type = ?")
+          .bind(access.workspaceId, access.user.id, access.membershipType),
+        env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(access.workspaceId),
+        env.DB.prepare('SELECT records, revision FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?').bind(access.workspaceId, fiscalYear),
+        ...(access.membershipType === 'owner' ? [] : [env.DB.prepare("SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND w.status = 'active')").bind(access.workspaceId, access.user.id, access.workspaceId, access.user.id)]),
+      ]);
+      const workspace = snapshot[0]?.results?.[0] as { directory_revision?: number } | undefined;
+      const years = snapshot[1];
+      const data = snapshot[2]?.results?.[0] as { records?: string; revision?: number } | undefined;
+      if (!workspace) return json({ error: 'สมาชิกหรือพื้นที่ทำงานนี้ไม่ได้เปิดใช้งานแล้ว กรุณาเข้าสู่ระบบใหม่' }, 403);
+      let records: unknown[] = [];
+      try { const parsed = JSON.parse(String(data?.records || '[]')); if (Array.isArray(parsed)) records = parsed; }
+      catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      if (access.membershipType !== 'owner') {
+        const assigned = snapshot[3];
+        const allowed = new Set(((assigned?.results || []) as Array<{ business_id: string }>).map(row => String(row.business_id)));
+        records = records.filter((record: unknown) => record && typeof record === 'object' && allowed.has(String((record as { id?: unknown }).id || '')));
+      }
+      const availableYears = (years.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
+      return json({ fiscalYear, records, availableYears, revision: Number(workspace.directory_revision || 1), yearRevision: Number(data?.revision || 1) });
+    }
+
+    if (path === '/api/directory' && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่บันทึกทะเบียนกิจการทั้งรอบปีได้' }, 403);
+      const body = await request.json() as { fiscalYear?: string; records?: unknown[]; revision?: number };
+      const fiscalYear = String(body.fiscalYear || '').trim();
+      const records = body.records;
+      const expectedRevision = Number(body.revision);
+      if (!/^\d{2,4}$/.test(fiscalYear) || !Array.isArray(records) || records.length > 10000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+        return json({ error: 'ข้อมูลทะเบียนหรือเลขรุ่นไม่ถูกต้อง' }, 400);
+      }
+      const serialized = JSON.stringify(records);
+      if (serialized.length > 8_000_000) return json({ error: 'ข้อมูลทะเบียนมีขนาดใหญ่เกินไป' }, 413);
+      const current = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ? AND status = \'active\'')
+        .bind(access.workspaceId).first() as { directory_revision?: number } | null;
+      if (!current) return json({ error: 'ไม่พบพื้นที่ทำงานที่ใช้งานได้' }, 403);
+      if (Number(current.directory_revision || 1) !== expectedRevision) {
+        return json({ error: 'ทะเบียนกิจการมีการเปลี่ยนแปลงจากผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึก', conflict: true, revision: Number(current.directory_revision || 1) }, 409);
+      }
+      const nextRevision = expectedRevision + 1;
+      const writeToken = randomToken(18);
+      const now = new Date().toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare("UPDATE workspaces SET directory_revision = ?, directory_write_token = ?, updated_at = ? WHERE id = ? AND directory_revision = ? AND status = 'active' AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = workspaces.id AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND u.role = 'admin')")
+          .bind(nextRevision, writeToken, now, access.workspaceId, expectedRevision, access.user.id),
+        env.DB.prepare("INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at")
+          .bind(access.workspaceId, fiscalYear, serialized, access.user.id, now, access.workspaceId, nextRevision, writeToken),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'directory.year_saved', 'directory_year', ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, fiscalYear, JSON.stringify({ recordCount: records.length, revision: nextRevision }), now, access.workspaceId, nextRevision, writeToken),
+        // Remove only dangling relationship references after the new year snapshot is saved.
+        // A business remains valid while it exists in ANY fiscal-year snapshot in this Workspace.
+        env.DB.prepare("DELETE FROM business_assignments WHERE workspace_id = ? AND NOT EXISTS (SELECT 1 FROM workspace_directory_year_data d, json_each(CASE WHEN json_valid(d.records) THEN d.records ELSE '[]' END) item WHERE d.workspace_id = business_assignments.workspace_id AND json_extract(item.value, '$.id') = business_assignments.business_id) AND EXISTS (SELECT 1 FROM workspaces w JOIN workspace_memberships wm ON wm.workspace_id = w.id JOIN users u ON u.id = wm.user_id WHERE w.id = ? AND w.status = 'active' AND w.directory_revision = ? AND w.directory_write_token = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND u.role = 'admin')")
+          .bind(access.workspaceId, access.workspaceId, nextRevision, writeToken, access.user.id),
+        env.DB.prepare("DELETE FROM business_relationship_group_memberships WHERE group_id IN (SELECT id FROM business_relationship_groups WHERE workspace_id = ?) AND NOT EXISTS (SELECT 1 FROM workspace_directory_year_data d, json_each(CASE WHEN json_valid(d.records) THEN d.records ELSE '[]' END) item WHERE d.workspace_id = ? AND json_extract(item.value, '$.id') = business_relationship_group_memberships.business_id) AND EXISTS (SELECT 1 FROM workspaces w JOIN workspace_memberships wm ON wm.workspace_id = w.id JOIN users u ON u.id = wm.user_id WHERE w.id = ? AND w.status = 'active' AND w.directory_revision = ? AND w.directory_write_token = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND u.role = 'admin')")
+          .bind(access.workspaceId, access.workspaceId, access.workspaceId, nextRevision, writeToken, access.user.id),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) {
+        const latest = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(access.workspaceId).first() as { directory_revision?: number } | null;
+        return json({ error: 'ทะเบียนกิจการมีการเปลี่ยนแปลงจากผู้ใช้อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึก', conflict: true, revision: Number(latest?.directory_revision || 1) }, 409);
+      }
+      return json({ ok: true, fiscalYear, savedRecords: records.length, revision: nextRevision });
+    }
+
+
+    // Annual obligations are stored as relational D1 rows scoped to the active workspace.
+    if (path === '/api/annual-tasks' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const fiscalYear = String(url.searchParams.get('year') || '').trim();
+      if (!/^\d{2,4}$/.test(fiscalYear)) return json({ error: 'รอบปีบัญชีไม่ถูกต้อง' }, 400);
+      const result = await env.DB.prepare(
+        'SELECT id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_at, updated_at FROM annual_tasks WHERE workspace_id = ? AND fiscal_year = ? ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END, due_date ASC, business_name COLLATE NOCASE ASC, task_name COLLATE NOCASE ASC'
+      ).bind(access.workspaceId, fiscalYear).all();
+      let tasks = (result.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), fiscalYear: String(row.fiscal_year), businessId: String(row.business_id),
+        businessName: String(row.business_name), taskCode: String(row.task_code), taskName: String(row.task_name),
+        status: String(row.status), dueDate: row.due_date ? String(row.due_date) : '',
+        note: String(row.note || ''), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+      }));
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?')
+          .bind(access.workspaceId, access.user.id).all();
+        const allowed = new Set((assigned.results || []).map((row: { business_id: string }) => String(row.business_id)));
+        tasks = tasks.filter((task: { businessId: string }) => allowed.has(task.businessId));
+      }
+      return json({ tasks });
+    }
+
+    if (path === '/api/annual-tasks' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { fiscalYear?: string; businessId?: string; taskCode?: string; taskName?: string; status?: string; dueDate?: string; note?: string };
+      const fiscalYear = String(body.fiscalYear || '').trim();
+      const businessId = String(body.businessId || '').trim();
+      const taskCode = String(body.taskCode || '').trim().toUpperCase();
+      const taskName = String(body.taskName || '').trim();
+      const status = String(body.status || 'pending');
+      const dueDate = String(body.dueDate || '').trim();
+      const note = String(body.note || '').trim();
+      if (!/^\d{2,4}$/.test(fiscalYear) || !businessId || businessId.length > 160 || !/^[A-Z0-9_-]{2,60}$/.test(taskCode) || !taskName || taskName.length > 120) return json({ error: 'กรุณาตรวจสอบรอบปี กิจการ และประเภทงาน' }, 400);
+      if (!['pending', 'in_progress', 'completed'].includes(status)) return json({ error: 'สถานะงานไม่ถูกต้อง' }, 400);
+      if (!isValidDateOnly(dueDate)) return json({ error: 'รูปแบบกำหนดส่งไม่ถูกต้อง' }, 400);
+      if (note.length > 2000) return json({ error: 'หมายเหตุยาวเกินไป' }, 400);
+      const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ?')
+        .bind(access.workspaceId, fiscalYear).first() as { records?: string } | null;
+      let business: Record<string, unknown> | undefined;
+      try {
+        const rows = JSON.parse(String(directory?.records || '[]'));
+        if (Array.isArray(rows)) business = rows.find((item: unknown) => item && typeof item === 'object' && String((item as { id?: unknown }).id || '') === businessId);
+      } catch { return json({ error: 'ข้อมูลทะเบียนกิจการไม่ถูกต้อง' }, 500); }
+      if (!business) return json({ error: 'ไม่พบกิจการในรอบปีที่เลือก' }, 404);
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS ok FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND business_id = ?')
+          .bind(access.workspaceId, access.user.id, businessId).first();
+        if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
+      }
+      const id = randomToken(18);
+      const now = new Date().toISOString();
+      try {
+        const results = await env.DB.batch([
+          env.DB.prepare("INSERT INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active' AND (? != 'owner' OR u.role = 'admin')) AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+            .bind(id, fiscalYear, businessId, String(business.companyName || 'กิจการไม่ระบุชื่อ'), taskCode, taskName, status, dueDate || null, note, access.user.id, access.user.id, now, now, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.membershipType, access.workspaceId, access.user.id, businessId),
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.created', 'annual_task', ?, ?, ? WHERE EXISTS (SELECT 1 FROM annual_tasks WHERE id = ? AND workspace_id = ? AND created_by = ?)")
+            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ fiscalYear, businessId, taskCode }), now, id, access.workspaceId, access.user.id),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+        if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติรายการงานไม่สำเร็จ กรุณาลองใหม่' }, 500);
+      } catch {
+        return json({ error: 'กิจการนี้มีงานประเภทนี้ในรอบปีดังกล่าวแล้ว' }, 409);
+      }
+      return json({ ok: true, id, createdAt: now, updatedAt: now }, 201);
+    }
+
+    const annualTaskMatch = path.match(/^\/api\/annual-tasks\/([A-Za-z0-9_-]+)$/);
+    if (annualTaskMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const id = annualTaskMatch[1];
+      const body = await request.json() as { status?: string; dueDate?: string; note?: string };
+      const status = String(body.status || '');
+      const dueDate = String(body.dueDate || '').trim();
+      const note = String(body.note || '').trim();
+      if (!['pending', 'in_progress', 'completed'].includes(status) || !isValidDateOnly(dueDate) || note.length > 2000) return json({ error: 'ข้อมูลสถานะงานไม่ถูกต้อง' }, 400);
+      const current = await env.DB.prepare('SELECT business_id FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(id, access.workspaceId).first() as { business_id?: string } | null;
+      if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      if (access.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT 1 AS ok FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND business_id = ?')
+          .bind(access.workspaceId, access.user.id, String(current.business_id)).first();
+        if (!assigned) return json({ error: 'ไม่มีสิทธิ์จัดการงานของกิจการนี้' }, 403);
+      }
+      const now = new Date().toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare("UPDATE annual_tasks SET status = ?, due_date = ?, note = ?, updated_by = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = ? AND wm.status = 'active' AND w.status = 'active' AND (? != 'owner' OR u.role = 'admin')) AND (? = 'owner' OR EXISTS (SELECT 1 FROM business_assignments ba WHERE ba.workspace_id = ? AND ba.user_id = ? AND ba.business_id = ?))")
+          .bind(status, dueDate || null, note, access.user.id, now, id, access.workspaceId, access.workspaceId, access.user.id, access.membershipType, access.membershipType, access.membershipType, access.workspaceId, access.user.id, String(current.business_id)),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.updated', 'annual_task', ?, ?, ? WHERE EXISTS (SELECT 1 FROM annual_tasks WHERE id = ? AND workspace_id = ? AND updated_by = ? AND updated_at = ?)")
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ status, dueDate }), now, id, access.workspaceId, access.user.id, now),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์สมาชิกหรือการมอบหมายกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติรายการงานไม่สำเร็จ กรุณาลองใหม่' }, 500);
+      return json({ ok: true });
+    }
+
+    if (annualTaskMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่ลบรายการงานได้' }, 403);
+      const current = await env.DB.prepare('SELECT business_id, task_code FROM annual_tasks WHERE id = ? AND workspace_id = ?').bind(annualTaskMatch[1], access.workspaceId).first() as { business_id?: string; task_code?: string } | null;
+      if (!current) return json({ error: 'ไม่พบรายการงานนี้' }, 404);
+      const now = new Date().toISOString();
+      const results = await env.DB.batch([
+        env.DB.prepare("DELETE FROM annual_tasks WHERE id = ? AND workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND u.role = 'admin')")
+          .bind(annualTaskMatch[1], access.workspaceId, access.workspaceId, access.user.id),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'annual_task.deleted', 'annual_task', ?, ?, ? WHERE changes() = 1")
+          .bind(randomToken(18), access.workspaceId, access.user.id, annualTaskMatch[1], JSON.stringify({ businessId: current.business_id, taskCode: current.task_code }), now),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      if (Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'บันทึกประวัติการลบไม่สำเร็จ กรุณาตรวจสอบรายการอีกครั้ง' }, 500);
+      return json({ ok: true });
+    }
+
+
+    // Owner-only member administration. There is no public sign-up endpoint.
+    if (path === '/api/admin/users' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการสมาชิกได้' }, 403);
+      const result = await env.DB.prepare(
+        "SELECT u.id, u.username, u.display_name, u.role, u.account_status, u.local_password_set, wm.membership_type FROM workspace_memberships wm JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.status != 'revoked' ORDER BY CASE wm.membership_type WHEN 'owner' THEN 0 ELSE 1 END, u.username COLLATE NOCASE"
+      ).bind(access.workspaceId).all();
+      const users = (result.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), username: String(row.username || ''), displayName: String(row.display_name || ''),
+        role: String(row.role), accountStatus: String(row.account_status), localPasswordSet: Number(row.local_password_set) === 1,
+        membershipType: String(row.membership_type),
+      }));
+      return json({ users });
+    }
+
+    if (path === '/api/admin/users' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่เพิ่มสมาชิกได้' }, 403);
+      const body = await request.json() as { username?: string; displayName?: string; password?: string };
+      const username = String(body.username || '').trim();
+      const displayName = String(body.displayName || '').trim();
+      const password = String(body.password || '');
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'ID ต้องยาว 3–32 ตัว และใช้ได้เฉพาะ a-z, 0-9, จุด, ขีดกลาง หรือขีดล่าง' }, 400);
+      if (!displayName || displayName.length > 80) return json({ error: 'กรุณาระบุชื่อสมาชิกไม่เกิน 80 ตัวอักษร' }, 400);
+      if (password.length < 12 || password.length > 1024) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const duplicate = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE').bind(username).first();
+      if (duplicate) return json({ error: 'ID นี้ถูกใช้งานแล้ว กรุณาเลือก ID อื่น' }, 409);
+      const encoded = await hashPassword(password);
+      const id = randomToken(18);
+      const membershipId = randomToken(18);
+      const now = new Date().toISOString();
+      const email = username.toLowerCase() + '@m101.local';
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users owner_user ON owner_user.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const newMemberGuard = "EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'member' AND account_status = 'active')";
+      try {
+        const results = await env.DB.batch([
+          env.DB.prepare(`INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, username, account_status, local_password_set) SELECT ?, ?, ?, 'member', ?, ?, ?, ?, 'active', 1 WHERE ${ownerGuard}`)
+            .bind(id, email, displayName, encoded.hash, encoded.salt, now, username, access.workspaceId, access.user.id),
+          env.DB.prepare(`INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, ?, ?, 'collaborator', 'active', ?, ? WHERE ${ownerGuard} AND ${newMemberGuard}`)
+            .bind(membershipId, access.workspaceId, id, now, now, access.workspaceId, access.user.id, id),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.created', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${newMemberGuard}`)
+            .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ username, displayName }), now, access.workspaceId, access.user.id, id),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1 || Number(results[1]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner เปลี่ยนแปลงหรือสร้างสมาชิกไม่สำเร็จ กรุณาโหลดข้อมูลใหม่' }, 403);
+      } catch {
+        return json({ error: 'ไม่สามารถสร้างสมาชิกได้ อาจมี ID นี้อยู่แล้ว' }, 409);
+      }
+      return json({ ok: true, user: { id, username, displayName, role: 'member', accountStatus: 'active', localPasswordSet: true, membershipType: 'collaborator' } }, 201);
+    }
+
+    if (path === '/api/admin/workspace-members' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่เพิ่มสมาชิกเข้า Workspace ได้' }, 403);
+      const body = await request.json() as { username?: string };
+      const username = String(body.username || '').trim();
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) return json({ error: 'กรุณาระบุ ID สมาชิกที่ถูกต้อง' }, 400);
+      const member = await env.DB.prepare("SELECT id, username, display_name, role, account_status FROM users WHERE username = ? COLLATE NOCASE LIMIT 1").bind(username).first() as { id?: string; username?: string; display_name?: string; role?: string; account_status?: string } | null;
+      if (!member || member.role !== 'member') return json({ error: 'ไม่พบบัญชีสมาชิกที่เพิ่มได้ กรุณาตรวจสอบ ID อีกครั้ง' }, 404);
+      if (member.account_status !== 'active') return json({ error: 'บัญชีสมาชิกนี้ถูกระงับอยู่ ต้องเปิดใช้งานบัญชีก่อน' }, 409);
+      const existing = await env.DB.prepare('SELECT id, membership_type, status FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? LIMIT 1').bind(access.workspaceId, member.id).first() as { id?: string; membership_type?: string; status?: string } | null;
+      if (existing?.membership_type === 'owner') return json({ error: 'บัญชีนี้เป็น Owner ของ Workspace นี้อยู่แล้ว' }, 409);
+      if (existing?.status === 'active') return json({ error: 'สมาชิกนี้อยู่ใน Workspace นี้อยู่แล้ว' }, 409);
+      const now = new Date().toISOString();
+      const membershipId = existing?.id || randomToken(18);
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users owner_user ON owner_user.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const memberGuard = "EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'member' AND account_status = 'active')";
+      const write = existing
+        ? env.DB.prepare(`UPDATE workspace_memberships SET membership_type = 'collaborator', status = 'active', updated_at = ? WHERE id = ? AND workspace_id = ? AND user_id = ? AND membership_type != 'owner' AND ${ownerGuard} AND ${memberGuard}`).bind(now, membershipId, access.workspaceId, member.id, access.workspaceId, access.user.id, member.id)
+        : env.DB.prepare(`INSERT INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) SELECT ?, ?, ?, 'collaborator', 'active', ?, ? WHERE ${ownerGuard} AND ${memberGuard}`).bind(membershipId, access.workspaceId, member.id, now, now, access.workspaceId, access.user.id, member.id);
+      try {
+        const result = await env.DB.batch([write, env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.added_to_workspace', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${memberGuard}`).bind(randomToken(18), access.workspaceId, access.user.id, member.id, JSON.stringify({ username: member.username, reactivated: Boolean(existing) }), now, access.workspaceId, access.user.id, member.id)]);
+        if (Number(result[0]?.meta?.changes || 0) !== 1) return json({ error: 'เพิ่มสมาชิกเข้า Workspace ไม่สำเร็จ' }, 409);
+      } catch { return json({ error: 'เพิ่มสมาชิกไม่สำเร็จ กรุณารีเฟรชแล้วลองอีกครั้ง' }, 409); }
+      return json({ ok: true, user: { id: member.id, username: member.username, displayName: member.display_name || '', membershipType: 'collaborator' } }, 201);
+    }
+
+    const workspaceMemberMatch = path.match(/^\/api\/admin\/workspace-members\/([A-Za-z0-9_-]+)$/);
+    if (workspaceMemberMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่นำสมาชิกออกจาก Workspace ได้' }, 403);
+      const userId = workspaceMemberMatch[1];
+      if (userId === access.user.id) return json({ error: 'ไม่สามารถนำ Owner ที่กำลังใช้งานออกจาก Workspace ได้' }, 400);
+      const member = await env.DB.prepare("SELECT id FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active'")
+        .bind(access.workspaceId, userId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกที่ใช้งานอยู่ใน Workspace นี้' }, 404);
+      const now = new Date().toISOString();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const revokedGuard = "EXISTS (SELECT 1 FROM workspace_memberships WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'revoked')";
+      const results = await env.DB.batch([
+        env.DB.prepare(`UPDATE workspace_memberships SET status = 'revoked', updated_at = ? WHERE workspace_id = ? AND user_id = ? AND membership_type = 'collaborator' AND status = 'active' AND ${ownerGuard}`)
+          .bind(now, access.workspaceId, userId, access.workspaceId, access.user.id),
+        env.DB.prepare(`DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND ${ownerGuard} AND ${revokedGuard}`)
+          .bind(access.workspaceId, userId, access.workspaceId, access.user.id, access.workspaceId, userId),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.removed_from_workspace', 'user', ?, '{}', ? WHERE ${ownerGuard} AND ${revokedGuard}`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, now, access.workspaceId, access.user.id, access.workspaceId, userId),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'นำสมาชิกออกไม่สำเร็จ กรุณาโหลดข้อมูลใหม่' }, 409);
+      return json({ ok: true });
+    }
+
+    const adminUserMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)$/);
+    if (adminUserMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขสมาชิกได้' }, 403);
+      const id = adminUserMatch[1];
+      const body = await request.json() as { displayName?: string; accountStatus?: string };
+      const displayName = String(body.displayName || '').trim();
+      const accountStatus = String(body.accountStatus || '');
+      if (!displayName || displayName.length > 80 || !['active', 'suspended'].includes(accountStatus)) return json({ error: 'ข้อมูลสมาชิกไม่ถูกต้อง' }, 400);
+      const member = await env.DB.prepare("SELECT u.id, u.account_status, u.display_name FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
+        .bind(id, access.workspaceId).first() as { id?: string; account_status?: string; display_name?: string } | null;
+      if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      // Profile name and account status live on the global user record, not on a Workspace membership.
+      // Do not let one Workspace silently change another active Workspace's shared account.
+      if (accountStatus !== String(member.account_status || 'active') || displayName !== String(member.display_name || '')) {
+        const otherWorkspace = await env.DB.prepare(
+          "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+        ).bind(id, access.workspaceId).first();
+        if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถแก้ไขชื่อหรือสถานะบัญชีรวมจาก Workspace นี้ได้' }, 409);
+      }
+      const now = new Date().toISOString();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const isolatedMemberGuard = "NOT EXISTS (SELECT 1 FROM workspace_memberships other_membership JOIN workspaces other_workspace ON other_workspace.id = other_membership.workspace_id WHERE other_membership.user_id = ? AND other_membership.workspace_id != ? AND other_membership.status = 'active' AND other_workspace.status = 'active')";
+      const statements = [
+        env.DB.prepare(`UPDATE users SET display_name = ?, account_status = ? WHERE id = ? AND ${ownerGuard} AND ${isolatedMemberGuard}`)
+          .bind(displayName, accountStatus, id, access.workspaceId, access.user.id, id, access.workspaceId),
+        ...(accountStatus === 'suspended' ? [env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = 'suspended' AND display_name = ?)`)
+          .bind(id, access.workspaceId, access.user.id, id, access.workspaceId, id, displayName)] : []),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.updated', 'user', ?, ?, ? WHERE ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND account_status = ? AND display_name = ?)`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, JSON.stringify({ displayName, accountStatus }), now, access.workspaceId, access.user.id, id, access.workspaceId, id, accountStatus, displayName),
+      ];
+      const results = await env.DB.batch(statements);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สมาชิกอยู่ใน Workspace อื่น หรือสิทธิ์ Owner เปลี่ยนแปลง จึงแก้ไขบัญชีรวมไม่ได้' }, 409);
+      return json({ ok: true });
+    }
+
+    const adminPasswordMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)\/password$/);
+    if (adminPasswordMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่ตั้งรหัสผ่านสมาชิกได้' }, 403);
+      const id = adminPasswordMatch[1];
+      const body = await request.json() as { password?: string };
+      const password = String(body.password || '');
+      if (password.length < 12 || password.length > 1024) return json({ error: 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร' }, 400);
+      const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status != 'revoked'")
+        .bind(id, access.workspaceId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกในพื้นที่ทำงานนี้' }, 404);
+      // Password hashes and sessions are global to the user account.
+      // Prevent a Workspace Owner from resetting credentials used in another active Workspace.
+      const otherWorkspace = await env.DB.prepare(
+        "SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.user_id = ? AND wm.workspace_id != ? AND wm.status = 'active' AND w.status = 'active' LIMIT 1"
+      ).bind(id, access.workspaceId).first();
+      if (otherWorkspace) return json({ error: 'สมาชิกบัญชีนี้อยู่ใน Workspace อื่นด้วย จึงไม่สามารถตั้งรหัสผ่านรวมจาก Workspace นี้ได้' }, 409);
+      const encoded = await hashPassword(password);
+      const now = new Date().toISOString();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const isolatedMemberGuard = "NOT EXISTS (SELECT 1 FROM workspace_memberships other_membership JOIN workspaces other_workspace ON other_workspace.id = other_membership.workspace_id WHERE other_membership.user_id = ? AND other_membership.workspace_id != ? AND other_membership.status = 'active' AND other_workspace.status = 'active')";
+      const results = await env.DB.batch([
+        env.DB.prepare(`UPDATE users SET password_hash = ?, password_salt = ?, local_password_set = 1 WHERE id = ? AND ${ownerGuard} AND ${isolatedMemberGuard}`)
+          .bind(encoded.hash, encoded.salt, id, access.workspaceId, access.user.id, id, access.workspaceId),
+        env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+          .bind(id, access.workspaceId, access.user.id, id, access.workspaceId, id, encoded.hash, encoded.salt),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.password_reset', 'user', ?, '{}', ? WHERE ${ownerGuard} AND ${isolatedMemberGuard} AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, id, now, access.workspaceId, access.user.id, id, access.workspaceId, id, encoded.hash, encoded.salt),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สมาชิกอยู่ใน Workspace อื่น หรือสิทธิ์ Owner เปลี่ยนแปลง จึงตั้งรหัสผ่านรวมไม่ได้' }, 409);
+      return json({ ok: true });
+    }
+
+
+    if (path === '/api/admin/assignments' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการการมอบหมายงานได้' }, 403);
+      const snapshot = await env.DB.batch([
+        env.DB.prepare("SELECT wm.workspace_id FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id JOIN users u ON u.id = wm.user_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active' AND u.role = 'admin'")
+          .bind(access.workspaceId, access.user.id),
+        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId),
+        env.DB.prepare("SELECT user_id, business_id FROM business_assignments WHERE workspace_id = ? AND EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')")
+          .bind(access.workspaceId, access.workspaceId, access.user.id),
+      ]);
+      if (!snapshot[0]?.results?.length) return json({ error: 'สิทธิ์ Owner หรือพื้นที่ทำงานเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      const directory = snapshot[1];
+      const assignments = snapshot[2];
+      const businesses = new Map<string, { id: string; companyName: string; taxId: string }>();
+      for (const row of directory.results || []) {
+        try {
+          const records = JSON.parse(String((row as { records?: string }).records || '[]'));
+          if (Array.isArray(records)) for (const item of records) {
+            if (!item || typeof item !== 'object') continue;
+            const id = String((item as { id?: unknown }).id || '');
+            if (!id) continue;
+            businesses.set(id, { id, companyName: String((item as { companyName?: unknown }).companyName || ''), taxId: String((item as { taxId?: unknown }).taxId || '') });
+          }
+        } catch { /* Ignore malformed historical snapshots; the current year remains available. */ }
+      }
+      const validBusinessIds = new Set(businesses.keys());
+      return json({ businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')), assignments: (assignments.results || []).filter((row: Record<string, unknown>) => validBusinessIds.has(String(row.business_id))).map((row: Record<string, unknown>)=>({ userId:String(row.user_id), businessId:String(row.business_id) })) });
+    }
+
+    const assignmentMatch = path.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)\/assignments$/);
+    if (assignmentMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่มอบหมายกิจการได้' }, 403);
+      const userId = assignmentMatch[1];
+      const member = await env.DB.prepare("SELECT u.id FROM users u JOIN workspace_memberships wm ON wm.user_id = u.id WHERE u.id = ? AND wm.workspace_id = ? AND wm.membership_type = 'collaborator' AND wm.status = 'active' AND u.account_status = 'active'")
+        .bind(userId, access.workspaceId).first();
+      if (!member) return json({ error: 'ไม่พบสมาชิกที่เปิดใช้งานในพื้นที่ทำงานนี้' }, 404);
+      const body = await request.json() as { businessIds?: unknown };
+      if (!Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id => typeof id !== 'string' || !id || id.length > 128)) return json({ error: 'รายการกิจการที่เลือกไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directory = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directory.results || []) {
+        try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) if (item && typeof item === 'object' && (item as { id?: unknown }).id) validIds.add(String((item as { id: unknown }).id)); }
+        catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      }
+      if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
+      const now = new Date().toISOString();
+      const ownerStillActive = "EXISTS (SELECT 1 FROM workspace_memberships owner_membership JOIN workspaces w ON w.id = owner_membership.workspace_id JOIN users owner_user ON owner_user.id = owner_membership.user_id WHERE owner_membership.workspace_id = ? AND owner_membership.user_id = ? AND owner_membership.membership_type = 'owner' AND owner_membership.status = 'active' AND w.status = 'active' AND owner_user.role = 'admin')";
+      const memberStillActive = "EXISTS (SELECT 1 FROM workspace_memberships member_membership JOIN users u ON u.id = member_membership.user_id WHERE member_membership.workspace_id = ? AND member_membership.user_id = ? AND member_membership.membership_type = 'collaborator' AND member_membership.status = 'active' AND u.account_status = 'active')";
+      const statements = [
+        // Revalidate the global Owner role, active membership, and Workspace inside the same D1 batch as writes.
+        env.DB.prepare("UPDATE workspace_memberships SET updated_at = updated_at WHERE workspace_id = ? AND user_id = ? AND membership_type = 'owner' AND status = 'active' AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND status = 'active') AND EXISTS (SELECT 1 FROM users WHERE id = ? AND role = 'admin')")
+          .bind(access.workspaceId, access.user.id, access.workspaceId, access.user.id),
+        env.DB.prepare(`DELETE FROM business_assignments WHERE workspace_id = ? AND user_id = ? AND ${ownerStillActive} AND ${memberStillActive}`)
+          .bind(access.workspaceId, userId, access.workspaceId, access.user.id, access.workspaceId, userId),
+        ...businessIds.map(businessId => env.DB.prepare(`INSERT INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE ${ownerStillActive} AND ${memberStillActive} AND EXISTS (SELECT 1 FROM workspace_directory_year_data d, json_each(d.records) item WHERE d.workspace_id = ? AND json_extract(item.value, '$.id') = ?)`)
+          .bind(randomToken(18), access.workspaceId, businessId, userId, access.user.id, now, access.workspaceId, access.user.id, access.workspaceId, userId, access.workspaceId, businessId)),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'member.assignments_updated', 'user', ?, ?, ? WHERE ${ownerStillActive} AND ${memberStillActive}`)
+          .bind(randomToken(18), access.workspaceId, access.user.id, userId, JSON.stringify({ businessCount: businessIds.length }), now, access.workspaceId, access.user.id, access.workspaceId, userId),
+      ];
+      const results = await env.DB.batch(statements);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      const insertedCount = results.slice(2, 2 + businessIds.length).reduce((sum: number, item: { meta?: { changes?: number } }) => sum + Number(item.meta?.changes || 0), 0);
+      if (insertedCount !== businessIds.length) return json({ error: 'สถานะสมาชิกหรือการมอบหมายเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 409);
+      return json({ ok: true, assignedCount: insertedCount });
+    }
+
+
+    if (path === '/api/relationship-groups' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่จัดการกลุ่มกิจการได้' }, 403);
+      const [groupRows, membershipRows, directoryRows] = await Promise.all([
+        env.DB.prepare('SELECT id, name, created_at, updated_at FROM business_relationship_groups WHERE workspace_id = ? ORDER BY name COLLATE NOCASE').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT m.group_id, m.business_id FROM business_relationship_group_memberships m JOIN business_relationship_groups g ON g.id = m.group_id WHERE g.workspace_id = ?').bind(access.workspaceId).all(),
+        env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all(),
+      ]);
+      const businesses = new Map<string, { id: string; companyName: string; taxId: string }>();
+      for (const row of directoryRows.results || []) {
+        try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) {
+          if (!item || typeof item !== 'object') continue;
+          const id = String((item as { id?: unknown }).id || '');
+          if (id) businesses.set(id, { id, companyName: String((item as { companyName?: unknown }).companyName || ''), taxId: String((item as { taxId?: unknown }).taxId || '') });
+        } } catch { return json({ error: 'ข้อมูลทะเบียนกิจการในฐานข้อมูลไม่ถูกต้อง' }, 500); }
+      }
+      const groups = (groupRows.results || []).map((row: Record<string, unknown>) => ({
+        id: String(row.id), name: String(row.name), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+        businessIds: (membershipRows.results || []).filter((membership: Record<string, unknown>) => String(membership.group_id) === String(row.id)).map((membership: Record<string, unknown>) => String(membership.business_id)).filter((businessId: string) => businesses.has(businessId)),
+      }));
+      return json({ groups, businesses: Array.from(businesses.values()).sort((a,b)=>a.companyName.localeCompare(b.companyName,'th')) });
+    }
+
+    const relationshipGroupMatch = path.match(/^\/api\/relationship-groups\/([A-Za-z0-9_-]+)$/);
+    if (path === '/api/relationship-groups' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่สร้างกลุ่มกิจการได้' }, 403);
+      const body = await request.json() as { name?: string; businessIds?: unknown };
+      const name = String(body.name || '').trim();
+      if (name.length < 2 || name.length > 80) return json({ error: 'ชื่อกลุ่มต้องมี 2–80 ตัวอักษร' }, 400);
+      if (!Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id => typeof id !== 'string' || !id || id.length > 128)) return json({ error: 'รายการกิจการไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directoryRows = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directoryRows.results || []) { try { const records = JSON.parse(String((row as { records?: string }).records || '[]')); if (Array.isArray(records)) for (const item of records) if (item && typeof item === 'object' && (item as { id?: unknown }).id) validIds.add(String((item as { id: unknown }).id)); } catch { return json({ error: 'ข้อมูลทะเบียนกิจการไม่ถูกต้อง' }, 500); } }
+      if (businessIds.some(id => !validIds.has(id))) return json({ error: 'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่' }, 400);
+      const id = randomToken(18); const now = new Date().toISOString();
+      try {
+        const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+        const results = await env.DB.batch([
+          env.DB.prepare(`INSERT INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) SELECT ?, ?, ?, ?, ? WHERE ${ownerGuard}`).bind(id, access.workspaceId, name, now, now, access.workspaceId, access.user.id),
+          ...businessIds.map(businessId=>env.DB.prepare(`INSERT INTO business_relationship_group_memberships (group_id, business_id, created_at) SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(id,businessId,now,id,access.workspaceId,access.workspaceId,access.user.id)),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.created', 'relationship_group', ?, ?, ? WHERE ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,id,JSON.stringify({name,businessCount:businessIds.length}),now,access.workspaceId,access.user.id),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือสถานะ Workspace เปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      } catch { return json({ error: 'สร้างกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มเดิม' }, 409); }
+      return json({ ok: true, id }, 201);
+    }
+
+    if (relationshipGroupMatch && request.method === 'PUT') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner') return json({ error: 'เฉพาะ Owner เท่านั้นที่แก้ไขกลุ่มกิจการได้' }, 403);
+      const groupId = relationshipGroupMatch[1];
+      const existing = await env.DB.prepare('SELECT id FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId).first();
+      if (!existing) return json({ error: 'ไม่พบกลุ่มกิจการนี้' }, 404);
+      const body = await request.json() as { name?: string; businessIds?: unknown };
+      const name = String(body.name || '').trim();
+      if (name.length < 2 || name.length > 80 || !Array.isArray(body.businessIds) || body.businessIds.length > 1000 || body.businessIds.some(id=>typeof id!=='string'||!id||id.length>128)) return json({ error: 'ข้อมูลกลุ่มกิจการไม่ถูกต้อง' }, 400);
+      const businessIds = Array.from(new Set(body.businessIds as string[]));
+      const directoryRows = await env.DB.prepare('SELECT records FROM workspace_directory_year_data WHERE workspace_id = ?').bind(access.workspaceId).all();
+      const validIds = new Set<string>();
+      for (const row of directoryRows.results || []) { try { const records=JSON.parse(String((row as {records?:string}).records||'[]')); if(Array.isArray(records)) for(const item of records) if(item&&typeof item==='object'&&(item as {id?:unknown}).id) validIds.add(String((item as {id:unknown}).id)); } catch { return json({error:'ข้อมูลทะเบียนกิจการไม่ถูกต้อง'},500); } }
+      if (businessIds.some(id=>!validIds.has(id))) return json({error:'พบกิจการที่ไม่มีอยู่ในพื้นที่ทำงาน กรุณาโหลดรายการใหม่'},400);
+      const now=new Date().toISOString();
+      try {
+        const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+        const results = await env.DB.batch([
+          env.DB.prepare(`UPDATE business_relationship_groups SET name = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND ${ownerGuard}`).bind(name,now,groupId,access.workspaceId,access.workspaceId,access.user.id),
+          env.DB.prepare(`DELETE FROM business_relationship_group_memberships WHERE group_id = ? AND EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(groupId,groupId,access.workspaceId,access.workspaceId,access.user.id),
+          ...businessIds.map(businessId=>env.DB.prepare(`INSERT INTO business_relationship_group_memberships (group_id,business_id,created_at) SELECT ?,?,? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(groupId,businessId,now,groupId,access.workspaceId,access.workspaceId,access.user.id)),
+          env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.updated', 'relationship_group', ?, ?, ? WHERE EXISTS (SELECT 1 FROM business_relationship_groups g WHERE g.id = ? AND g.workspace_id = ?) AND ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,groupId,JSON.stringify({name,businessCount:businessIds.length}),now,groupId,access.workspaceId,access.workspaceId,access.user.id),
+        ]);
+        if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือกลุ่มกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      } catch { return json({error:'บันทึกกลุ่มไม่สำเร็จ ชื่อกลุ่มอาจซ้ำกับกลุ่มอื่น'},409); }
+      return json({ok:true});
+    }
+
+    if (relationshipGroupMatch && request.method === 'DELETE') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({error:'กรุณาเข้าสู่ระบบใหม่'},401);
+      if (access.membershipType !== 'owner') return json({error:'เฉพาะ Owner เท่านั้นที่ลบกลุ่มกิจการได้'},403);
+      const groupId=relationshipGroupMatch[1];
+      const existing=await env.DB.prepare('SELECT id FROM business_relationship_groups WHERE id = ? AND workspace_id = ?').bind(groupId,access.workspaceId).first();
+      if(!existing)return json({error:'ไม่พบกลุ่มกิจการนี้'},404);
+      const now=new Date().toISOString();
+      const ownerGuard = "EXISTS (SELECT 1 FROM workspace_memberships wm JOIN workspaces w ON w.id = wm.workspace_id WHERE wm.workspace_id = ? AND wm.user_id = ? AND wm.membership_type = 'owner' AND wm.status = 'active' AND w.status = 'active')";
+      const results = await env.DB.batch([
+        env.DB.prepare(`DELETE FROM business_relationship_groups WHERE id = ? AND workspace_id = ? AND ${ownerGuard}`).bind(groupId,access.workspaceId,access.workspaceId,access.user.id),
+        env.DB.prepare(`INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'relationship_group.deleted', 'relationship_group', ?, '{}', ? WHERE ${ownerGuard}`).bind(randomToken(18),access.workspaceId,access.user.id,groupId,now,access.workspaceId,access.user.id),
+      ]);
+      if (Number(results[0]?.meta?.changes || 0) !== 1) return json({ error: 'สิทธิ์ Owner หรือกลุ่มกิจการเปลี่ยนแปลง กรุณาโหลดข้อมูลใหม่' }, 403);
+      return json({ok:true});
+    }
+
+
+    if (path === '/api/activity' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const result = await env.DB.prepare(
+        "SELECT a.id, a.actor_user_id, u.username, u.display_name, a.action, a.resource_type, a.resource_id, a.metadata_json, a.created_at FROM audit_events a LEFT JOIN users u ON u.id = a.actor_user_id WHERE a.workspace_id = ? AND (? = 'owner' OR a.actor_user_id = ?) ORDER BY a.created_at DESC LIMIT 100"
+      ).bind(access.workspaceId, access.membershipType, access.user.id).all();
+      const events = (result.results || []).map((row: Record<string, unknown>) => {
+        let metadata: Record<string, unknown> = {};
+        try { const parsed = JSON.parse(String(row.metadata_json || '{}')); if (parsed && typeof parsed === 'object') metadata = parsed as Record<string, unknown>; } catch { /* Keep empty metadata for legacy events. */ }
+        return { id: String(row.id), actorUserId: row.actor_user_id ? String(row.actor_user_id) : '', actorName: String(row.display_name || row.username || ''), action: String(row.action), resourceType: String(row.resource_type), resourceId: String(row.resource_id || ''), metadata, createdAt: String(row.created_at) };
+      });
+      return json({ events });
     }
 
     return json({ error: 'API route not found' }, 404);

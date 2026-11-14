@@ -1,92 +1,105 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { ActivityView, AdminSecurity, AnnualWork, BusinessRegistry, CalendarView, ImportExport, RelationshipGroups, ReportsView } from './components/WorkspacePages';
+import CommandCenter from './components/CommandCenter';
 
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
-type Page = 'overview' | 'businesses' | 'work' | 'calendar' | 'documents' | 'reports' | 'activity' | 'settings';
+type WorkspaceOption = { id: string; name: string; membershipType: 'owner' | 'collaborator' };
+type Page = 'overview' | 'businesses' | 'groups' | 'work' | 'calendar' | 'reports' | 'activity' | 'import' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
-  { id: 'overview', label: 'ศูนย์บัญชาการ', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมสถานะและสิ่งที่ต้องจัดการในพอร์ตโฟลิโอ' },
-  { id: 'businesses', label: 'พอร์ตโฟลิโอกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'จัดการข้อมูลนิติบุคคลและกิจการในพื้นที่ทำงาน' },
-  { id: 'work', label: 'งานและภาระประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'วางแผน ติดตาม และตรวจสอบงานของแต่ละกิจการ' },
-  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'กำหนดส่งและเหตุการณ์สำคัญตามช่วงเวลา' },
-  { id: 'documents', label: 'คลังเอกสาร', group: 'OPERATIONS', icon: '▱', desc: 'เอกสารและหลักฐานที่เชื่อมโยงกับกิจการและงาน' },
-  { id: 'reports', label: 'รายงานและข้อมูลเชิงลึก', group: 'INTELLIGENCE', icon: '▥', desc: 'วิเคราะห์ภาพรวมและติดตามผลการดำเนินงาน' },
-  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: '◷', desc: 'ตรวจสอบเหตุการณ์และการเปลี่ยนแปลงในระบบ' },
-  { id: 'settings', label: 'ตั้งค่าพื้นที่ทำงาน', group: 'SYSTEM', icon: '⚙', desc: 'จัดการสมาชิก สิทธิ์ และการตั้งค่าระบบ' },
+  { id: 'overview', label: 'ภาพรวม', group: 'WORKSPACE', icon: 'dashboard', desc: 'ภาพรวมกิจการและงานที่ต้องติดตาม' },
+  { id: 'businesses', label: 'ทะเบียนกิจการ', group: 'WORKSPACE', icon: 'building', desc: 'ข้อมูลกิจการและนิติบุคคลทั้งหมด' },
+  { id: 'groups', label: 'กลุ่มกิจการ', group: 'WORKSPACE', icon: 'network', desc: 'จัดกลุ่มกิจการและความสัมพันธ์' },
+  { id: 'work', label: 'งานประจำปี', group: 'OPERATIONS', icon: 'clipboard', desc: 'จัดการงานและกำหนดส่งรายกิจการ' },
+  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: 'calendar', desc: 'ติดตามกำหนดส่งและงานที่ใกล้ถึง' },
+  { id: 'reports', label: 'รายงาน', group: 'INTELLIGENCE', icon: 'chart', desc: 'สรุปข้อมูลทะเบียนและความคืบหน้างาน' },
+  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: 'history', desc: 'ตรวจสอบประวัติการเปลี่ยนแปลง' },
+  { id: 'import', label: 'นำเข้า / ส่งออก', group: 'OPERATIONS', icon: 'transfer', desc: 'นำเข้าและส่งออกข้อมูลทะเบียนกิจการ' },
+  { id: 'settings', label: 'ผู้ดูแลและความปลอดภัย', group: 'SYSTEM', icon: 'settings', desc: 'จัดการบัญชีและสิทธิ์ในพื้นที่ทำงาน' },
 ];
 
 function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
   const [page, setPage] = useState<Page>('overview');
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
+  const [year, setYear] = useState('69');
+  const [availableYears, setAvailableYears] = useState<string[]>(['69']);
+  const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState('');
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState('');
+  useEffect(() => {
+    let active = true;
+    fetch('/api/workspaces', { credentials: 'same-origin', cache: 'no-store' })
+      .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลด Workspace ไม่สำเร็จ'); return data; })
+      .then(data => { if (active) { setWorkspaces(Array.isArray(data.workspaces) ? data.workspaces : []); setActiveWorkspaceId(String(data.activeWorkspaceId || '')); } })
+      .catch(e => { if (active) setWorkspaceError(e instanceof Error ? e.message : 'โหลด Workspace ไม่สำเร็จ'); });
+    return () => { active = false; };
+  }, []);
+  const switchWorkspace = async (workspaceId: string) => {
+    if (!workspaceId || workspaceId === activeWorkspaceId || workspaceBusy) return;
+    setWorkspaceBusy(true); setWorkspaceError('');
+    try {
+      const response = await fetch('/api/workspaces/select', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspaceId }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'เปลี่ยน Workspace ไม่สำเร็จ');
+      window.location.reload();
+    } catch (e) { setWorkspaceError(e instanceof Error ? e.message : 'เปลี่ยน Workspace ไม่สำเร็จ'); setWorkspaceBusy(false); }
+  };
+  useEffect(() => { let active = true; fetch('/api/directory?year=' + encodeURIComponent(year), { credentials: 'same-origin', cache: 'no-store' }).then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'โหลดรอบปีไม่สำเร็จ'); return data; }).then(data => { if (active && Array.isArray(data.availableYears) && data.availableYears.length) setAvailableYears(data.availableYears); }).catch(() => {}); return () => { active = false; }; }, [year]);
   const current = pages.find(p => p.id === page)!;
-  const choose = (id: Page) => { setPage(id); setMobileMenu(false); };
-  const signOut = async () => { setBusy(true); try { await logout(); } finally { setBusy(false); } };
+  const choose = (id: Page) => { setPage(id); setMobileMenu(false); setProfileMenuOpen(false); };
+  useEffect(() => { if (!mobileMenu && !profileMenuOpen) return; const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMobileMenu(false); setProfileMenuOpen(false); } }; window.addEventListener('keydown', onKeyDown); return () => window.removeEventListener('keydown', onKeyDown); }, [mobileMenu, profileMenuOpen]);
+  useEffect(() => {
+    if (!mobileMenu) return;
+    const sidebar = document.getElementById('workspace-navigation');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const getFocusable = () => sidebar?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [];
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+    const containFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const items = getFocusable();
+      if (!items.length) { event.preventDefault(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    sidebar?.addEventListener('keydown', containFocus);
+    return () => {
+      sidebar?.removeEventListener('keydown', containFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [mobileMenu]);
+  const signOut = async () => { if (busy) return; setBusy(true); setWorkspaceError(''); try { await logout(); } catch (e) { setWorkspaceError(e instanceof Error ? e.message : 'ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง'); } finally { setBusy(false); } };
   const groups = ['WORKSPACE', 'OPERATIONS', 'INTELLIGENCE', 'SYSTEM'];
-  return <div className="shell">
+  return <div className={'shell ' + (sidebarCollapsed ? 'shell-sidebar-collapsed' : '')}>
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
-    <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
-      <div className="brand"><div className="brand-mark">M</div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
-      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>MODERN NAVY</span></div></div>
+    <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')} id="workspace-navigation" aria-label="เมนูหลัก">
+      <div className="brand"><div className="brand-mark"><img src="/logo-orange-3-badge-Photoroom.png" alt="M101" /></div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" type="button" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)}>×</button></div>
+      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group}</label>{pages.filter(p => p.group === group && (user.role === 'admin' || !['groups', 'import', 'settings'].includes(p.id))).map(p => <button key={p.id} type="button" aria-label={p.label} title={sidebarCollapsed ? p.label : undefined} aria-current={page === p.id ? 'page' : undefined} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><use href={`/icons/m101-icons.svg#${p.icon}`} /></svg><span>{p.label}</span></button>)}</div>)}</nav>
+      <div className="sidebar-bottom"><div className="secure-note"><svg className="secure-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#lock" /></svg><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar">
-        <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
-        <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button></div>
+        <button className="sidebar-collapse-toggle" type="button" aria-label={sidebarCollapsed ? 'ขยายเมนูด้านข้าง' : 'ย่อเมนูด้านข้าง'} aria-pressed={sidebarCollapsed} onClick={() => setSidebarCollapsed(value => !value)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={sidebarCollapsed ? 'm9 5 7 7-7 7' : 'm15 5-7 7 7 7'} /></svg></button>
+        <div className="workspace-breadcrumb"><span>Workspace</span><i>/</i><b>{current.label}</b></div>
+        <button className="menu-toggle" type="button" aria-label="เปิดเมนู" aria-controls="workspace-navigation" aria-expanded={mobileMenu} onClick={() => setMobileMenu(true)}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#menu" /></svg></button>
+        <div className="global-search"><svg className="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons/m101-icons.svg#search" /></svg><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="topbar-right">{workspaces.length > 1 && <label className="topbar-year">Workspace <select aria-label="เลือก Workspace" value={activeWorkspaceId} disabled={workspaceBusy} onChange={e => switchWorkspace(e.target.value)}>{workspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>}<label className="topbar-year">ปีบัญชี <select value={year} onChange={e => setYear(e.target.value)}>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}</select></label><button className="refresh-button" type="button" onClick={() => window.location.reload()} aria-label="รีเฟรชหน้า" title="รีเฟรชหน้า"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg></button><div className="profile-menu-wrap"><button className="profile-trigger" type="button" aria-label="เมนูบัญชีผู้ใช้" aria-controls="profile-dropdown" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen(open => !open)}><span className="avatar">{(user.displayName || user.username || 'U').trim().charAt(0).toUpperCase()}</span><span className="profile-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" /></svg></span></button>{profileMenuOpen && <div className="profile-dropdown" id="profile-dropdown" aria-label="การดำเนินการบัญชี"><div className="profile-dropdown-identity"><b>{user.displayName || user.username}</b><small>{user.role === 'admin' ? 'Owner' : 'Member'}</small></div><button type="button" onClick={() => { setProfileMenuOpen(false); window.location.reload(); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4.9 9A7.5 7.5 0 0 1 18 6.5L20 12M4 17v-5h5m6.1 3A7.5 7.5 0 0 1 6 17.5L4 12" /></svg>รีเฟรชหน้า</button><div className="profile-dropdown-divider" /><button className="profile-signout" type="button" onClick={signOut} disabled={busy}>{busy ? 'กำลังออกจากระบบ…' : 'ออกจากระบบ'}</button></div>}</div></div>
+        {workspaceError && <span className="auth-error" role="alert">{workspaceError}</span>}
       </header>
       <main className="content">
-        {page === 'overview' ? <CommandCenter navigate={choose} /> : <section className="module-page">
+        {page === 'overview' ? <CommandCenter navigate={choose} year={year} /> : page === 'businesses' ? <BusinessRegistry year={year} globalSearch={search} onYearChange={setYear} onOpenImport={() => choose('import')} canManage={user.role === 'admin'} /> : page === 'groups' ? <RelationshipGroups /> : page === 'work' ? <AnnualWork year={year} canManage={user.role === 'admin'} /> : page === 'calendar' ? <CalendarView year={year} /> : page === 'reports' ? <ReportsView year={year} /> : page === 'activity' ? <ActivityView /> : page === 'settings' ? <AdminSecurity /> : page === 'import' ? <ImportExport year={year} /> : <section className="module-page">
           <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
-          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>ฟังก์ชันและข้อมูลของแต่ละส่วนจะเชื่อมกับระบบ M101 ตามลำดับ</p></div>
+          <div className="module-empty"><div className="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href={`/icons/m101-icons.svg#${current.icon}`} /></svg></div><h2>{page === 'import' ? 'เครื่องมือนำเข้าและส่งออก' : 'การจัดการ Owner และความปลอดภัย'}</h2><p>{page === 'import' ? 'การส่งออก CSV พร้อมใช้งานจากหน้าทะเบียนกิจการ ส่วนตัวช่วยจับคู่ไฟล์ Excel จะเชื่อมต่อในขั้นถัดไป' : 'บัญชี Owner และสิทธิ์สมาชิกจะเชื่อมกับระบบจัดการบัญชีในขั้นถัดไป'}</p>{page === 'import' && <button className="m101-button" onClick={() => choose('businesses')}>ไปยังทะเบียนกิจการ</button>}</div>
         </section>}
       </main>
     </div>
   </div>;
-}
-
-function CommandCenter({ navigate }: { navigate: (id: Page) => void }) {
-  return <div className="dashboard">
-    <div className="page-title"><div><h1>Dashboard</h1></div></div>
-    <div className="dashboard-top">
-      <section className="dash-panel revenue-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมกิจการ</h2><p>สถานะกิจการในพอร์ตโฟลิโอ</p></div><button onClick={() => navigate('businesses')}>ดูทะเบียนกิจการ</button></div>
-        <div className="metric-value">— <small>กิจการทั้งหมด</small></div>
-        <div className="metric-note">ข้อมูลจะแสดงเมื่อเชื่อมต่อทะเบียนกิจการ</div>
-        <div className="bar-chart" aria-label="กราฟภาพรวมกิจการยังไม่มีข้อมูล">
-          <div className="chart-gridlines"><i/><i/><i/><i/></div>
-          {Array.from({length:12},(_,i)=><div className="bar-group" key={i}><span className="bar-placeholder"/><span className="bar-placeholder pale"/><small>{String(i+1).padStart(2,'0')}</small></div>)}
-        </div>
-        <div className="chart-legend"><span><i className="blue-dot"/> กิจการที่ดำเนินการ</span><span><i className="gray-dot"/> กิจการที่รอตรวจสอบ</span></div>
-      </section>
-      <section className="dash-panel order-time-panel">
-        <div className="dash-panel-head"><div><h2>สถานะงานประจำปี</h2><p>ภาพรวมความคืบหน้าของงาน</p></div><button onClick={() => navigate('work')}>ดูรายงาน</button></div>
-        <div className="donut-area"><div className="donut"><div className="donut-hole"><b>—</b><small>ยังไม่มีข้อมูล</small></div></div></div>
-        <div className="donut-legend"><span><i className="blue-dot"/> เสร็จแล้ว</span><span><i className="purple-dot"/> กำลังทำ</span><span><i className="light-dot"/> ยังไม่เริ่ม</span></div>
-      </section>
-    </div>
-    <div className="dashboard-bottom">
-      <section className="dash-panel rating-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมการปฏิบัติงาน</h2><p>ตัวชี้วัดจากข้อมูลจริงในระบบ</p></div></div>
-        <div className="ring-metrics"><div className="ring ring-one"><b>—</b><small>งานเสร็จ</small></div><div className="ring ring-two"><b>—</b><small>ตรงเวลา</small></div><div className="ring ring-three"><b>—</b><small>รอตรวจสอบ</small></div></div>
-      </section>
-      <section className="dash-panel most-panel">
-        <div className="dash-panel-head"><div><h2>กิจการที่ต้องติดตาม</h2><p>รายการสำคัญที่ต้องดำเนินการ</p></div><button onClick={() => navigate('businesses')}>ดูทั้งหมด</button></div>
-        <div className="empty-list"><span>▤</span><div><b>ยังไม่มีรายการกิจการ</b><small>กิจการที่เพิ่มในทะเบียนจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>☷</span><div><b>ยังไม่มีงานที่ต้องติดตาม</b><small>รายการงานและกำหนดส่งจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>◷</span><div><b>ยังไม่มีกำหนดการใกล้ถึง</b><small>กำหนดส่งสำคัญจะแสดงที่นี่</small></div></div>
-        <button className="text-action" onClick={() => navigate('work')}>ไปยังงานประจำปี →</button>
-      </section>
-      <section className="dash-panel order-panel">
-        <div className="dash-panel-head"><div><h2>แนวโน้มการดำเนินงาน</h2><p>สรุปสถานะตามช่วงเวลา</p></div><button onClick={() => navigate('reports')}>ดูรายงาน</button></div>
-        <div className="line-chart"><div className="line-grid"><i/><i/><i/><i/></div><svg viewBox="0 0 300 130" preserveAspectRatio="none" aria-hidden="true"><path d="M4 90 L52 65 L100 105 L148 48 L196 74 L244 57 L296 24" fill="none" stroke="#d9dee7" strokeWidth="2.5"/><path d="M4 112 L52 118 L100 78 L148 84 L196 104 L244 50 L296 42" fill="none" stroke="#5d6ed8" strokeWidth="2.5"/></svg><div className="line-labels"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span></div></div>
-        <div className="chart-legend"><span><i className="blue-dot"/> ช่วงเวลาปัจจุบัน</span><span><i className="gray-dot"/> ช่วงเวลาก่อนหน้า</span></div>
-      </section>
-    </div>
-  </div>;
-}
-function Empty({ icon, title, text }: { icon: string; title: string; text: string }) {
-  return <div className="empty"><span>{icon}</span><b>{title}</b><p>{text}</p></div>;
 }
 
 export default function App() {
@@ -147,10 +160,10 @@ export default function App() {
     } catch (e) { setBootstrapError(e instanceof Error ? e.message : 'ตั้งค่า Owner ไม่สำเร็จ'); }
     finally { setBootstrapBusy(false); }
   };
-  const logout = async () => { try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } finally { setUser(null); setUsername(''); setPassword(''); setError(''); } };
+  const logout = async () => { const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json' } }); const payload = await response.json().catch(() => ({})); if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'เซิร์ฟเวอร์ยังไม่ยืนยันการออกจากระบบ กรุณาลองอีกครั้ง'); window.location.replace('/'); };
 
   if (!ready) return <main className="auth-screen"><p className="loading-copy">กำลังตรวจสอบการเข้าสู่ระบบ…</p></main>;
   if (user) return <Workspace user={user} logout={logout} />;
-  if (bootstrapRequired) return <main className="auth-screen"><section className="auth-panel"><div className="auth-mark">M</div><div className="auth-eyebrow">MUSTANG WORKSPACE</div><h1>ตั้งค่า Owner</h1><p className="auth-subtitle">สร้างบัญชีเจ้าของระบบก่อนเริ่มต้นใช้งาน</p>{bootstrapReady ? <form onSubmit={bootstrap} className="auth-form"><input value={ownerId} onChange={e => setOwnerId(e.target.value)} autoComplete="username" minLength={3} maxLength={32} required placeholder="Owner ID" /><input value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)} type="password" autoComplete="new-password" minLength={11} required placeholder="รหัสผ่าน Owner" /><input value={ownerPasswordConfirm} onChange={e => setOwnerPasswordConfirm(e.target.value)} type="password" autoComplete="new-password" minLength={11} required placeholder="ยืนยันรหัสผ่าน Owner" /><input value={bootstrapKey} onChange={e => setBootstrapKey(e.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" />{bootstrapError && <p className="auth-error" role="alert">{bootstrapError}</p>}<button type="submit" disabled={bootstrapBusy}>{bootstrapBusy ? 'กำลังตั้งค่า…' : 'สร้างบัญชี Owner'}</button></form> : <p className="auth-error" role="alert">{bootstrapMode === 'claim-existing-owner' ? 'พบ Owner เดิม แต่ยังไม่ได้เปิดการตั้งค่ารหัสผ่าน' : 'ยังไม่ได้เปิดการสร้าง Owner ครั้งแรก กรุณาตรวจสอบ Preview Secret และ Deploy อีกครั้ง'}</p>}</section></main>;
-  return <main className="auth-screen"><section className="auth-panel"><div className="auth-mark">M</div><div className="auth-eyebrow">MUSTANG WORKSPACE</div><h1>เข้าสู่ระบบ</h1><form onSubmit={login} className="auth-form"><input type="text" autoComplete="username" required value={username} onChange={e => setUsername(e.target.value)} placeholder="ID ผู้ใช้" /><input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="รหัสผ่าน" />{error && <p className="auth-error" role="alert">{error}</p>}<button type="submit" disabled={busy}>{busy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}</button></form><div className="auth-footnote">◈ &nbsp; SECURE WORKSPACE ACCESS</div></section></main>;
+  if (bootstrapRequired) return <main className="auth-screen"><section className="auth-panel"><div className="auth-mark">M</div><div className="auth-eyebrow">MUSTANG WORKSPACE</div><h1>ตั้งค่า Owner</h1><p className="auth-subtitle">สร้างบัญชีเจ้าของระบบก่อนเริ่มต้นใช้งาน</p>{bootstrapReady ? <form onSubmit={bootstrap} className="auth-form"><input value={ownerId} onChange={e => setOwnerId(e.target.value)} autoComplete="username" minLength={3} maxLength={32} required placeholder="Owner ID" /><input value={ownerPassword} onChange={e => setOwnerPassword(e.target.value)} type="password" autoComplete="new-password" minLength={12} required placeholder="รหัสผ่าน Owner" /><input value={ownerPasswordConfirm} onChange={e => setOwnerPasswordConfirm(e.target.value)} type="password" autoComplete="new-password" minLength={12} required placeholder="ยืนยันรหัสผ่าน Owner" /><input value={bootstrapKey} onChange={e => setBootstrapKey(e.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" />{bootstrapError && <p className="auth-error" role="alert">{bootstrapError}</p>}<button type="submit" disabled={bootstrapBusy}>{bootstrapBusy ? 'กำลังตั้งค่า…' : 'สร้างบัญชี Owner'}</button></form> : <p className="auth-error" role="alert">{bootstrapMode === 'claim-existing-owner' ? 'พบ Owner เดิม แต่ยังไม่ได้เปิดการตั้งค่ารหัสผ่าน' : 'ยังไม่ได้เปิดการสร้าง Owner ครั้งแรก กรุณาตรวจสอบ Preview Secret และ Deploy อีกครั้ง'}</p>}</section></main>;
+  return <main className="auth-screen"><section className="auth-panel" aria-label="เข้าสู่ระบบ M101"><form onSubmit={login} className="auth-form"><input type="text" autoComplete="username" required value={username} onChange={e => setUsername(e.target.value)} placeholder="ID ผู้ใช้" aria-label="ID ผู้ใช้" /><input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="รหัสผ่าน" aria-label="รหัสผ่าน" />{error && <p className="auth-error" role="alert">{error}</p>}<button type="submit" disabled={busy}>{busy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}</button></form></section></main>;
 }
