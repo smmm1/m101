@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 
 type Business = {
@@ -516,8 +516,28 @@ export function RelationshipGroups() {
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
-  const load=useCallback(async()=>{setLoading(true);setError('');try{const data=await apiJson('/api/relationship-groups');setGroups(data.groups||[]);setBusinesses(data.businesses||[]);setSelectedId(current=>current&&((data.groups||[]).some((g:RelationshipGroup)=>g.id===current))?current:'');}catch(e){setError(e instanceof Error?e.message:'โหลดกลุ่มกิจการไม่สำเร็จ');}finally{setLoading(false);}},[]);
-  useEffect(()=>{void load();},[load]);
+  const requestVersion=useRef(0);
+  const load=useCallback(async()=>{
+    const version=++requestVersion.current;
+    setLoading(true);setError('');
+    try{
+      const data=await apiJson('/api/relationship-groups');
+      if(version!==requestVersion.current)return;
+      const nextGroups=Array.isArray(data.groups)?data.groups:[];
+      setGroups(nextGroups);
+      setBusinesses(Array.isArray(data.businesses)?data.businesses:[]);
+      setSelectedId(current=>current&&nextGroups.some((g:RelationshipGroup)=>g.id===current)?current:'');
+    }catch(e){
+      if(version!==requestVersion.current)return;
+      setError(e instanceof Error?e.message:'โหลดกลุ่มกิจการไม่สำเร็จ');
+    }finally{
+      if(version===requestVersion.current)setLoading(false);
+    }
+  },[]);
+  useEffect(()=>{
+    void load();
+    return ()=>{requestVersion.current+=1;};
+  },[load]);
   useEffect(()=>{const selected=groups.find(g=>g.id===selectedId);setName(selected?.name||'');setBusinessIds(selected?.businessIds||[]);},[groups,selectedId]);
   const startNew=()=>{setSelectedId('');setName('');setBusinessIds([]);};
   const save=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);setError('');try{if(selectedId){await apiJson('/api/relationship-groups/'+selectedId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,businessIds})});}else{const data=await apiJson('/api/relationship-groups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,businessIds})});setSelectedId(data.id);}await load();setError('บันทึกกลุ่มกิจการแล้ว');}catch(e){setError(e instanceof Error?e.message:'บันทึกกลุ่มกิจการไม่สำเร็จ');}finally{setSaving(false);}};
