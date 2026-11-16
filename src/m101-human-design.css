@@ -239,3 +239,27 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   .m101-v2-record-arrow{display:none}
   .m101-v2-record-status{font-size:8px;padding:4px 5px}
 }
+
+
+/* Registry command hierarchy: one visible primary action, secondary commands grouped. */
+.m101-directory-heading-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.m101-directory-actions{display:flex;align-items:center;gap:8px!important;flex-wrap:wrap}
+.m101-more-actions{position:relative;z-index:25}
+.m101-more-actions>summary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 12px;border:1px solid var(--m101-line-strong);border-radius:8px;background:var(--m101-white);color:#626b63;font-size:11px;font-weight:700;list-style:none;cursor:pointer;user-select:none}
+.m101-more-actions>summary::-webkit-details-marker{display:none}
+.m101-more-actions>summary:hover,.m101-more-actions[open]>summary{background:var(--m101-teal-wash);border-color:#cbdad1;color:var(--m101-teal-dark)}
+.m101-more-actions>summary .material-symbols-outlined{font-size:18px}
+.m101-more-actions-menu{position:absolute;top:calc(100% + 8px);right:0;display:flex;flex-direction:column;gap:3px;width:238px;padding:7px;border:1px solid var(--m101-line);border-radius:11px;background:var(--m101-white);box-shadow:0 18px 42px rgba(50,48,39,.14);animation:m101-arrive .14s ease both}
+.m101-more-actions-menu button{display:flex;align-items:center;gap:11px;width:100%;min-height:49px;padding:7px 9px;border:0;border-radius:7px;background:transparent;color:#626b63;text-align:left}
+.m101-more-actions-menu button:hover{background:#f2f0e9}
+.m101-more-actions-menu button>.material-symbols-outlined{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:8px;background:#edf1eb;color:var(--m101-teal);font-size:17px}
+.m101-more-actions-menu button>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.m101-more-actions-menu button b{color:#3f4941;font-size:11px;font-weight:750}
+.m101-more-actions-menu button small{color:#92958c;font-size:9px}
+.m101-more-actions-menu button.is-destructive>.material-symbols-outlined{background:var(--m101-coral-wash);color:var(--m101-coral)}
+.m101-more-actions-menu button.is-destructive b{color:#a96852}
+.m101-more-actions-divider{height:1px;margin:3px 4px;background:var(--m101-line)}
+@media(max-width:760px){
+ .m101-directory-heading-actions{width:100%;justify-content:space-between}
+ .m101-more-actions-menu{right:0;max-width:calc(100vw - 36px)}
+}
