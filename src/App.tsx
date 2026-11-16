@@ -25,7 +25,9 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19 13.5a7.5 7.5 0 0 0 0-3l2-1.5-2-3.5-2.4.7a7.5 7.5 0 0 0-2.6-1.5L13.5 2h-3L10 4.7a7.5 7.5 0 0 0-2.6 1.5L5 5.5 3 9l2 1.5a7.5 7.5 0 0 0 0 3L3 15l2 3.5 2.4-.7a7.5 7.5 0 0 0 2.6 1.5l.5 2.7h3l.5-2.7a7.5 7.5 0 0 0 2.6-1.5l2.4.7 2-3.5z"/></>,
     search: <><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4.2 4.2"/></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
-    logout: <><path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></>
+    logout: <><path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></>,
+    download: <><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 17v3h14v-3"/></>,
+    refresh: <><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"/></>
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[name as keyof typeof icons] || icons.grid}</svg>;
 }
@@ -78,6 +80,7 @@ function BusinessRegistry() {
   const [query,setQuery] = useState('');
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState('');
+  const [refreshKey,setRefreshKey] = useState(0);
   useEffect(() => {
     let active=true;
     setLoading(true); setError('');
@@ -87,12 +90,20 @@ function BusinessRegistry() {
       .catch(e=>{if(active)setError(e instanceof Error?e.message:'เกิดข้อผิดพลาดในการโหลดข้อมูล');})
       .finally(()=>{if(active)setLoading(false);});
     return ()=>{active=false;};
-  },[year]);
+  },[year,refreshKey]);
   const filtered=records.filter(r=>[r.companyName,r.taxId,r.sequenceNo,r.eFilingCode,r.ssoCode,r.remark].join(' ').toLocaleLowerCase('th-TH').includes(query.trim().toLocaleLowerCase('th-TH')));
   const typeLabel=(v?:string)=>v==='company'?'บริษัทจำกัด':v==='partnership'?'ห้างหุ้นส่วน':v==='individual'?'บุคคลธรรมดา':'ไม่ระบุ';
   const statusLabel=(v?:string)=>v==='completed'?'เสร็จแล้ว':v==='in_progress'?'กำลังดำเนินการ':'รอดำเนินการ';
+  const exportCsv=()=>{
+    const headers=['ลำดับ','ชื่อกิจการ','ประเภท','เลขทะเบียน/เลขผู้เสียภาษี','e-Filing','ประกันสังคม','ผู้สอบบัญชี/วันที่','สถานะ','ตรวจ DBD','หมายเหตุ'];
+    const rows=filtered.map((r,i)=>[r.sequenceNo||String(i+1),r.companyName||'',typeLabel(r.type),r.taxId||'',r.eFilingCode||'',r.ssoCode||'',r.auditorDate||'',statusLabel(r.status),r.isVerifiedDbd?'ยืนยันแล้ว':'ยังไม่ยืนยัน',r.remark||'']);
+    const csv=[headers,...rows].map(row=>row.map(value=>'"'+String(value??'').replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+    const blob=new Blob(['\\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);const link=document.createElement('a');
+    link.href=url;link.download='M101-business-registry-'+year+'.csv';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+  };
   return <section className="registry-page">
-    <div className="page-title"><div><h1>ทะเบียนกิจการ</h1><p>รายการนิติบุคคลและข้อมูลที่จัดเก็บในพื้นที่ทำงาน</p></div><div className="registry-controls"><label>ปีข้อมูล <select value={year} onChange={e=>setYear(e.target.value)}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
+    <div className="page-title"><div><h1>ทะเบียนกิจการ</h1><p>รายการนิติบุคคลและข้อมูลที่จัดเก็บในพื้นที่ทำงาน</p></div><div className="registry-controls"><label>ปีข้อมูล <select value={year} onChange={e=>setYear(e.target.value)}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label><button className="registry-action" type="button" onClick={()=>setRefreshKey(v=>v+1)} disabled={loading} title="รีเฟรชข้อมูล"><Icon name="refresh" size={15}/><span>รีเฟรช</span></button><button className="registry-action registry-export" type="button" onClick={exportCsv} disabled={loading||filtered.length===0} title="ส่งออก CSV"><Icon name="download" size={15}/><span>ส่งออก CSV</span></button></div></div>
     <div className="registry-summary" aria-label="สรุปสถานะทะเบียน">
       <div className="summary-card"><span>กิจการทั้งหมด</span><b>{records.length.toLocaleString('th-TH')}</b><small>รายการในปีที่เลือก</small></div>
       <div className="summary-card summary-done"><span>ดำเนินการเสร็จแล้ว</span><b>{records.filter(r => r.status === 'completed').length.toLocaleString('th-TH')}</b><small>สถานะ completed</small></div>
