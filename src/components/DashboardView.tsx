@@ -722,7 +722,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </details>
                     </div>
                   )}
-                </div>                </div>
+                </div>
               </div>
 
 
