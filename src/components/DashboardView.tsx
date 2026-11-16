@@ -688,33 +688,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="m101-directory-heading-actions">
                   <div className="m101-directory-count" aria-label={`${records.length} รายการ`}>
                     <strong>{records.length.toLocaleString('th-TH')}</strong>
-                    <span>รายการ</span>
+                    <span>กิจการ</span>
                   </div>
-
                   {isLoggedIn && (
                     <div className="m101-directory-actions" role="group" aria-label="จัดการทะเบียนกิจการ">
                       <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="m101-directory-action m101-directory-action--add">
                         <span className="material-symbols-outlined" aria-hidden="true">add</span>
                         <span>เพิ่มกิจการ</span>
                       </DSButton>
-                      <DSButton type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} className="m101-directory-action">
-                        <span className="material-symbols-outlined" aria-hidden="true">upload_file</span>
-                        <span>นำเข้าไฟล์</span>
-                      </DSButton>
-                      <DSButton type="button" variant="secondary" onClick={() => setIsExcelMappingOpen(true)} className="m101-directory-action" title="นำเข้าไฟล์โดยเลือก Sheet และจับคู่คอลัมน์เอง">
-                        <span className="material-symbols-outlined" aria-hidden="true">table_chart</span>
-                        <span>จับคู่คอลัมน์</span>
-                      </DSButton>
-                      <DSButton type="button" variant="danger" onClick={() => setIsDeleteModalOpen(true)} className="m101-directory-action m101-directory-action--delete">
-                        <span className="material-symbols-outlined" aria-hidden="true">delete_outline</span>
-                        <span>ลบหลายรายการ</span>
-                      </DSButton>
+                      <details className="m101-more-actions">
+                        <summary aria-label="คำสั่งเพิ่มเติม">
+                          <span className="material-symbols-outlined" aria-hidden="true">more_horiz</span>
+                          <span>เพิ่มเติม</span>
+                        </summary>
+                        <div className="m101-more-actions-menu" role="group" aria-label="คำสั่งเพิ่มเติม">
+                          <button type="button" onClick={() => fileInputRef.current?.click()}>
+                            <span className="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                            <span><b>นำเข้าไฟล์</b><small>นำเข้าด้วยรูปแบบเดิม</small></span>
+                          </button>
+                          <button type="button" onClick={() => setIsExcelMappingOpen(true)}>
+                            <span className="material-symbols-outlined" aria-hidden="true">table_chart</span>
+                            <span><b>จับคู่คอลัมน์</b><small>เลือก Sheet และจับคู่ข้อมูลเอง</small></span>
+                          </button>
+                          <div className="m101-more-actions-divider" />
+                          <button type="button" className="is-destructive" onClick={() => setIsDeleteModalOpen(true)}>
+                            <span className="material-symbols-outlined" aria-hidden="true">delete_outline</span>
+                            <span><b>ลบหลายรายการ</b><small>จัดการรายการในทะเบียน</small></span>
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   )}
-                </div>
+                </div>                </div>
               </div>
 
 
