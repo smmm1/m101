@@ -6,7 +6,7 @@ const pages: { id: Page; label: string; group: string; icon: string; desc: strin
   { id: 'overview', label: 'ศูนย์บัญชาการ', group: 'WORKSPACE', icon: 'grid', desc: 'ภาพรวมสถานะและสิ่งที่ต้องจัดการในพอร์ตโฟลิโอ' },
   { id: 'businesses', label: 'พอร์ตโฟลิโอกิจการ', group: 'WORKSPACE', icon: 'building', desc: 'จัดการข้อมูลนิติบุคคลและกิจการในพื้นที่ทำงาน' },
   { id: 'work', label: 'งานและภาระประจำปี', group: 'OPERATIONS', icon: 'tasks', desc: 'วางแผน ติดตาม และตรวจสอบงานของแต่ละกิจการ' },
-  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'กำหนดส่งและเหตุการณ์สำคัญตามช่วงเวลา' },
+  { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: 'calendar', desc: 'กำหนดส่งและเหตุการณ์สำคัญตามช่วงเวลา' },
   { id: 'documents', label: 'คลังเอกสาร', group: 'OPERATIONS', icon: 'folder', desc: 'เอกสารและหลักฐานที่เชื่อมโยงกับกิจการและงาน' },
   { id: 'reports', label: 'รายงานและข้อมูลเชิงลึก', group: 'INTELLIGENCE', icon: 'chart', desc: 'วิเคราะห์ภาพรวมและติดตามผลการดำเนินงาน' },
   { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: 'clock', desc: 'ตรวจสอบเหตุการณ์และการเปลี่ยนแปลงในระบบ' },
