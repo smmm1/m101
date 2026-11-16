@@ -3,15 +3,32 @@ import { FormEvent, useEffect, useState } from 'react';
 type User = { id: string; username: string; displayName?: string; role: 'admin' | 'member' };
 type Page = 'overview' | 'businesses' | 'work' | 'calendar' | 'documents' | 'reports' | 'activity' | 'settings';
 const pages: { id: Page; label: string; group: string; icon: string; desc: string }[] = [
-  { id: 'overview', label: 'ศูนย์บัญชาการ', group: 'WORKSPACE', icon: '▦', desc: 'ภาพรวมสถานะและสิ่งที่ต้องจัดการในพอร์ตโฟลิโอ' },
-  { id: 'businesses', label: 'พอร์ตโฟลิโอกิจการ', group: 'WORKSPACE', icon: '▤', desc: 'จัดการข้อมูลนิติบุคคลและกิจการในพื้นที่ทำงาน' },
-  { id: 'work', label: 'งานและภาระประจำปี', group: 'OPERATIONS', icon: '☷', desc: 'วางแผน ติดตาม และตรวจสอบงานของแต่ละกิจการ' },
+  { id: 'overview', label: 'ศูนย์บัญชาการ', group: 'WORKSPACE', icon: 'grid', desc: 'ภาพรวมสถานะและสิ่งที่ต้องจัดการในพอร์ตโฟลิโอ' },
+  { id: 'businesses', label: 'พอร์ตโฟลิโอกิจการ', group: 'WORKSPACE', icon: 'building', desc: 'จัดการข้อมูลนิติบุคคลและกิจการในพื้นที่ทำงาน' },
+  { id: 'work', label: 'งานและภาระประจำปี', group: 'OPERATIONS', icon: 'tasks', desc: 'วางแผน ติดตาม และตรวจสอบงานของแต่ละกิจการ' },
   { id: 'calendar', label: 'ปฏิทินกำหนดการ', group: 'OPERATIONS', icon: '▦', desc: 'กำหนดส่งและเหตุการณ์สำคัญตามช่วงเวลา' },
-  { id: 'documents', label: 'คลังเอกสาร', group: 'OPERATIONS', icon: '▱', desc: 'เอกสารและหลักฐานที่เชื่อมโยงกับกิจการและงาน' },
-  { id: 'reports', label: 'รายงานและข้อมูลเชิงลึก', group: 'INTELLIGENCE', icon: '▥', desc: 'วิเคราะห์ภาพรวมและติดตามผลการดำเนินงาน' },
-  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: '◷', desc: 'ตรวจสอบเหตุการณ์และการเปลี่ยนแปลงในระบบ' },
-  { id: 'settings', label: 'ตั้งค่าพื้นที่ทำงาน', group: 'SYSTEM', icon: '⚙', desc: 'จัดการสมาชิก สิทธิ์ และการตั้งค่าระบบ' },
+  { id: 'documents', label: 'คลังเอกสาร', group: 'OPERATIONS', icon: 'folder', desc: 'เอกสารและหลักฐานที่เชื่อมโยงกับกิจการและงาน' },
+  { id: 'reports', label: 'รายงานและข้อมูลเชิงลึก', group: 'INTELLIGENCE', icon: 'chart', desc: 'วิเคราะห์ภาพรวมและติดตามผลการดำเนินงาน' },
+  { id: 'activity', label: 'ประวัติการทำงาน', group: 'INTELLIGENCE', icon: 'clock', desc: 'ตรวจสอบเหตุการณ์และการเปลี่ยนแปลงในระบบ' },
+  { id: 'settings', label: 'ตั้งค่าพื้นที่ทำงาน', group: 'SYSTEM', icon: 'settings', desc: 'จัดการสมาชิก สิทธิ์ และการตั้งค่าระบบ' },
 ];
+
+function Icon({ name, size = 18 }: { name: string; size?: number }) {
+  const icons = {
+    grid: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></>,
+    building: <><path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V20"/><path d="M8 8h2m4 0h2M8 12h2m4 0h2M10 20v-4h4v4M3 20h18"/></>,
+    tasks: <><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5m-3.5 7 1.2 1.2L7 11m-3.5 7 1.2 1.2L7 17"/></>,
+    calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4m9-4v4M3.5 9.5h17M8 13h2m4 0h2m-8 4h2"/></>,
+    folder: <><path d="M3.5 7A2 2 0 0 1 5.5 5h4l2 2h7A2 2 0 0 1 20.5 9v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10h17"/></>,
+    chart: <><path d="M4 20V4m0 16h17"/><rect x="7" y="12" width="3" height="5" rx=".5"/><rect x="13" y="8" width="3" height="9" rx=".5"/><rect x="19" y="5" width="2" height="12" rx=".5"/></>,
+    clock: <><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19 13.5a7.5 7.5 0 0 0 0-3l2-1.5-2-3.5-2.4.7a7.5 7.5 0 0 0-2.6-1.5L13.5 2h-3L10 4.7a7.5 7.5 0 0 0-2.6 1.5L5 5.5 3 9l2 1.5a7.5 7.5 0 0 0 0 3L3 15l2 3.5 2.4-.7a7.5 7.5 0 0 0 2.6 1.5l.5 2.7h3l.5-2.7a7.5 7.5 0 0 0 2.6-1.5l2.4.7 2-3.5z"/></>,
+    search: <><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4.2 4.2"/></>,
+    menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
+    logout: <><path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></>
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[name as keyof typeof icons] || icons.grid}</svg>;
+}
 
 function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
   const [page, setPage] = useState<Page>('overview');
@@ -26,13 +43,13 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
     {mobileMenu && <button className="scrim" aria-label="ปิดเมนู" onClick={() => setMobileMenu(false)} />}
     <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark">M</div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
-      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group === 'WORKSPACE' ? 'MENU' : group === 'OPERATIONS' ? 'OPERATIONS' : group === 'INTELLIGENCE' ? 'INSIGHTS' : 'OTHERS'}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></button>)}</div>)}</nav>
+      <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group === 'WORKSPACE' ? 'MENU' : group === 'OPERATIONS' ? 'OPERATIONS' : group === 'INTELLIGENCE' ? 'INSIGHTS' : 'OTHERS'}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon"><Icon name={p.icon} size={17} /></span><span>{p.label}</span></button>)}</div>)}</nav>
       <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar">
-        <button className="menu-toggle" onClick={() => setMobileMenu(true)}>☰</button>
-        <div className="global-search"><span>⌕</span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <button className="menu-toggle" aria-label="เปิดเมนู" onClick={() => setMobileMenu(true)}><Icon name="menu" /></button>
+        <div className="global-search"><span><Icon name="search" size={16} /></span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
         <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button><button className="notice" aria-label="การแจ้งเตือน">♧<i /></button></div>
       </header>
       <main className="content">
