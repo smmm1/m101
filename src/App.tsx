@@ -54,8 +54,8 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
       </header>
       <main className="content">
         {page === 'overview' ? <CommandCenter navigate={choose} /> : page === 'businesses' ? <BusinessRegistry /> : <section className="module-page">
-          <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">M101 Workspace</span></div>
-          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>หน้าจอนี้จะเชื่อมกับข้อมูลและความสามารถเดิมของ M101 ในเฟสถัดไป</p></div>
+          <div className="page-title"><div><h1>{current.label}</h1><p>{current.desc}</p></div><span className="phase-tag">Workspace</span></div>
+          <div className="module-empty"><div className="empty-icon">{current.icon}</div><h2>พื้นที่ทำงานส่วนนี้กำลังเตรียมระบบ</h2><p>ส่วนนี้อยู่ระหว่างจัดวางประสบการณ์ใช้งานใหม่</p></div>
         </section>}
       </main>
     </div>
