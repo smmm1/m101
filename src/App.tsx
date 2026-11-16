@@ -44,13 +44,13 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
     <aside className={'sidebar ' + (mobileMenu ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark">M</div><div><b>MUSTANG</b><small>BUSINESS WORKSPACE</small></div><button className="close-menu" onClick={() => setMobileMenu(false)}>×</button></div>
       <nav>{groups.map(group => <div className="nav-group" key={group}><label>{group === 'WORKSPACE' ? 'MENU' : group === 'OPERATIONS' ? 'OPERATIONS' : group === 'INTELLIGENCE' ? 'INSIGHTS' : 'OTHERS'}</label>{pages.filter(p => p.group === group).map(p => <button key={p.id} onClick={() => choose(p.id)} className={'nav-link ' + (page === p.id ? 'selected' : '')}><span className="nav-icon"><Icon name={p.icon} size={17} /></span><span>{p.label}</span></button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">M101 <span>BUSINESS WORKSPACE</span></div></div>
+      <div className="sidebar-bottom"><div className="secure-note"><span>◈</span><div>พื้นที่ทำงานส่วนตัว<small>เชื่อมต่ออย่างปลอดภัย</small></div></div><div className="version">PRIVATE WORKSPACE <span>BUSINESS OPERATIONS</span></div></div>
     </aside>
     <div className="main-column">
       <header className="topbar">
         <button className="menu-toggle" aria-label="เปิดเมนู" onClick={() => setMobileMenu(true)}><Icon name="menu" /></button>
-        <div className="global-search"><span><Icon name="search" size={16} /></span><input aria-label="ค้นหาใน M101" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" onClick={signOut} disabled={busy}>{busy ? 'กำลังออก…' : '⌄'}</button><button className="notice" aria-label="การแจ้งเตือน">♧<i /></button></div>
+        <div className="global-search"><span><Icon name="search" size={16} /></span><input aria-label="ค้นหาในพื้นที่ทำงาน" placeholder="ค้นหากิจการ งาน หรือเอกสาร..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="topbar-right"><div className="avatar">{(user.displayName || user.username).slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{user.displayName || user.username}</b><small>Owner</small></div><button className="logout" aria-label="ออกจากระบบ" title="ออกจากระบบ" onClick={signOut} disabled={busy}>{busy ? '…' : <Icon name="logout" size={17} />}</button></div>
       </header>
       <main className="content">
         {page === 'overview' ? <CommandCenter navigate={choose} /> : page === 'businesses' ? <BusinessRegistry /> : <section className="module-page">
