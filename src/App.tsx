@@ -108,38 +108,70 @@ function BusinessRegistry() {
 }
 
 function CommandCenter({ navigate }: { navigate: (id: Page) => void }) {
+  const [year,setYear] = useState('69');
+  const [years,setYears] = useState<string[]>(['69']);
+  const [records,setRecords] = useState<DirectoryRecord[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState('');
+  useEffect(() => {
+    let active=true;
+    setLoading(true); setError('');
+    fetch('/api/directory?year='+encodeURIComponent(year),{credentials:'same-origin',cache:'no-store'})
+      .then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||'โหลดภาพรวมไม่สำเร็จ');return data;})
+      .then(data=>{if(!active)return;setRecords(Array.isArray(data.records)?data.records:[]);setYears(Array.isArray(data.availableYears)&&data.availableYears.length?data.availableYears:['69']);})
+      .catch(e=>{if(active)setError(e instanceof Error?e.message:'เกิดข้อผิดพลาดในการโหลดข้อมูล');})
+      .finally(()=>{if(active)setLoading(false);});
+    return ()=>{active=false;};
+  },[year]);
+  const total=records.length;
+  const completed=records.filter(r=>r.status==='completed').length;
+  const progress=total?Math.round(completed/total*100):0;
+  const inProgress=records.filter(r=>r.status==='in_progress').length;
+  const pending=records.filter(r=>!r.status||r.status==='pending').length;
+  const unverified=records.filter(r=>!r.isVerifiedDbd).length;
+  const followUps=records.filter(r=>r.status!=='completed').slice(0,5);
+  const fmt=(n:number)=>n.toLocaleString('th-TH');
   return <div className="dashboard">
-    <div className="page-title"><div><h1>Dashboard</h1><p>ภาพรวมการดำเนินงานของกิจการทั้งหมด</p></div><div className="period-select">ภาพรวมทั้งหมด <span>⌄</span></div></div>
+    <div className="page-title"><div><h1>ศูนย์บัญชาการ</h1><p>ภาพรวมสถานะกิจการและรายการที่ต้องติดตาม</p></div><label className="dashboard-year">ปีข้อมูล <select value={year} onChange={e=>setYear(e.target.value)}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label></div>
+    {error&&<div className="registry-error" role="alert">{error}</div>}
+    <div className="registry-summary dashboard-summary" aria-label="ตัวชี้วัดกิจการ">
+      <div className="summary-card"><span>กิจการทั้งหมด</span><b>{loading?'—':fmt(total)}</b><small>รายการในปีที่เลือก</small></div>
+      <div className="summary-card summary-done"><span>ดำเนินการเสร็จแล้ว</span><b>{loading?'—':fmt(completed)}</b><small>{loading?'กำลังโหลด':total?progress+'% ของกิจการทั้งหมด':'ยังไม่มีข้อมูล'}</small></div>
+      <div className="summary-card summary-pending"><span>ยังต้องติดตาม</span><b>{loading?'—':fmt(total-completed)}</b><small>รอดำเนินการหรือกำลังทำ</small></div>
+      <div className="summary-card summary-review"><span>รอตรวจสอบ DBD</span><b>{loading?'—':fmt(unverified)}</b><small>รายการที่ยังไม่ยืนยัน</small></div>
+    </div>
     <div className="dashboard-top">
       <section className="dash-panel revenue-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมกิจการ</h2><p>สถานะกิจการในพอร์ตโฟลิโอ</p></div><button onClick={() => navigate('businesses')}>ดูทะเบียนกิจการ</button></div>
-        <div className="metric-value">— <small>กิจการทั้งหมด</small></div>
-        <div className="metric-note">ยังไม่มีข้อมูลสำหรับสรุปผล</div>
-        <div className="bar-chart empty-chart"><div className="chart-gridlines"><i/><i/><i/><i/></div><div className="chart-empty-label">ข้อมูลกิจการจะแสดงในส่วนนี้เมื่อเชื่อมต่อข้อมูลจริง</div><div className="bar-axis">{Array.from({length:12},(_,i)=><small key={i}>{String(i+1).padStart(2,'0')}</small>)}</div></div>
-        <div className="chart-legend"><span><i className="blue-dot"/> กิจการที่ดำเนินการ</span><span><i className="gray-dot"/> รอตรวจสอบ</span></div>
+        <div className="dash-panel-head"><div><h2>ความคืบหน้าทะเบียนกิจการ</h2><p>สัดส่วนสถานะจากข้อมูลจริงในระบบ</p></div><button onClick={() => navigate('businesses')}>เปิดทะเบียน <span>↗</span></button></div>
+        <div className="progress-overview"><div><strong>{loading?'—':progress+'%'}</strong><span>ดำเนินการเสร็จแล้ว</span></div><div className="progress-track"><i style={{width:progress+'%'}} /></div></div>
+        <div className="status-breakdown">
+          <div><span><i className="status-dot dot-done"/>เสร็จแล้ว</span><b>{loading?'—':fmt(completed)}</b></div>
+          <div><span><i className="status-dot dot-progress"/>กำลังดำเนินการ</span><b>{loading?'—':fmt(inProgress)}</b></div>
+          <div><span><i className="status-dot dot-pending"/>รอดำเนินการ</span><b>{loading?'—':fmt(pending)}</b></div>
+        </div>
       </section>
       <section className="dash-panel order-time-panel">
-        <div className="dash-panel-head"><div><h2>สถานะงานประจำปี</h2><p>ความคืบหน้าของงานทั้งหมด</p></div><button onClick={() => navigate('work')}>ดูงานทั้งหมด</button></div>
-        <div className="donut-area"><div className="donut"><div className="donut-hole"><b>—</b><small>ไม่มีข้อมูล</small></div></div></div>
-        <div className="donut-legend"><span><i className="blue-dot"/> เสร็จแล้ว <small>—</small></span><span><i className="purple-dot"/> กำลังทำ <small>—</small></span><span><i className="light-dot"/> ยังไม่เริ่ม <small>—</small></span></div>
+        <div className="dash-panel-head"><div><h2>สถานะงานทะเบียน</h2><p>สรุปจำนวนกิจการแยกตามสถานะ</p></div></div>
+        <div className="status-total"><strong>{loading?'—':fmt(total)}</strong><span>กิจการทั้งหมด</span></div>
+        <div className="status-meter"><i className="meter-done" style={{width:(total?completed/total*100:0)+'%'}}/><i className="meter-progress" style={{width:(total?inProgress/total*100:0)+'%'}}/><i className="meter-pending" style={{width:(total?pending/total*100:0)+'%'}}/></div>
+        <div className="status-breakdown compact">
+          <div><span><i className="status-dot dot-done"/>เสร็จแล้ว</span><b>{loading?'—':fmt(completed)}</b></div>
+          <div><span><i className="status-dot dot-progress"/>กำลังทำ</span><b>{loading?'—':fmt(inProgress)}</b></div>
+          <div><span><i className="status-dot dot-pending"/>รอดำเนินการ</span><b>{loading?'—':fmt(pending)}</b></div>
+        </div>
       </section>
     </div>
     <div className="dashboard-bottom">
-      <section className="dash-panel rating-panel">
-        <div className="dash-panel-head"><div><h2>ภาพรวมการปฏิบัติงาน</h2><p>ตัวชี้วัดจากข้อมูลในระบบ</p></div></div>
-        <div className="ring-metrics"><div className="ring ring-one"><b>—</b><small>งานเสร็จ</small></div><div className="ring ring-two"><b>—</b><small>ตรงเวลา</small></div><div className="ring ring-three"><b>—</b><small>รอตรวจสอบ</small></div></div>
-      </section>
       <section className="dash-panel most-panel">
-        <div className="dash-panel-head"><div><h2>กิจการที่ต้องติดตาม</h2><p>รายการสำคัญที่ต้องดำเนินการ</p></div><button onClick={() => navigate('businesses')}>ดูทั้งหมด</button></div>
-        <div className="empty-list"><span>▤</span><div><b>ยังไม่มีรายการกิจการ</b><small>กิจการที่ต้องติดตามจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>☷</span><div><b>ยังไม่มีงานที่ต้องติดตาม</b><small>งานใกล้ครบกำหนดจะแสดงที่นี่</small></div></div>
-        <div className="empty-list"><span>◷</span><div><b>ยังไม่มีกำหนดการใกล้ถึง</b><small>กำหนดส่งสำคัญจะแสดงที่นี่</small></div></div>
-        <button className="text-action" onClick={() => navigate('work')}>ไปยังงานประจำปี →</button>
+        <div className="dash-panel-head"><div><h2>รายการที่ต้องติดตาม</h2><p>กิจการที่ยังดำเนินการไม่เสร็จ</p></div><button onClick={() => navigate('businesses')}>ดูทั้งหมด <span>↗</span></button></div>
+        {loading?<div className="empty-list"><span>◷</span><div><b>กำลังโหลดข้อมูล</b><small>กำลังดึงรายการจากฐานข้อมูล</small></div></div>:followUps.length?followUps.map((r)=><div className="followup-row" key={r.id}><div className="followup-mark"><Icon name="building" size={16}/></div><div className="followup-copy"><b>{r.companyName||'ไม่ระบุชื่อกิจการ'}</b><small>{r.taxId||'ไม่มีเลขผู้เสียภาษี'}</small></div><span className={'status-chip status-'+(r.status||'pending')}>{r.status==='in_progress'?'กำลังทำ':'รอดำเนินการ'}</span></div>):<div className="empty-list"><span>✓</span><div><b>{total?'ไม่มีรายการค้างติดตาม':'ยังไม่มีข้อมูลกิจการ'}</b><small>{total?'กิจการทั้งหมดดำเนินการเสร็จแล้ว':'เพิ่มข้อมูลในทะเบียนเพื่อเริ่มติดตาม'}</small></div></div>}
+        <button className="text-action" onClick={() => navigate('businesses')}>ไปยังทะเบียนกิจการ →</button>
       </section>
       <section className="dash-panel order-panel">
-        <div className="dash-panel-head"><div><h2>แนวโน้มการดำเนินงาน</h2><p>สรุปตามช่วงเวลา</p></div><button onClick={() => navigate('reports')}>ดูรายงาน</button></div>
-        <div className="line-chart empty-line"><div className="line-grid"><i/><i/><i/><i/></div><div className="chart-empty-label">กราฟจะแสดงเมื่อมีข้อมูลเพียงพอ</div><div className="line-labels"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span></div></div>
-        <div className="chart-legend"><span><i className="blue-dot"/> ช่วงเวลาปัจจุบัน</span><span><i className="gray-dot"/> ช่วงเวลาก่อนหน้า</span></div>
+        <div className="dash-panel-head"><div><h2>ข้อมูลที่ควรตรวจสอบ</h2><p>คุณภาพข้อมูลในทะเบียน</p></div><button onClick={() => navigate('businesses')}>ตรวจสอบ <span>↗</span></button></div>
+        <div className="quality-item"><div><span>ข้อมูล DBD ยังไม่ยืนยัน</span><b>{loading?'—':fmt(unverified)}</b></div><div className="quality-track"><i style={{width:(total?unverified/total*100:0)+'%'}}/></div></div>
+        <div className="quality-item"><div><span>รหัส e-Filing ยังไม่ระบุ</span><b>{loading?'—':fmt(records.filter(r=>!r.eFilingCode?.trim()).length)}</b></div><div className="quality-track"><i style={{width:(total?records.filter(r=>!r.eFilingCode?.trim()).length/total*100:0)+'%'}}/></div></div>
+        <div className="quality-item"><div><span>รหัสประกันสังคมยังไม่ระบุ</span><b>{loading?'—':fmt(records.filter(r=>!r.ssoCode?.trim()).length)}</b></div><div className="quality-track"><i style={{width:(total?records.filter(r=>!r.ssoCode?.trim()).length/total*100:0)+'%'}}/></div></div>
       </section>
     </div>
   </div>;
