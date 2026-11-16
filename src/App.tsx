@@ -97,8 +97,8 @@ function BusinessRegistry() {
   const exportCsv=()=>{
     const headers=['ลำดับ','ชื่อกิจการ','ประเภท','เลขทะเบียน/เลขผู้เสียภาษี','e-Filing','ประกันสังคม','ผู้สอบบัญชี/วันที่','สถานะ','ตรวจ DBD','หมายเหตุ'];
     const rows=filtered.map((r,i)=>[r.sequenceNo||String(i+1),r.companyName||'',typeLabel(r.type),r.taxId||'',r.eFilingCode||'',r.ssoCode||'',r.auditorDate||'',statusLabel(r.status),r.isVerifiedDbd?'ยืนยันแล้ว':'ยังไม่ยืนยัน',r.remark||'']);
-    const csv=[headers,...rows].map(row=>row.map(value=>'"'+String(value??'').replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
-    const blob=new Blob(['\\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
+    const csv=[headers,...rows].map(row=>row.map(value=>'"'+String(value??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const blob=new Blob(['\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob);const link=document.createElement('a');
     link.href=url;link.download='M101-business-registry-'+year+'.csv';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
   };
