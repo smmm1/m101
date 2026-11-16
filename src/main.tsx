@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './design-system/index.css';
+import './m101-human-design.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
