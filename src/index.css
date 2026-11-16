@@ -392,3 +392,11 @@ button{cursor:pointer}
 .dash-panel-head button span{margin-left:5px;color:#9eb8dc}
 @media(max-width:1000px){.dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dashboard-year{font-size:10px}.dashboard-year select{padding:7px 20px 7px 8px}.progress-overview strong,.status-total strong{font-size:30px}.followup-row{gap:8px}.followup-row .status-chip{font-size:9px;padding:4px 6px}}
+
+/* Compact registry actions */
+.registry-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.registry-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 11px;border:1px solid #303d50;border-radius:8px;background:#151e2b;color:#c7d2e2;font-size:11px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.registry-action:hover:not(:disabled){background:#202c3d;border-color:#526987;color:#f3f6fb}
+.registry-action:disabled{opacity:.42;cursor:not-allowed}
+.registry-export{border-color:#3b5575;color:#d7e7ff;background:#17263a}
+@media(max-width:560px){.registry-controls{gap:6px}.registry-controls label{margin-right:auto}.registry-action{min-height:32px;padding:0 9px;font-size:10px}.registry-action span{display:inline}}
