@@ -76,6 +76,11 @@ function BusinessRegistry() {
   const statusLabel=(v?:string)=>v==='completed'?'เสร็จแล้ว':v==='in_progress'?'กำลังดำเนินการ':'รอดำเนินการ';
   return <section className="registry-page">
     <div className="page-title"><div><h1>ทะเบียนกิจการ</h1><p>รายการนิติบุคคลและข้อมูลที่จัดเก็บในพื้นที่ทำงาน</p></div><div className="registry-controls"><label>ปีข้อมูล <select value={year} onChange={e=>setYear(e.target.value)}>{years.map(y=><option key={y} value={y}>{y}</option>)}</select></label></div></div>
+    <div className="registry-summary" aria-label="สรุปสถานะทะเบียน">
+      <div className="summary-card"><span>กิจการทั้งหมด</span><b>{records.length.toLocaleString('th-TH')}</b><small>รายการในปีที่เลือก</small></div>
+      <div className="summary-card summary-done"><span>ดำเนินการเสร็จแล้ว</span><b>{records.filter(r => r.status === 'completed').length.toLocaleString('th-TH')}</b><small>สถานะ completed</small></div>
+      <div className="summary-card summary-pending"><span>ยังต้องติดตาม</span><b>{records.filter(r => r.status !== 'completed').length.toLocaleString('th-TH')}</b><small>รอดำเนินการหรือกำลังทำ</small></div>
+    </div>
     <div className="registry-toolbar"><div className="registry-count"><b>{records.length.toLocaleString('th-TH')}</b><span>กิจการในทะเบียน</span></div><div className="registry-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="ค้นหาชื่อกิจการ เลขทะเบียน หรือรหัส..." /></div></div>
     {error&&<div className="registry-error" role="alert">{error}</div>}
     <div className="registry-table-wrap"><table className="registry-table"><thead><tr><th>ลำดับ</th><th>ชื่อกิจการ</th><th>ประเภท</th><th>เลขทะเบียน / เลขผู้เสียภาษี</th><th>e-Filing</th><th>ประกันสังคม</th><th>ผู้สอบบัญชี / วันที่</th><th>สถานะ</th><th>ตรวจ DBD</th><th>หมายเหตุ</th></tr></thead><tbody>
