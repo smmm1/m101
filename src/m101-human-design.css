@@ -368,3 +368,53 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
  .m101-settings-grid{grid-template-columns:1fr!important}
  .m101-settings-dataset{grid-column:auto!important}
 }
+
+
+/* Shared dialogs: tactile, legible forms with a quieter frame and a clear primary action. */
+.m101-dialog-overlay{background:rgba(37,45,42,.48)!important;backdrop-filter:blur(5px)!important}
+.m101-dialog-panel,.ds-form-modal,.m101-detail-dialog{border:1px solid #e4ded3!important;border-radius:15px!important;background:var(--m101-white)!important;color:var(--m101-ink)!important;box-shadow:0 28px 90px rgba(33,37,32,.22)!important}
+.m101-dialog-header,.ds-modal-header,.ds-form-modal__header{padding:20px 23px!important;border-bottom:1px solid var(--m101-line)!important;background:#fbfaf6!important}
+.ds-modal-icon{display:grid!important;place-items:center!important;width:38px!important;height:38px!important;border-radius:10px!important;background:var(--m101-teal-wash)!important;color:var(--m101-teal)!important}
+.ds-modal-title{color:var(--m101-ink)!important;font-size:17px!important;font-weight:800!important;letter-spacing:-.035em!important}
+.ds-modal-description{color:var(--m101-muted)!important;font-size:10px!important;line-height:1.6!important}
+.ds-icon-button{width:34px!important;height:34px!important;border:1px solid var(--m101-line)!important;border-radius:8px!important;background:var(--m101-white)!important;color:#778077!important}
+.ds-icon-button:hover{background:var(--m101-coral-wash)!important;color:var(--m101-coral)!important}
+.ds-form-modal__body,.m101-detail-dialog>div:nth-child(2){padding:22px 23px!important;background:var(--m101-white)!important}
+.ds-form-section{padding:16px!important;border:1px solid var(--m101-line)!important;border-radius:10px!important;background:#fbfaf6!important}
+.ds-form-section__title{color:#485249!important;font-size:11px!important;font-weight:800!important}
+.ds-label{color:#626b62!important;font-size:10px!important;font-weight:750!important}
+.ds-field,.ds-form-modal input,.ds-form-modal select,.ds-form-modal textarea,.m101-detail-dialog input,.m101-detail-dialog select,.m101-detail-dialog textarea{min-height:40px!important;border:1px solid var(--m101-line-strong)!important;border-radius:7px!important;background:#fffefa!important;color:var(--m101-ink)!important;font-size:11px!important;box-shadow:none!important}
+.ds-field:focus,.ds-form-modal input:focus,.ds-form-modal select:focus,.ds-form-modal textarea:focus{border-color:#8eafa0!important;outline:2px solid rgba(55,110,101,.12)!important}
+.ds-form-status-row{border:1px solid var(--m101-line)!important;border-radius:9px!important;background:#fbfaf6!important}
+.ds-status-option{border-radius:7px!important}
+.ds-modal-footer{padding:15px 23px!important;border-top:1px solid var(--m101-line)!important;background:#fbfaf6!important}
+.ds-modal-footer button,.ds-form-modal button{min-height:38px!important;border-radius:8px!important;font-size:11px!important;font-weight:700!important}
+.ds-modal-footer button[data-variant="primary"],.ds-form-modal button[data-variant="primary"]{background:var(--m101-teal)!important}
+.m101-detail-dialog .m101-dialog-header{background:#f3f4ed!important}
+.m101-detail-dialog .ds-copy-action,.m101-detail-dialog .ds-copy-icon{border:1px solid var(--m101-line)!important;border-radius:6px!important;background:#f5f2eb!important;color:#657267!important}
+.m101-detail-dialog .ds-delete-action{color:var(--m101-coral)!important}
+.m101-import-dialog{background:rgba(37,45,42,.52)!important;backdrop-filter:blur(5px)!important}
+.m101-import-wizard{border:1px solid var(--m101-line)!important;border-radius:15px!important;background:var(--m101-white)!important;box-shadow:0 28px 90px rgba(33,37,32,.22)!important}
+.m101-import-wizard__header{padding:20px 24px!important;border-bottom:1px solid var(--m101-line)!important;background:#fbfaf6!important}
+.m101-import-kicker{color:#99958a!important;letter-spacing:.15em!important}
+.m101-import-wizard__body{background:var(--m101-white)!important}
+.m101-import-upload{border:1px dashed #bdcfc3!important;border-radius:11px!important;background:#f5f7f1!important}
+.m101-import-upload__icon{background:var(--m101-teal-wash)!important;color:var(--m101-teal)!important}
+.m101-import-section{border:1px solid var(--m101-line)!important;border-radius:10px!important;background:#fffefa!important}
+.m101-import-section__heading{border-bottom:1px solid var(--m101-line)!important;color:#455047!important}
+.m101-import-control input,.m101-import-control select{min-height:39px!important;border:1px solid var(--m101-line-strong)!important;border-radius:7px!important;background:#fbfaf6!important;color:var(--m101-ink)!important}
+.m101-import-table-option__check{accent-color:var(--m101-teal)!important}
+.m101-import-table-option__copy{color:#59635a!important}
+.m101-import-mini-preview,.m101-import-preview-list{border:1px solid var(--m101-line)!important;border-radius:8px!important;background:#fbfaf6!important}
+.m101-import-wizard__actions{padding:14px 22px!important;border-top:1px solid var(--m101-line)!important;background:#fbfaf6!important}
+.m101-import-wizard__actions button{min-height:39px!important;border-radius:8px!important;font-size:11px!important;font-weight:750!important}
+@media(max-width:640px){
+ .m101-dialog-overlay{align-items:flex-end!important;padding:8px!important}
+ .m101-dialog-panel,.ds-form-modal,.m101-detail-dialog{max-height:94dvh!important;border-radius:15px 15px 10px 10px!important}
+ .m101-dialog-header,.ds-modal-header,.ds-form-modal__header{padding:16px!important}
+ .ds-form-modal__body,.m101-detail-dialog>div:nth-child(2){padding:16px!important}
+ .ds-modal-footer{padding:12px 16px!important}
+ .m101-import-wizard{max-height:96dvh!important}
+ .m101-import-wizard__header{padding:15px!important}
+ .m101-import-wizard__actions{padding:12px!important}
+}
