@@ -1065,7 +1065,7 @@ button { -webkit-tap-highlight-color:transparent; }
   .m101-topbar-brand strong { font-size:14px; }
   .m101-topbar-brand small { display:none; }
   .m101-primary-nav { gap:1px; }
-  .m101-primary-nav .m101-nav-item:nth-child(n+2) { display:none; }
+  .m101-primary-nav .m101-nav-item:nth-child(n+3) { display:none; }
   .m101-nav-item,.m101-nav-more { min-height:36px; padding:0 8px; font-size:10px; gap:5px; }
   .m101-global-search { min-width:0 !important; max-width:none; flex:1 1 90px !important; height:35px !important; margin:0 !important; }
   .m101-global-search kbd { display:none !important; }
