@@ -1084,3 +1084,32 @@ button { -webkit-tap-highlight-color:transparent; }
 @media (prefers-reduced-motion:reduce) {
   .m101-nav-item,.m101-nav-more { transition:none !important; }
 }
+
+
+/* Semantic status colors: color is paired with the existing text labels */
+:root {
+  --ds-color-primary: #625bf6;
+  --ds-color-primary-hover: #5048dc;
+  --ds-color-primary-soft: #efeeff;
+  --ds-color-success: #167a45;
+  --ds-color-success-soft: #e9f7ef;
+  --ds-color-warning: #a16207;
+  --ds-color-warning-soft: #fff6df;
+  --ds-color-danger: #c83e4d;
+  --ds-color-danger-soft: #fff0f1;
+  --ds-color-info: #2864c7;
+  --ds-color-info-soft: #edf4ff;
+  --ds-focus-ring: 0 0 0 3px rgba(98,91,246,.16);
+}
+.ds-badge--success { color:#17683e !important; background:#e9f7ef !important; border:1px solid #d2efdd; }
+.ds-badge--warning { color:#925b08 !important; background:#fff6df !important; border:1px solid #f5e7b9; }
+.ds-badge--danger { color:#b83242 !important; background:#fff0f1 !important; border:1px solid #f7d7dc; }
+.ds-badge--info { color:#2459ad !important; background:#edf4ff !important; border:1px solid #d9e8ff; }
+.ds-badge--neutral { color:#656b80 !important; background:#f1f2f7 !important; border:1px solid #e6e8f0; }
+.ds-button--danger { background:#c83e4d !important; border-color:#c83e4d !important; color:#fff !important; }
+.ds-button--danger:hover { background:#ad3040 !important; border-color:#ad3040 !important; }
+.m101-dot-done,.m101-progress-done { background:#21a366 !important; }
+.m101-dot-progress,.m101-progress-active { background:#4385e8 !important; }
+.m101-dot-pending,.m101-progress-waiting { background:#e5a12b !important; }
+.m101-task-dot-overdue,.m101-task-overdue-segment { background:#dc5260 !important; }
+.m101-status-dot { flex:0 0 auto; }
