@@ -1410,3 +1410,166 @@ html, body, #root,
     font-size:11px !important;
   }
 }
+
+
+/* M101 Topbar rebuild — two clear desktop rows, responsive mobile stack.
+   This final layout intentionally supersedes the earlier competing navbar rules. */
+.mobile-app-nav.m101-topbar {
+  display:grid !important;
+  grid-template-columns:minmax(150px, 1fr) minmax(240px, 380px) max-content !important;
+  grid-template-areas:
+    "brand search actions"
+    "navigation navigation navigation" !important;
+  align-items:center !important;
+  justify-content:stretch !important;
+  column-gap:clamp(18px,2.2vw,34px) !important;
+  row-gap:8px !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:120px !important;
+  height:auto !important;
+  padding:12px clamp(22px,3vw,44px) 10px !important;
+  background:#fff !important;
+  border:0 !important;
+  border-bottom:1px solid #e3ece6 !important;
+  box-shadow:0 2px 8px rgba(25,65,42,.035) !important;
+  overflow:visible !important;
+}
+.mobile-app-nav.m101-topbar > .m101-topbar-brand {
+  grid-area:brand !important;
+  align-self:center !important;
+  justify-self:start !important;
+  min-width:140px !important;
+  margin:0 !important;
+}
+.mobile-app-nav.m101-topbar > .m101-primary-nav {
+  grid-area:navigation !important;
+  display:flex !important;
+  align-self:center !important;
+  justify-self:stretch !important;
+  width:100% !important;
+  min-width:0 !important;
+  flex:0 1 auto !important;
+  flex-wrap:nowrap !important;
+  justify-content:flex-start !important;
+  gap:8px !important;
+  padding:7px 0 0 !important;
+  margin:0 !important;
+  overflow-x:auto !important;
+  overflow-y:visible !important;
+  border:0 !important;
+  border-top:1px solid #edf2ee !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  scrollbar-width:thin;
+  scrollbar-color:#d7e5db transparent;
+}
+.mobile-app-nav.m101-topbar > .m101-page-context { display:none !important; }
+.mobile-app-nav.m101-topbar > .m101-global-search {
+  grid-area:search !important;
+  justify-self:stretch !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  height:40px !important;
+  margin:0 !important;
+}
+.mobile-app-nav.m101-topbar > .m101-topbar-actions {
+  grid-area:actions !important;
+  justify-self:end !important;
+  align-self:center !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  min-width:max-content !important;
+  margin:0 !important;
+}
+.mobile-app-nav.m101-topbar .m101-nav-item,
+.mobile-app-nav.m101-topbar .m101-nav-more {
+  display:inline-flex !important;
+  flex:0 0 auto !important;
+  min-height:40px !important;
+  padding:0 14px !important;
+  font-size:12px !important;
+}
+.mobile-app-nav.m101-topbar .m101-nav-item:nth-child(n),
+.mobile-app-nav.m101-topbar .m101-nav-more-wrap {
+  display:inline-flex !important;
+}
+.mobile-app-nav.m101-topbar .m101-nav-more-wrap { display:none !important; }
+.mobile-app-nav.m101-topbar .m101-nav-item.is-active {
+  background:#eaf5ee !important;
+  border-color:#d4e9da !important;
+  color:#145c35 !important;
+  box-shadow:none !important;
+}
+.mobile-app-nav.m101-topbar .m101-topbar-actions > div:first-child > button {
+  min-height:40px !important;
+  padding:0 12px !important;
+  border-radius:8px !important;
+  font-size:12px !important;
+}
+.mobile-app-nav.m101-topbar .m101-topbar-actions > div:nth-child(2) > button {
+  width:40px !important;
+  height:40px !important;
+}
+.mobile-app-nav.m101-topbar .m101-topbar-actions > div:last-child {
+  padding-left:10px !important;
+  margin-left:2px !important;
+}
+@media (max-width:1180px) {
+  .mobile-app-nav.m101-topbar {
+    grid-template-columns:minmax(125px,1fr) minmax(190px,280px) max-content !important;
+    column-gap:16px !important;
+    padding-inline:20px !important;
+  }
+  .mobile-app-nav.m101-topbar .m101-nav-item { padding-inline:11px !important; }
+}
+@media (max-width:760px) {
+  .mobile-app-nav.m101-topbar {
+    grid-template-columns:minmax(0,1fr) max-content !important;
+    grid-template-areas:
+      "brand actions"
+      "search search"
+      "navigation navigation" !important;
+    row-gap:9px !important;
+    min-height:0 !important;
+    padding:12px 14px 9px !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-topbar-brand { min-width:0 !important; }
+  .mobile-app-nav.m101-topbar > .m101-global-search { height:38px !important; }
+  .mobile-app-nav.m101-topbar > .m101-topbar-actions { gap:5px !important; }
+  .mobile-app-nav.m101-topbar .m101-topbar-actions > div:nth-child(2) { display:none !important; }
+  .mobile-app-nav.m101-topbar .m101-topbar-actions > div:last-child {
+    padding-left:7px !important;
+    margin-left:0 !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-primary-nav {
+    gap:5px !important;
+    padding-top:8px !important;
+  }
+  .mobile-app-nav.m101-topbar .m101-nav-item,
+  .mobile-app-nav.m101-topbar .m101-nav-more {
+    min-height:37px !important;
+    padding-inline:11px !important;
+    font-size:11px !important;
+  }
+}
+@media (max-width:420px) {
+  .mobile-app-nav.m101-topbar {
+    padding-inline:10px !important;
+    column-gap:8px !important;
+  }
+  .mobile-app-nav.m101-topbar .m101-topbar-brand .m101-brand-mark {
+    width:35px !important;
+    height:35px !important;
+  }
+  .mobile-app-nav.m101-topbar .m101-topbar-brand strong { font-size:14px !important; }
+  .mobile-app-nav.m101-topbar .m101-topbar-actions > div:first-child > button {
+    min-height:36px !important;
+    padding-inline:8px !important;
+  }
+  .mobile-app-nav.m101-topbar .m101-nav-item { padding-inline:9px !important; }
+}
