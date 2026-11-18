@@ -456,7 +456,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือหลัก">
         <div className="m101-topbar-brand">
           <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button>
-          <span><strong>M101</strong><small>Business workspace</small></span>
+          
         </div>
         <div className="m101-primary-nav" role="navigation" aria-label="เมนูหลัก">
           <button type="button" aria-current={activeTab === 'dashboard' ? 'page' : undefined} onClick={() => navigateToTab('dashboard')} className={`m101-nav-item ${activeTab === 'dashboard' ? 'is-active' : ''}`}><LayoutDashboard size={16} aria-hidden="true" /><span>ภาพรวม</span></button>
