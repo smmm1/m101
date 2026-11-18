@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History } from 'lucide-react';
+import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History, MoreHorizontal } from 'lucide-react';
 import { BusinessRecord } from '../types';
 import { AnnualTasksView } from './AnnualTasksView';
 import { AddBusinessModal } from './AddBusinessModal';
@@ -102,6 +102,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Active view tab: 'directory' | 'dashboard' | 'settings' | 'import'
   const [activeTab, setActiveTab] = useState<'directory' | 'dashboard' | 'settings' | 'import' | 'tasks'>('dashboard');
+  const [showMoreNavigation, setShowMoreNavigation] = useState(false);
+  const [showSensitiveValues, setShowSensitiveValues] = useState(false);
   const [showNavigationProgress, setShowNavigationProgress] = useState(false);
   const navigationProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -427,19 +429,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
       
-      <aside className="m101-sidebar m101-primary-sidebar" aria-label="เมนูหลัก">
-        <div className="m101-sidebar-brand"><button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button><div><strong>M101</strong><span>Business Directory</span></div></div>
-        <div className="m101-nav-section-label">WORKSPACE</div>
-        <nav className="m101-sidebar-navigation" aria-label="เมนูหลัก">
-          <button type="button" role="tab" aria-selected={activeTab === "dashboard"} onClick={() => navigateToTab("dashboard")} className={`m101-side-link ${activeTab === "dashboard" ? "is-active" : ""}`}><LayoutDashboard aria-hidden="true" /><span>ภาพรวม</span></button>
-          <button type="button" role="tab" aria-selected={activeTab === "directory"} onClick={() => navigateToTab("directory")} className={`m101-side-link ${activeTab === "directory" ? "is-active" : ""}`}><Building2 aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "tasks"} onClick={() => navigateToTab("tasks")} className={`m101-side-link ${activeTab === "tasks" ? "is-active" : ""}`}><ClipboardList aria-hidden="true" /><span>งานประจำปี</span></button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "import"} onClick={() => navigateToTab("import")} className={`m101-side-link ${activeTab === "import" ? "is-active" : ""}`}><FileSpreadsheet aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
-          {isLoggedIn && <button type="button" role="tab" aria-selected={activeTab === "settings"} onClick={() => navigateToTab("settings")} className={`m101-side-link ${activeTab === "settings" ? "is-active" : ""}`}><Settings aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
-        </nav>
-        <div className="m101-sidebar-spacer" />
-        <div className="m101-sidebar-foot"><span className="m101-status-dot" /><div><strong>M101 WORKSPACE</strong><span>ระบบทะเบียนกิจการ</span></div></div>
-      </aside>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -464,6 +454,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
       <nav className="mobile-app-nav m101-topbar min-h-16 bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 shrink-0 z-30" aria-label="เครื่องมือหลัก">
+        <div className="m101-topbar-brand">
+          <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button>
+          <span><strong>M101</strong><small>Business workspace</small></span>
+        </div>
+        <nav className="m101-primary-nav" aria-label="เมนูหลัก">
+          <button type="button" aria-current={activeTab === 'dashboard' ? 'page' : undefined} onClick={() => navigateToTab('dashboard')} className={`m101-nav-item ${activeTab === 'dashboard' ? 'is-active' : ''}`}><LayoutDashboard size={16} aria-hidden="true" /><span>ภาพรวม</span></button>
+          <button type="button" aria-current={activeTab === 'directory' ? 'page' : undefined} onClick={() => navigateToTab('directory')} className={`m101-nav-item ${activeTab === 'directory' ? 'is-active' : ''}`}><Building2 size={16} aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
+          {isLoggedIn && <button type="button" aria-current={activeTab === 'tasks' ? 'page' : undefined} onClick={() => navigateToTab('tasks')} className={`m101-nav-item ${activeTab === 'tasks' ? 'is-active' : ''}`}><ClipboardList size={16} aria-hidden="true" /><span>งานประจำปี</span></button>}
+          {isLoggedIn && <button type="button" aria-current={activeTab === 'import' ? 'page' : undefined} onClick={() => navigateToTab('import')} className={`m101-nav-item ${activeTab === 'import' ? 'is-active' : ''}`}><FileSpreadsheet size={16} aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
+          {isLoggedIn && <button type="button" aria-current={activeTab === 'settings' ? 'page' : undefined} onClick={() => navigateToTab('settings')} className={`m101-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}><Settings size={16} aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
+          <div className="m101-nav-more-wrap">
+            <button type="button" className={`m101-nav-more ${showMoreNavigation ? 'is-open' : ''}`} aria-expanded={showMoreNavigation} aria-haspopup="menu" onClick={() => setShowMoreNavigation((open) => !open)}><MoreHorizontal size={17} aria-hidden="true" /><span>เพิ่มเติม</span></button>
+            {showMoreNavigation && <div className="m101-nav-more-menu" role="menu" aria-label="เมนูเพิ่มเติม">
+              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('tasks'); setShowMoreNavigation(false); }}><ClipboardList size={16} />งานประจำปี</button>}
+              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('import'); setShowMoreNavigation(false); }}><FileSpreadsheet size={16} />นำเข้า / ส่งออก</button>}
+              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('settings'); setShowMoreNavigation(false); }}><Settings size={16} />ตั้งค่าระบบ</button>}
+            </div>}
+          </div>
+        </nav>
         <div className="m101-page-context">
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
@@ -831,9 +840,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono tracking-tight truncate">
-                        {isLoggedIn 
-                          ? (activeRecord.taxId || '0994001000000') 
-                          : `${(activeRecord.taxId || '0994001000000').slice(0, 4)}*********`}
+                        {isLoggedIn ? (activeRecord.taxId || '—') : (activeRecord.taxId ? `${activeRecord.taxId.slice(0, 4)}*********` : '—')}
                       </span>
                       {isLoggedIn && (
                         <button
@@ -855,8 +862,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-slate-900 dark:text-white font-mono tracking-tight truncate">
-                        {isLoggedIn ? (activeRecord.password || activeRecord.eFilingCode || '90696285') : '********'}
+                        {isLoggedIn ? (showSensitiveValues ? (activeRecord.password || activeRecord.eFilingCode || '—') : '••••••••') : '********'}
                       </span>
+                      {isLoggedIn && (
+                        <button type="button" onClick={() => setShowSensitiveValues((visible) => !visible)} aria-label={showSensitiveValues ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'} title={showSensitiveValues ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'} className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
+                          <span className="material-symbols-outlined text-[16px]">{showSensitiveValues ? 'visibility_off' : 'visibility'}</span>
+                        </button>
+                      )}
                       {isLoggedIn && (
                         <button
                           type="button"
