@@ -1685,3 +1685,32 @@ html, body, #root,
   .mobile-app-nav.m101-topbar { padding-inline:10px !important; }
   .mobile-app-nav.m101-topbar > .m101-topbar-actions { gap:4px !important; }
 }
+
+
+/* Center the complete desktop header group as one balanced unit */
+@media (min-width:961px) {
+  .mobile-app-nav.m101-topbar {
+    grid-template-columns:42px max-content minmax(180px,220px) max-content !important;
+    grid-template-areas:"brand navigation search actions" !important;
+    justify-content:center !important;
+    justify-items:center !important;
+    column-gap:clamp(12px,1.5vw,22px) !important;
+    padding-inline:24px !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-topbar-brand {
+    justify-self:center !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-primary-nav {
+    width:max-content !important;
+    max-width:100% !important;
+    justify-self:center !important;
+    justify-content:center !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-global-search {
+    justify-self:center !important;
+  }
+  .mobile-app-nav.m101-topbar > .m101-topbar-actions {
+    justify-self:center !important;
+    justify-content:center !important;
+  }
+}
