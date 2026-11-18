@@ -458,21 +458,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button type="button" onClick={handleOwnerLogoTap} aria-label="M101" className="m101-brand-mark">M</button>
           <span><strong>M101</strong><small>Business workspace</small></span>
         </div>
-        <nav className="m101-primary-nav" aria-label="เมนูหลัก">
+        <div className="m101-primary-nav" role="navigation" aria-label="เมนูหลัก">
           <button type="button" aria-current={activeTab === 'dashboard' ? 'page' : undefined} onClick={() => navigateToTab('dashboard')} className={`m101-nav-item ${activeTab === 'dashboard' ? 'is-active' : ''}`}><LayoutDashboard size={16} aria-hidden="true" /><span>ภาพรวม</span></button>
           <button type="button" aria-current={activeTab === 'directory' ? 'page' : undefined} onClick={() => navigateToTab('directory')} className={`m101-nav-item ${activeTab === 'directory' ? 'is-active' : ''}`}><Building2 size={16} aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
           {isLoggedIn && <button type="button" aria-current={activeTab === 'tasks' ? 'page' : undefined} onClick={() => navigateToTab('tasks')} className={`m101-nav-item ${activeTab === 'tasks' ? 'is-active' : ''}`}><ClipboardList size={16} aria-hidden="true" /><span>งานประจำปี</span></button>}
           {isLoggedIn && <button type="button" aria-current={activeTab === 'import' ? 'page' : undefined} onClick={() => navigateToTab('import')} className={`m101-nav-item ${activeTab === 'import' ? 'is-active' : ''}`}><FileSpreadsheet size={16} aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
           {isLoggedIn && <button type="button" aria-current={activeTab === 'settings' ? 'page' : undefined} onClick={() => navigateToTab('settings')} className={`m101-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}><Settings size={16} aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
           <div className="m101-nav-more-wrap">
-            <button type="button" className={`m101-nav-more ${showMoreNavigation ? 'is-open' : ''}`} aria-expanded={showMoreNavigation} aria-haspopup="menu" onClick={() => setShowMoreNavigation((open) => !open)}><MoreHorizontal size={17} aria-hidden="true" /><span>เพิ่มเติม</span></button>
+            <button type="button" className={`m101-nav-more ${showMoreNavigation ? 'is-open' : ''} ${activeTab === 'tasks' || activeTab === 'import' || activeTab === 'settings' ? 'has-active-child' : ''}`} aria-expanded={showMoreNavigation} aria-haspopup="menu" onClick={() => setShowMoreNavigation((open) => !open)}><MoreHorizontal size={17} aria-hidden="true" /><span>เพิ่มเติม</span></button>
             {showMoreNavigation && <div className="m101-nav-more-menu" role="menu" aria-label="เมนูเพิ่มเติม">
-              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('tasks'); setShowMoreNavigation(false); }}><ClipboardList size={16} />งานประจำปี</button>}
-              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('import'); setShowMoreNavigation(false); }}><FileSpreadsheet size={16} />นำเข้า / ส่งออก</button>}
-              {isLoggedIn && <button type="button" role="menuitem" onClick={() => { navigateToTab('settings'); setShowMoreNavigation(false); }}><Settings size={16} />ตั้งค่าระบบ</button>}
+              {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'tasks' ? 'page' : undefined} className={activeTab === 'tasks' ? 'is-active' : ''} onClick={() => { navigateToTab('tasks'); setShowMoreNavigation(false); }}><ClipboardList size={16} />งานประจำปี</button>}
+              {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'import' ? 'page' : undefined} className={activeTab === 'import' ? 'is-active' : ''} onClick={() => { navigateToTab('import'); setShowMoreNavigation(false); }}><FileSpreadsheet size={16} />นำเข้า / ส่งออก</button>}
+              {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'settings' ? 'page' : undefined} className={activeTab === 'settings' ? 'is-active' : ''} onClick={() => { navigateToTab('settings'); setShowMoreNavigation(false); }}><Settings size={16} />ตั้งค่าระบบ</button>}
             </div>}
           </div>
-        </nav>
+        </div>
         <div className="m101-page-context">
           <strong>{activeTab === "dashboard" ? "ภาพรวมระบบ" : activeTab === "directory" ? "ทะเบียนกิจการ" : activeTab === "tasks" ? "งานประจำปี" : activeTab === "import" ? "นำเข้า / ส่งออกข้อมูล" : "ตั้งค่าระบบ"}</strong>
           <span>พื้นที่จัดการทะเบียนกิจการ</span>
