@@ -32,7 +32,9 @@ const actionLabel = (event: Activity) => {
     'annual_task.created': 'เพิ่มงานประจำปี', 'annual_task.updated': 'แก้ไขงานประจำปี', 'annual_task.deleted': 'ลบงานประจำปี',
     'owner.password_initialized': 'ตั้งค่าบัญชี Owner',
   };
-  return (labels[event.action] || event.action) + (name ? ` · ${name}` : '') + year + changed;
+  const memberState = event.action === 'user.updated' && metadata.accountStatus === 'suspended' ? ' · ระงับบัญชี'
+    : event.action === 'user.updated' && metadata.passwordReset ? ' · รีเซ็ตรหัสผ่าน' : '';
+  return (labels[event.action] || event.action) + (name ? ` · ${name}` : '') + memberState + year + changed;
 };
 
 export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
