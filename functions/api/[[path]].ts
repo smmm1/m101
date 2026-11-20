@@ -674,8 +674,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
           const preserved = (existingByYear.get(year) || []).filter((record) => !assignedIds.has(String(record.id || '')));
           recordsToWrite[year] = [...preserved, ...incoming];
         }
-        years = Array.from(new Set([...existingByYear.keys(), ...years])).slice(0, 100);
-        for (const year of existingByYear.keys()) if (!Object.prototype.hasOwnProperty.call(recordsToWrite, year)) recordsToWrite[year] = existingByYear.get(year) || [];
+        // Members cannot create or remove fiscal years. Only existing years are writable.
+        years = Array.from(existingByYear.keys()).slice(0, 100);
+        for (const year of years) {
+          if (!Object.prototype.hasOwnProperty.call(recordsToWrite, year)) {
+            const currentRows = existingByYear.get(year) || [];
+            recordsToWrite[year] = currentRows;
+          }
+        }
       }
       for (const year of years) if ((recordsToWrite[year] || []).length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
 
