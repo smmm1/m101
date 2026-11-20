@@ -23,7 +23,7 @@ const actionLabel = (event: Activity) => {
   const year = metadata.fiscalYear ? ` · ปี ${metadata.fiscalYear}` : '';
   const changed = Array.isArray(metadata.changedFields) ? ` (แก้ไข: ${metadata.changedFields.join(', ')})` : '';
   const labels: Record<string, string> = {
-    'auth.login': 'เข้าสู่ระบบ', 'auth.logout': 'ออกจากระบบ',
+    'auth.login': 'เข้าสู่ระบบ', 'auth.logout': 'ออกจากระบบ', 'auth.session_expired': 'เซสชันหมดอายุ',
     'user.created': 'สร้างบัญชีสมาชิก', 'user.updated': 'แก้ไขบัญชีสมาชิก',
     'business.created': 'เพิ่มกิจการ', 'business.updated': 'แก้ไขกิจการ',
     'business.deleted': 'ลบกิจการ', 'business.viewed': 'เปิดดูรายละเอียดกิจการ',
@@ -265,7 +265,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
               <time className="shrink-0 text-xs tabular-nums text-slate-500">{dateTime(event.created_at)}</time>
             </article>)}
           </div> : <p className="p-10 text-center text-sm text-slate-400">ยังไม่มีประวัติในหมวดนี้</p>}
-          <footer className="border-t border-slate-100 px-4 py-3 text-[11px] leading-5 text-slate-400">แสดงสูงสุด 500 รายการ · การออกจากระบบจะแสดงเฉพาะเมื่อกดออกจากระบบจริง ส่วนเซสชันหมดอายุหรือปิดเบราว์เซอร์จะไม่ถูกนับเป็นการ Logout</footer>
+          <footer className="border-t border-slate-100 px-4 py-3 text-[11px] leading-5 text-slate-400">แสดงสูงสุด 500 รายการ · การออกจากระบบจะแสดงเฉพาะเมื่อกดออกจากระบบจริง เซสชันหมดอายุจะแสดงแยกจาก Logout ส่วนการปิดเบราว์เซอร์โดยไม่กดออกจากระบบจะไม่ถือเป็น Logout</footer>
         </section>}
       </div>
 
