@@ -533,8 +533,24 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const access = await requireWorkspaceAccess(request, env);
       if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
       if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่ดูประวัติกิจกรรมได้' }, 403);
-      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') || 250)));
+      const requestedLimit = Number(url.searchParams.get('limit') || 250);
+      const limit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(1, Math.floor(requestedLimit))) : 250;
       const memberId = String(url.searchParams.get('memberId') || '').slice(0, 100);
+
+      // Distinguish an expired session from an explicit Logout. Expired sessions
+      // are recorded once when the Owner opens the audit page, using expires_at.
+      const expiredSessions = await env.DB.prepare(
+        "SELECT s.token_hash, s.user_id, u.username, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id JOIN workspace_memberships wm ON wm.user_id = u.id WHERE wm.workspace_id = ? AND wm.status = 'active' AND s.expires_at <= ? LIMIT 500"
+      ).bind(access.workspaceId, Math.floor(Date.now() / 1000)).all();
+      for (const session of (expiredSessions.results || []) as Array<{ token_hash: string; user_id: string; username: string; expires_at: number }>) {
+        const expiredAt = new Date(Number(session.expires_at) * 1000).toISOString();
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'auth.session_expired', 'session', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM audit_events WHERE workspace_id = ? AND action = 'auth.session_expired' AND resource_id = ?)")
+            .bind(randomToken(18), access.workspaceId, session.user_id, session.token_hash, JSON.stringify({ username: session.username, expirationType: 'session_timeout' }), expiredAt, access.workspaceId, session.token_hash),
+          env.DB.prepare('DELETE FROM sessions WHERE token_hash = ? AND expires_at <= ?').bind(session.token_hash, Math.floor(Date.now() / 1000)),
+        ]);
+      }
+
       const result = await env.DB.prepare(
         `SELECT e.id, e.actor_user_id, e.action, e.resource_type, e.resource_id, e.metadata_json, e.created_at,
           u.username AS actor_username, u.display_name AS actor_display_name
