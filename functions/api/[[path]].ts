@@ -143,13 +143,18 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
     const existingIds = new Set(productionRecords.map((record) => String(record.id || '')));
     for (const record of previewRecords) {
       previewRecordCount++;
-      const nameMatches = byName.get(normalize(record.companyName)) || [];
-      let target = nameMatches.length === 1 ? nameMatches[0] : null;
+      const previewId = String(record.id || '');
+      // Preview and Production were created from the same M101 dataset, so preserve
+      // exact record identity first (important for rows already safely merged).
+      let target = previewId ? productionRecords.find((item) => String(item.id || '') === previewId) || null : null;
+      if (!target) {
+        const nameMatches = byName.get(normalize(record.companyName)) || [];
+        target = nameMatches.length === 1 ? nameMatches[0] : null;
+      }
       if (!target) {
         const taxMatches = byTaxId.get(normalize(record.taxId)) || [];
         if (taxMatches.length === 1) target = taxMatches[0];
       }
-      const previewId = String(record.id || '');
       if (target) {
         matchedRecordCount++;
         idMap.set(previewId, String(target.id || previewId));
