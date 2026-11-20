@@ -8,7 +8,9 @@ type Activity = {
   id: string; actor_user_id: string | null; actor_username?: string | null; actor_display_name?: string | null;
   action: string; resource_type: string; resource_id: string | null; metadata_json: string; created_at: string;
 };
-type Tab = 'members' | 'login' | 'activity';
+type Assignment = { id: string; business_id: string; user_id: string; display_name: string; created_at: string };
+type BusinessOption = { id: string; companyName: string; fiscalYear: string };
+type Tab = 'members' | 'permissions' | 'login' | 'activity';
 
 const dateTime = (value: string) => {
   const date = new Date(value);
@@ -27,6 +29,7 @@ const actionLabel = (event: Activity) => {
     'business.deleted': 'ลบกิจการ', 'business.viewed': 'เปิดดูรายละเอียดกิจการ',
     'navigation.opened': 'เปิดหน้าเมนู', 'report.exported': 'ส่งออกรายงาน',
     'business.assignment.created': 'มอบหมายกิจการ', 'business.assignment.revoked': 'ยกเลิกการมอบหมาย',
+    'annual_task.created': 'เพิ่มงานประจำปี', 'annual_task.updated': 'แก้ไขงานประจำปี', 'annual_task.deleted': 'ลบงานประจำปี',
     'owner.password_initialized': 'ตั้งค่าบัญชี Owner',
   };
   return (labels[event.action] || event.action) + (name ? ` · ${name}` : '') + year + changed;
@@ -48,6 +51,10 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
   const [editName, setEditName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [filterMember, setFilterMember] = useState('');
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [businessOptions, setBusinessOptions] = useState<BusinessOption[]>([]);
+  const [selectedMember, setSelectedMember] = useState('');
+  const [selectedBusiness, setSelectedBusiness] = useState('');
   const [activityFilter, setActivityFilter] = useState<'all' | 'login' | 'changes' | 'views'>('all');
 
   const loadMembers = useCallback(async () => {
@@ -75,7 +82,30 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
   }, [filterMember]);
 
   useEffect(() => { void loadMembers(); }, [loadMembers]);
-  useEffect(() => { if (tab !== 'members') void loadEvents(); }, [tab, loadEvents]);
+  const loadAssignments = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const [assignmentResponse, dataResponse] = await Promise.all([
+        fetch('/api/workspace/assignments', { credentials: 'same-origin' }),
+        fetch('/api/data', { credentials: 'same-origin' }),
+      ]);
+      const [assignmentPayload, dataPayload] = await Promise.all([assignmentResponse.json(), dataResponse.json()]);
+      if (!assignmentResponse.ok) throw new Error(assignmentPayload.error || 'โหลดสิทธิ์สมาชิกไม่สำเร็จ');
+      if (!dataResponse.ok) throw new Error(dataPayload.error || 'โหลดทะเบียนกิจการไม่สำเร็จ');
+      setAssignments((assignmentPayload.assignments || []) as Assignment[]);
+      const options: BusinessOption[] = [];
+      for (const [year, rows] of Object.entries(dataPayload.recordsByYear || {}) as Array<[string, Array<Record<string, unknown>>]>) {
+        for (const row of rows || []) if (row.id && row.companyName) options.push({ id: String(row.id), companyName: String(row.companyName), fiscalYear: year });
+      }
+      setBusinessOptions(options);
+    } catch (err) { setError(err instanceof Error ? err.message : 'โหลดสิทธิ์สมาชิกไม่สำเร็จ'); }
+    finally { setLoadingEvents(false); }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'login' || tab === 'activity') void loadEvents();
+    if (tab === 'permissions') void loadAssignments();
+  }, [tab, loadEvents, loadAssignments]);
 
   const memberCount = members.filter((member) => member.role === 'member').length;
   const activeCount = members.filter((member) => member.role === 'member' && member.account_status === 'active').length;
@@ -85,6 +115,35 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
     if (activityFilter === 'changes') return !event.action.startsWith('auth.') && !['business.viewed', 'navigation.opened'].includes(event.action);
     return true;
   }), [events, activityFilter]);
+
+  const assignBusiness = async () => {
+    if (!selectedMember || !selectedBusiness || saving) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/workspace/assignments', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedMember, businessId: selectedBusiness }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'มอบหมายสิทธิ์ไม่สำเร็จ');
+      setNotice(payload.alreadyAssigned ? 'สมาชิกมีสิทธิ์ในกิจการนี้อยู่แล้ว' : 'มอบหมายสิทธิ์เข้าถึงกิจการแล้ว');
+      await loadAssignments();
+    } catch (err) { setError(err instanceof Error ? err.message : 'มอบหมายสิทธิ์ไม่สำเร็จ'); }
+    finally { setSaving(false); }
+  };
+
+  const revokeAssignment = async (assignment: Assignment) => {
+    if (saving || !window.confirm('ยกเลิกสิทธิ์เข้าถึงกิจการนี้?')) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const response = await fetch(`/api/workspace/assignments/${encodeURIComponent(assignment.id)}`, { method: 'DELETE', credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'ยกเลิกสิทธิ์ไม่สำเร็จ');
+      setNotice('ยกเลิกสิทธิ์เข้าถึงแล้ว');
+      await loadAssignments();
+    } catch (err) { setError(err instanceof Error ? err.message : 'ยกเลิกสิทธิ์ไม่สำเร็จ'); }
+    finally { setSaving(false); }
+  };
 
   const createMember = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); if (saving) return;
@@ -138,7 +197,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
         </section>
 
         <nav className="flex gap-1 border-b border-slate-200" aria-label="ส่วนจัดการสมาชิก">
-          {([['members','สมาชิก'],['login','เข้า–ออกระบบ'],['activity','กิจกรรมในระบบ']] as Array<[Tab,string]>).map(([key,label]) => (
+          {([['members','สมาชิก'],['permissions','สิทธิ์กิจการ'],['login','เข้า–ออกระบบ'],['activity','กิจกรรมในระบบ']] as Array<[Tab,string]>).map(([key,label]) => (
             <button key={key} type="button" onClick={() => { setTab(key); setError(''); setNotice(''); }} className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${tab === key ? 'border-slate-800 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{label}</button>
           ))}
         </nav>
@@ -172,6 +231,24 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
             <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-5 text-slate-400">การนำออกจะระงับการเข้าสู่ระบบและเก็บประวัติเดิมไว้ ไม่ลบบันทึกกิจกรรมย้อนหลัง</p>
           </section>
         </div>}
+
+        {tab === 'permissions' && <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 p-4"><h2 className="text-sm font-semibold">กำหนดสิทธิ์เข้าถึงกิจการ</h2><p className="mt-1 text-xs text-slate-400">สมาชิกจะเห็นและแก้ไขได้เฉพาะกิจการที่ Owner มอบหมายให้</p></div>
+          <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-[1fr_1.5fr_auto] sm:items-end">
+            <label className="block text-xs font-medium text-slate-600">สมาชิก<select value={selectedMember} onChange={(event) => setSelectedMember(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">เลือกสมาชิก</option>{members.filter((member) => member.role === 'member' && member.account_status === 'active').map((member) => <option key={member.id} value={member.id}>{member.display_name} (@{member.username})</option>)}</select></label>
+            <label className="block text-xs font-medium text-slate-600">กิจการที่อนุญาต<select value={selectedBusiness} onChange={(event) => setSelectedBusiness(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">เลือกกิจการ</option>{businessOptions.map((business) => <option key={business.id} value={business.id}>{business.companyName} · ปี {business.fiscalYear}</option>)}</select></label>
+            <button type="button" disabled={!selectedMember || !selectedBusiness || saving} onClick={() => void assignBusiness()} className="h-10 rounded-lg bg-[#172b4d] px-4 text-sm font-semibold text-white disabled:opacity-50">มอบหมายสิทธิ์</button>
+          </div>
+          {loadingEvents ? <p className="p-8 text-center text-sm text-slate-400">กำลังโหลดสิทธิ์…</p> : <div className="divide-y divide-slate-100">
+            {assignments.filter((assignment) => !selectedMember || assignment.user_id === selectedMember).map((assignment) => {
+              const business = businessOptions.find((item) => item.id === assignment.business_id);
+              const member = members.find((item) => item.id === assignment.user_id);
+              return <div key={assignment.id} className="flex items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{business?.companyName || 'กิจการที่ไม่มีในทะเบียนแล้ว'}</p><p className="mt-1 text-xs text-slate-400">{member?.display_name || assignment.display_name} · มอบหมายเมื่อ {dateTime(assignment.created_at)}</p></div><button type="button" disabled={saving} onClick={() => void revokeAssignment(assignment)} className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50">ยกเลิกสิทธิ์</button></div>;
+            })}
+            {!assignments.length && <p className="p-8 text-center text-sm text-slate-400">ยังไม่มีการมอบหมายสิทธิ์</p>}
+          </div>}
+          <footer className="border-t border-slate-100 px-4 py-3 text-[11px] leading-5 text-slate-400">สิทธิ์ในปัจจุบันเป็นการกำหนดขอบเขตตามกิจการ (เข้าถึงและแก้ไขข้อมูลกิจการที่ได้รับมอบหมาย) ยังไม่มีการแยกสิทธิ์อ่านอย่างเดียวกับแก้ไข</footer>
+        </section>}
 
         {(tab === 'login' || tab === 'activity') && <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
