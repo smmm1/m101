@@ -68,6 +68,7 @@ interface DashboardViewProps {
   isAdmin?: boolean;
   isVisitor?: boolean;
   onReturnToLogin?: () => void;
+  onManageUsers?: () => void;
   onToggleLogin: () => void;
 }
 
@@ -93,6 +94,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   isAdmin = false,
   isVisitor = false,
   onReturnToLogin,
+  onManageUsers,
   onToggleLogin,
 }) => {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -674,6 +676,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white truncate">{userName}</p>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</p>
                 </div>
+                {isLoggedIn && isAdmin && onManageUsers && (
+                  <button type="button" role="menuitem" onClick={() => { setShowProfileDropdown(false); onManageUsers(); }}
+                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">manage_accounts</span>
+                    <span>จัดการสมาชิกและสิทธิ์กิจการ</span>
+                  </button>
+                )}
                 {isLoggedIn && (
                   <button
                     type="button"
@@ -720,7 +729,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <span>รายการ</span>
                   </div>
 
-                  {isLoggedIn && (
+                  {isLoggedIn && isAdmin && (
                     <div className="m101-directory-actions" role="group" aria-label="จัดการทะเบียนกิจการ">
                       <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="m101-directory-action m101-directory-action--add">
                         <span className="material-symbols-outlined" aria-hidden="true">add</span>
