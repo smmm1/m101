@@ -712,6 +712,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </nav>
 
+      {/* Mobile bottom navigation — shared by both visual themes */}
+      <nav className="m101-mobile-bottom-nav" aria-label="เมนูหลักบนมือถือ">
+        <button type="button" aria-current={activeTab === 'dashboard' ? 'page' : undefined} className={activeTab === 'dashboard' ? 'is-active' : ''} onClick={() => navigateToTab('dashboard')}>
+          <LayoutDashboard size={20} aria-hidden="true" /><span>ภาพรวม</span>
+        </button>
+        <button type="button" aria-current={activeTab === 'directory' ? 'page' : undefined} className={activeTab === 'directory' ? 'is-active' : ''} onClick={() => navigateToTab('directory')}>
+          <Building2 size={20} aria-hidden="true" /><span>กิจการ</span>
+        </button>
+        {isLoggedIn && <button type="button" aria-current={activeTab === 'tasks' ? 'page' : undefined} className={activeTab === 'tasks' ? 'is-active' : ''} onClick={() => navigateToTab('tasks')}>
+          <ClipboardList size={20} aria-hidden="true" /><span>งานประจำปี</span>
+        </button>}
+        {isLoggedIn && isAdmin && <button type="button" aria-current={activeTab === 'import' ? 'page' : undefined} className={activeTab === 'import' ? 'is-active' : ''} onClick={() => navigateToTab('import')}>
+          <FileSpreadsheet size={20} aria-hidden="true" /><span>นำเข้า</span>
+        </button>}
+        {isLoggedIn && <button type="button" aria-current={activeTab === 'settings' ? 'page' : undefined} className={activeTab === 'settings' ? 'is-active' : ''} onClick={() => navigateToTab('settings')}>
+          <Settings size={20} aria-hidden="true" /><span>ตั้งค่า</span>
+        </button>}
+      </nav>
+
       {/* 2. MAIN VIEW SWITCHER / CONTENT */}
       <div ref={mainContentRef} className="mobile-main-content flex-1 min-h-0 overflow-auto flex flex-col p-3 sm:p-5">
         <div key={activeTab} className="m101-tab-transition min-h-full">
