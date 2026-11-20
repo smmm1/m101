@@ -474,10 +474,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101 กรุณาติดต่อ Owner' }, 403);
       const token = randomToken();
       const createdAt = new Date().toISOString();
-      await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
-        .bind(await digest(token), user.id, now + SESSION_SECONDS, createdAt).run();
-      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.login', 'session', ?, ?, ?)")
-        .bind(randomToken(18), workspaceAccess.workspaceId, user.id, user.id, JSON.stringify({ username: user.username }), createdAt).run();
+      const tokenHash = await digest(token);
+      await env.DB.batch([
+        env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)').bind(tokenHash, user.id, now + SESSION_SECONDS, createdAt),
+        env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.login', 'session', ?, ?, ?)").bind(randomToken(18), workspaceAccess.workspaceId, user.id, user.id, JSON.stringify({ username: user.username }), createdAt),
+      ]);
       return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
     }
 
@@ -516,10 +517,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
         const activeUser = await getUser(request, env);
         if (activeUser) {
           const access = await getWorkspaceAccess(activeUser, env);
-          if (access) await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.logout', 'session', ?, ?, ?)")
-            .bind(randomToken(18), access.workspaceId, activeUser.id, activeUser.id, JSON.stringify({ username: activeUser.username, logoutType: 'explicit' }), new Date().toISOString()).run();
+          if (access) await env.DB.batch([
+            env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.logout', 'session', ?, ?, ?)").bind(randomToken(18), access.workspaceId, activeUser.id, activeUser.id, JSON.stringify({ username: activeUser.username, logoutType: 'explicit' }), new Date().toISOString()),
+            env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash),
+          ]);
+          else await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
+        } else {
+          await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
         }
-        await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
       }
       return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
     }
