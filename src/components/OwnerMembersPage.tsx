@@ -297,7 +297,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
                     <p className="mt-1 text-[10px] text-slate-400">{event.action}</p>
                   </div>
                   <time className="shrink-0 self-center text-right text-[11px] leading-5 tabular-nums text-slate-500">{dateTime(event.created_at)}</time>
-                </article>;
+                </button>;
               })}
             </div> : <div className="px-5 py-12 text-center"><span className="text-2xl" aria-hidden="true">🗂️</span><p className="mt-2 text-sm font-medium text-slate-600">ยังไม่มีประวัติในหมวดนี้</p><p className="mt-1 text-xs text-slate-400">เมื่อมีการใช้งาน รายการจะปรากฏที่นี่</p></div>}
             <footer className="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] leading-5 text-slate-500">แสดงสูงสุด 500 รายการ · Logout จะบันทึกเมื่อกดออกจากระบบจริง ส่วนเซสชันหมดอายุจะแสดงแยกต่างหาก</footer>
