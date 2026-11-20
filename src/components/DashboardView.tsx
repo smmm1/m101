@@ -671,7 +671,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div role="menu" aria-label="เมนูบัญชีผู้ใช้" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-3 border-b border-slate-100 dark:border-slate-800">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">บัญชีที่กำลังใช้งาน</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white truncate">{userName}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{isVisitor ? 'ผู้เยี่ยมชม · ดูอย่างเดียว' : isAdmin ? 'ผู้ดูแลระบบ' : 'สมาชิก'}</p>
                 </div>
+                {isLoggedIn && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowProfileDropdown(false);
+                      onToggleLogin();
+                    }}
+                    className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  >
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span>
+                    <span>ออกจากระบบ</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
