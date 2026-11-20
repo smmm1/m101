@@ -542,14 +542,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const expiredSessions = await env.DB.prepare(
         "SELECT s.token_hash, s.user_id, u.username, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id JOIN workspace_memberships wm ON wm.user_id = u.id WHERE wm.workspace_id = ? AND wm.status = 'active' AND s.expires_at <= ? LIMIT 500"
       ).bind(access.workspaceId, Math.floor(Date.now() / 1000)).all();
+      const expiryNow = Math.floor(Date.now() / 1000);
+      const expiryStatements: any[] = [];
       for (const session of (expiredSessions.results || []) as Array<{ token_hash: string; user_id: string; username: string; expires_at: number }>) {
         const expiredAt = new Date(Number(session.expires_at) * 1000).toISOString();
-        await env.DB.batch([
+        expiryStatements.push(
           env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) SELECT ?, ?, ?, 'auth.session_expired', 'session', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM audit_events WHERE workspace_id = ? AND action = 'auth.session_expired' AND resource_id = ?)")
             .bind(randomToken(18), access.workspaceId, session.user_id, session.token_hash, JSON.stringify({ username: session.username, expirationType: 'session_timeout' }), expiredAt, access.workspaceId, session.token_hash),
-          env.DB.prepare('DELETE FROM sessions WHERE token_hash = ? AND expires_at <= ?').bind(session.token_hash, Math.floor(Date.now() / 1000)),
-        ]);
+          env.DB.prepare('DELETE FROM sessions WHERE token_hash = ? AND expires_at <= ?').bind(session.token_hash, expiryNow),
+        );
       }
+      for (let offset = 0; offset < expiryStatements.length; offset += 80) await env.DB.batch(expiryStatements.slice(offset, offset + 80));
 
       const result = await env.DB.prepare(
         `SELECT e.id, e.actor_user_id, e.action, e.resource_type, e.resource_id, e.metadata_json, e.created_at,
