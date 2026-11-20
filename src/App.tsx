@@ -890,7 +890,8 @@ function AppContent() {
         }}
         isLoggedIn={isLoggedIn}
         isAdmin={userRole === 'admin'}
-        onToggleLogin={() => {
+        onManageUsers={() => setUserManagementOpen(true)}
+        onToggleLogin={() => {}
           void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
             .finally(() => {
               setSessionUser(null);
