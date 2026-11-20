@@ -191,12 +191,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const scrollPositionsRef = useRef<Record<string, number>>({});
   const activeTabRef = useRef(activeTab);
 
+  const recordServerActivity = (action: string, resourceType: string, resourceId = '', label = '') => {
+    void fetch('/api/activity', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, resourceType, resourceId, label, fiscalYear: selectedYear }),
+    }).catch(() => undefined);
+  };
+
   // Save the outgoing tab's scroll position before switching views.
   const navigateToTab = (nextTab: typeof activeTab) => {
     if (nextTab === activeTabRef.current) return;
     const container = mainContentRef.current;
     if (container) scrollPositionsRef.current[activeTabRef.current] = container.scrollTop;
     activeTabRef.current = nextTab;
+    recordServerActivity('navigation.opened', 'section', nextTab, nextTab);
     setShowNavigationProgress(true);
     if (navigationProgressTimerRef.current) clearTimeout(navigationProgressTimerRef.current);
     navigationProgressTimerRef.current = setTimeout(() => {
@@ -928,7 +937,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => setIsDetailModalOpen(true)}
+                      onClick={() => {
+                        setIsDetailModalOpen(true);
+                        recordServerActivity('business.viewed', 'business', activeRecord.id, activeRecord.companyName);
+                      }}
                       className="w-full h-11 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-500/15"
                     >
                       <span className="material-symbols-outlined text-[17px] text-zinc-500">visibility</span>
