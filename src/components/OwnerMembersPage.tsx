@@ -271,32 +271,38 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
             <div className="col-span-2 rounded-xl border border-slate-200 bg-white p-3 sm:col-span-1"><p className="text-xs text-slate-500">{tab === 'login' ? 'ออกจากระบบ / หมดอายุ' : 'เปิดดู / เปิดหน้า'}</p><p className="mt-1 text-xl font-semibold tabular-nums">{tab === 'login' ? events.filter((event) => event.action === 'auth.logout' || event.action === 'auth.session_expired').length : events.filter((event) => ['business.viewed','navigation.opened'].includes(event.action)).length}</p></div>
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3"><p className="text-xs font-semibold text-slate-700">{tab === 'login' ? 'รายการเข้า–ออกล่าสุด' : 'รายการกิจกรรมล่าสุด'}</p><span className="text-[11px] text-slate-400">ใหม่ล่าสุดอยู่ด้านบน</span></div>
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-3.5"><div><p className="text-sm font-semibold text-slate-800">{tab === 'login' ? 'รายการเข้า–ออกล่าสุด' : 'รายการกิจกรรมล่าสุด'}</p><p className="mt-0.5 text-[11px] text-slate-400">เลือกหนึ่งรายการเพื่อดูรายละเอียด</p></div><span className="rounded-md bg-white px-2 py-1 text-[10px] font-medium text-slate-500 ring-1 ring-slate-200">ใหม่ล่าสุดก่อน</span></div>
             {loadingEvents ? <p className="p-10 text-center text-sm text-slate-400">กำลังโหลดประวัติ…</p> : (tab === 'login' ? events.filter((event) => event.action.startsWith('auth.')) : filteredEvents).length ? <div className="divide-y divide-slate-100">
               {(tab === 'login' ? events.filter((event) => event.action.startsWith('auth.')) : filteredEvents).map((event) => {
                 const meta = (() => { try { return JSON.parse(event.metadata_json || '{}') as Record<string, unknown>; } catch { return {}; } })();
-                const visual = event.action === 'auth.login' ? { icon: '↪', tone: 'bg-emerald-50 text-emerald-700', tag: 'เข้าสู่ระบบ' }
-                  : event.action === 'auth.logout' ? { icon: '↩', tone: 'bg-slate-100 text-slate-600', tag: 'ออกจากระบบ' }
-                  : event.action === 'auth.session_expired' ? { icon: '◷', tone: 'bg-amber-50 text-amber-700', tag: 'เซสชันหมดอายุ' }
-                  : event.action === 'business.imported' ? { icon: '⇧', tone: 'bg-cyan-50 text-cyan-700', tag: 'นำเข้าไฟล์' }
-                   : event.action.endsWith('.created') ? { icon: '+', tone: 'bg-emerald-50 text-emerald-700', tag: 'เพิ่มข้อมูล' }
-                  : event.action.endsWith('.updated') ? { icon: '✎', tone: 'bg-sky-50 text-sky-700', tag: 'แก้ไขข้อมูล' }
-                  : event.action.endsWith('.deleted') ? { icon: '×', tone: 'bg-rose-50 text-rose-700', tag: 'ลบข้อมูล' }
-                  : event.action === 'business.viewed' ? { icon: '◎', tone: 'bg-violet-50 text-violet-700', tag: 'เปิดดูข้อมูล' }
-                  : event.action === 'navigation.opened' ? { icon: '⌂', tone: 'bg-slate-100 text-slate-600', tag: 'เปิดหน้าเมนู' }
-                  : event.action.includes('assignment') ? { icon: '⌑', tone: 'bg-indigo-50 text-indigo-700', tag: 'จัดการสิทธิ์' }
-                  : event.action === 'report.exported' ? { icon: '⇧', tone: 'bg-cyan-50 text-cyan-700', tag: 'ส่งออกรายงาน' }
-                  : { icon: '•', tone: 'bg-slate-100 text-slate-600', tag: 'กิจกรรมอื่น' };
+                const visual = event.action === 'auth.login' ? { icon: '↗', tone: 'bg-emerald-100 text-emerald-700 ring-emerald-200', tag: 'เข้าสู่ระบบ' }
+                  : event.action === 'auth.logout' ? { icon: '↙', tone: 'bg-slate-100 text-slate-600 ring-slate-200', tag: 'ออกจากระบบ' }
+                  : event.action === 'auth.session_expired' ? { icon: '◷', tone: 'bg-amber-100 text-amber-700 ring-amber-200', tag: 'เซสชันหมดอายุ' }
+                  : event.action === 'business.imported' ? { icon: '⇧', tone: 'bg-cyan-100 text-cyan-700 ring-cyan-200', tag: 'นำเข้าไฟล์' }
+                  : event.action.endsWith('.created') ? { icon: '+', tone: 'bg-emerald-100 text-emerald-700 ring-emerald-200', tag: 'เพิ่มข้อมูล' }
+                  : event.action.endsWith('.updated') ? { icon: '✎', tone: 'bg-blue-100 text-blue-700 ring-blue-200', tag: 'แก้ไขข้อมูล' }
+                  : event.action.endsWith('.deleted') ? { icon: '−', tone: 'bg-rose-100 text-rose-700 ring-rose-200', tag: 'ลบข้อมูล' }
+                  : event.action === 'business.viewed' ? { icon: '◉', tone: 'bg-violet-100 text-violet-700 ring-violet-200', tag: 'เปิดดูข้อมูล' }
+                  : event.action === 'navigation.opened' ? { icon: '⌂', tone: 'bg-indigo-100 text-indigo-700 ring-indigo-200', tag: 'เปิดหน้าเมนู' }
+                  : event.action.includes('assignment') ? { icon: '▣', tone: 'bg-purple-100 text-purple-700 ring-purple-200', tag: 'จัดการสิทธิ์' }
+                  : event.action === 'report.exported' ? { icon: '⇩', tone: 'bg-orange-100 text-orange-700 ring-orange-200', tag: 'ส่งออกรายงาน' }
+                  : { icon: '•', tone: 'bg-slate-100 text-slate-600 ring-slate-200', tag: 'กิจกรรมอื่น' };
                 const target = String(meta.businessName || meta.taskName || meta.label || (meta.username ? '@' + meta.username : '') || '');
                 const actor = event.actor_display_name || event.actor_username || 'บัญชีที่ถูกนำออก';
-                return <button type="button" key={event.id} onClick={() => setSelectedEvent(event)} className="flex w-full gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50/70">
-                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-base font-semibold ${visual.tone}`} aria-hidden="true">{visual.icon}</span>
+                return <button type="button" key={event.id} onClick={() => setSelectedEvent(event)} className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400">
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl font-bold ring-1 ring-inset ${visual.tone}`} aria-hidden="true">{visual.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-slate-800">{actionLabel(event)}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${visual.tone}`}>{visual.tag}</span></div>
-                    <p className="mt-1 truncate text-xs text-slate-500">{actor}{event.actor_username ? ` (@${event.actor_username})` : ''}{target && !actionLabel(event).includes(target) ? ` · ${target}` : ''}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-slate-800">{actionLabel(event)}</p>
+                      <span className={`inline-flex shrink-0 items-center rounded-md px-2 py-1 text-[10px] font-semibold ${visual.tone}`}>{visual.tag}</span>
+                    </div>
+                    <p className="mt-1.5 truncate text-xs text-slate-500"><span className="font-medium text-slate-700">{actor}</span>{event.actor_username ? ` · @${event.actor_username}` : ''}{target && !actionLabel(event).includes(target) ? ` · ${target}` : ''}</p>
                     <p className="mt-1 text-[10px] text-slate-400">{event.action}</p>
                   </div>
-                  <time className="shrink-0 self-center text-right text-[11px] leading-5 tabular-nums text-slate-500">{dateTime(event.created_at)}</time>
+                  <div className="flex shrink-0 flex-col items-end gap-1 pl-1">
+                    <time className="text-[11px] font-medium leading-5 tabular-nums text-slate-500">{dateTime(event.created_at)}</time>
+                    <span className="text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" aria-hidden="true">›</span>
+                  </div>
                 </button>;
               })}
             </div> : <div className="px-5 py-12 text-center"><span className="text-2xl" aria-hidden="true">🗂️</span><p className="mt-2 text-sm font-medium text-slate-600">ยังไม่มีประวัติในหมวดนี้</p><p className="mt-1 text-xs text-slate-400">เมื่อมีการใช้งาน รายการจะปรากฏที่นี่</p></div>}
