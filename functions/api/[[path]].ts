@@ -711,8 +711,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
         availableYears?: string[];
         recordsByYear?: Record<string, unknown[]>;
         expectedDirectoryRevision?: number;
+        changeContext?: { type?: string; fileName?: string; fiscalYear?: string } | null;
       };
       const expectedRevision = Number(body.expectedDirectoryRevision);
+      const changeContext = body.changeContext?.type === 'import' ? { type: 'import' as const, fileName: String(body.changeContext.fileName || '').slice(0, 240), fiscalYear: String(body.changeContext.fiscalYear || '').slice(0, 8) } : null;
       if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
         return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
       }
@@ -763,6 +765,10 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
       // Record meaningful business changes only after the guarded D1 write succeeds.
       const auditStatements: any[] = [];
+      const importCreated: Array<Record<string, unknown>> = [];
+      const importUpdated: Array<Record<string, unknown>> = [];
+      const previewFields = ['companyName', 'type', 'status', 'auditorDate', 'remark', 'topic', 'sourceType', 'sourceFileName', 'sequenceNo'];
+      const previewRecord = (record: Record<string, unknown>) => Object.fromEntries(previewFields.filter((field) => record[field] !== undefined && record[field] !== null && String(record[field]).trim() !== '').map((field) => [field, String(record[field]).slice(0, 240)]));
       for (const year of years) {
         const before = previousByYear.get(year) || [];
         const after = recordsToWrite[year] || [];
@@ -772,12 +778,15 @@ export async function onRequest(context: { request: Request; env: Env }) {
           if (!id) continue;
           const previous = beforeById.get(id);
           if (!previous) {
+            if (changeContext) importCreated.push({ id, fiscalYear: year, ...previewRecord(record) });
             auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.created', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year }), now));
+              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.created', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year, recordPreview: previewRecord(record), source: changeContext ? 'import' : 'manual' }), now));
           } else {
             const changedFields = Array.from(new Set([...Object.keys(previous), ...Object.keys(record)])).filter((field) => !['id', 'createdAt'].includes(field) && JSON.stringify(previous[field] ?? null) !== JSON.stringify(record[field] ?? null)).slice(0, 60);
+            const changes = changedFields.filter((field) => previewFields.includes(field)).slice(0, 30).map((field) => ({ field, before: previous[field] === undefined || previous[field] === null ? '' : String(previous[field]).slice(0, 240), after: record[field] === undefined || record[field] === null ? '' : String(record[field]).slice(0, 240) }));
+            if (changeContext) importUpdated.push({ id, fiscalYear: year, companyName: String(record.companyName || previous.companyName || ''), changes });
             if (changedFields.length) auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.updated', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || previous.companyName || '').slice(0, 200), fiscalYear: year, changedFields }), now));
+              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.updated', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || previous.companyName || '').slice(0, 200), fiscalYear: year, changedFields, changes, source: changeContext ? 'import' : 'manual' }), now));
           }
         }
         for (const [id, record] of beforeById) {
@@ -785,7 +794,14 @@ export async function onRequest(context: { request: Request; env: Env }) {
             .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.deleted', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year }), now));
         }
       }
-      if (auditStatements.length) await env.DB.batch(auditStatements.slice(0, 500));
+      if (changeContext && (importCreated.length || importUpdated.length)) {
+        const summary = { username: user.username, fileName: changeContext.fileName, fiscalYear: changeContext.fiscalYear, createdCount: importCreated.length, updatedCount: importUpdated.length, totalChanged: importCreated.length + importUpdated.length, createdSamples: importCreated.slice(0, 12), updatedSamples: importUpdated.slice(0, 12) };
+        auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.imported', 'import', null, JSON.stringify(summary), now));
+      }
+      if (auditStatements.length) {
+        for (let offset = 0; offset < auditStatements.length; offset += 100) await env.DB.batch(auditStatements.slice(offset, offset + 100));
+      }
       return json({ ok: true, savedYears: years.length, directoryRevision: nextRevision });
     }
 
