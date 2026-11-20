@@ -69,7 +69,7 @@ function AppContent() {
   };
   const closeMembersPage = () => {
     setUserManagementOpen(false);
-    if (window.location.pathname === '/admin/members') window.history.pushState({}, '', '/');
+    if (window.location.pathname === '/admin/members') window.history.replaceState({}, '', '/');
   };
   useEffect(() => {
     const handleHistoryChange = () => setUserManagementOpen(window.location.pathname === '/admin/members');
