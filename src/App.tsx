@@ -64,7 +64,7 @@ function AppContent() {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(() => window.location.pathname === '/admin/members');
   const openMembersPage = () => {
-    openMembersPage();
+    setUserManagementOpen(true);
     if (window.location.pathname !== '/admin/members') window.history.pushState({ m101OwnerMembers: true }, '', '/admin/members');
   };
   const closeMembersPage = () => {
