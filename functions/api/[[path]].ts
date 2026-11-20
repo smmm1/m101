@@ -771,7 +771,6 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
       // Record meaningful business changes only after the guarded D1 write succeeds.
       const auditStatements: any[] = [];
-      const trackedFields = ['companyName', 'taxId', 'sequenceNo', 'eFilingCode', 'ssoCode', 'remark', 'topic', 'auditorDate', 'type', 'status'];
       for (const year of years) {
         const before = previousByYear.get(year) || [];
         const after = recordsToWrite[year] || [];
@@ -784,7 +783,7 @@ export async function onRequest(context: { request: Request; env: Env }) {
             auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
               .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.created', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year }), now));
           } else {
-            const changedFields = trackedFields.filter((field) => JSON.stringify(previous[field] ?? null) !== JSON.stringify(record[field] ?? null));
+            const changedFields = Array.from(new Set([...Object.keys(previous), ...Object.keys(record)])).filter((field) => !['id', 'createdAt'].includes(field) && JSON.stringify(previous[field] ?? null) !== JSON.stringify(record[field] ?? null)).slice(0, 60);
             if (changedFields.length) auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
               .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.updated', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || previous.companyName || '').slice(0, 200), fiscalYear: year, changedFields }), now));
           }
