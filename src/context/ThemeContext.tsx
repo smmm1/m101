@@ -1,38 +1,48 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
-  theme: 'light';
-  isDark: false;
+  theme: ThemeMode;
+  isDark: boolean;
   toggleTheme: () => void;
   setTheme: (theme: ThemeMode) => void;
 }
 
+const STORAGE_KEY = 'mustang_theme_mode';
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-/** M101 currently ships one governed visual theme: clean light.
- * Keep the context API stable for existing consumers while preventing
- * stale browser preferences from reintroducing a second, conflicting theme.
- */
+const readSavedTheme = (): ThemeMode => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'light';
+  } catch { return 'light'; }
+};
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<ThemeMode>(readSavedTheme);
+  const [systemDark, setSystemDark] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.remove('light');
-    document.documentElement.style.colorScheme = 'light';
-    try {
-      localStorage.removeItem('mustang_theme_mode');
-    } catch {}
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setSystemDark(media.matches);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
   }, []);
 
-  const toggleTheme = () => {};
-  const setTheme = (_theme: ThemeMode) => {};
+  const isDark = theme === 'dark' || (theme === 'system' && systemDark);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', isDark);
+    root.classList.toggle('light', !isDark);
+    root.style.colorScheme = isDark ? 'dark' : 'light';
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* Session-only fallback. */ }
+  }, [theme, isDark]);
 
-  return (
-    <ThemeContext.Provider value={{ theme: 'light', isDark: false, toggleTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  const setTheme = useCallback((next: ThemeMode) => setThemeState(next), []);
+  const toggleTheme = useCallback(() => setThemeState(current => current === 'dark' ? 'light' : 'dark'), []);
+  return <ThemeContext.Provider value={{ theme, isDark, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = (): ThemeContextType => {

@@ -5,6 +5,7 @@ import { useSystemConfig } from '../context/SystemConfigContext';
 import { INITIAL_BUSINESS_RECORDS } from '../data/initialData';
 import { getSoundSettings, saveSoundSettings, playUISound } from '../utils/cuteAudio';
 import { DSBadge, DSButton, DSInput, DSPageHeader } from '../design-system/components';
+import { useTheme, ThemeMode } from '../context/ThemeContext';
 
 interface SettingsViewProps {
   records: BusinessRecord[];
@@ -29,6 +30,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const fileRestoreInputRef = useRef<HTMLInputElement>(null);
   const { config, updateConfig } = useSystemConfig();
+  const { theme, setTheme } = useTheme();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [soundSettings, setSoundSettings] = useState(getSoundSettings);
 
@@ -155,6 +157,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         actions={<><DSBadge variant="info">รอบปีปัจจุบัน: {selectedYear}</DSBadge><DSBadge variant="neutral">{records.length} กิจการ</DSBadge></>}
       />
 
+      <div className="mb-5 max-w-6xl m101-settings-grid">
+        <section className="m101-settings-card rounded-xl border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] p-5 sm:p-6" aria-labelledby="appearance-settings-title">
+          <div className="flex flex-wrap items-center justify-between gap-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-color-surface-subtle)] text-[var(--ds-color-text-secondary)]">
+                <span className="material-symbols-outlined text-[21px]" aria-hidden="true">contrast</span>
+              </div>
+              <div>
+                <h3 id="appearance-settings-title" className="text-sm font-semibold text-[var(--ds-color-text)]">รูปแบบการแสดงผล</h3>
+                <p className="mt-1 text-xs text-[var(--ds-color-text-secondary)]">เลือกธีมที่ต้องการใช้กับพื้นที่ทำงานนี้</p>
+              </div>
+            </div>
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto" role="group" aria-label="เลือกรูปแบบธีม">
+              {([
+                { value: 'light', label: 'สว่าง', icon: 'light_mode' },
+                { value: 'dark', label: 'มืด', icon: 'dark_mode' },
+                { value: 'system', label: 'ตามอุปกรณ์', icon: 'desktop_windows' },
+              ] as { value: ThemeMode; label: string; icon: string }[]).map((option) => (
+                <button key={option.value} type="button" aria-pressed={theme === option.value} onClick={() => setTheme(option.value)}
+                  className={theme === option.value ? 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--ds-color-primary)] bg-[var(--ds-color-primary)] px-3 py-2 text-xs font-medium text-white sm:flex-none' : 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] px-3 py-2 text-xs font-medium text-[var(--ds-color-text-secondary)] hover:bg-[var(--ds-color-surface-subtle)] sm:flex-none'}>
+                  <span className="material-symbols-outlined text-[17px]" aria-hidden="true">{option.icon}</span>{option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl m101-settings-grid">
         {/* 1. System Information Card */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 bg-white dark:bg-[#1b1b1b] flex flex-col gap-5 shadow-xs m101-settings-card">
