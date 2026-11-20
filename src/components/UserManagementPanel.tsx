@@ -40,7 +40,8 @@ export function UserManagementPanel({ onClose }: { onClose: () => void }) {
         if (record?.id && record?.companyName) uniqueBusinesses.set(String(record.id), { id: String(record.id), companyName: String(record.companyName) });
       });
       setBusinesses(Array.from(uniqueBusinesses.values()).sort((a, b) => a.companyName.localeCompare(b.companyName, 'th')));
-      if (!assignmentUserId && rows.some((user) => user.role === 'member')) setAssignmentUserId(rows.find((user) => user.role === 'member').id);
+      const firstMemberId = rows.find((user) => user.role === 'member')?.id || '';
+      setAssignmentUserId((current) => current && rows.some((user) => user.id === current && user.role === 'member') ? current : firstMemberId);
     } catch (err) { setError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'); }
     finally { setLoading(false); }
   }, []);
