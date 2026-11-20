@@ -613,13 +613,20 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
-      if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       const result = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
       const workspaceState = await env.DB.prepare('SELECT directory_revision FROM workspaces WHERE id = ?').bind(workspaceAccess.workspaceId).first();
       if (!workspaceState) return json({ error: 'ไม่พบ Workspace ที่ใช้งานอยู่' }, 404);
       const directoryRevision = Number((workspaceState as { directory_revision?: number }).directory_revision || 1);
+      const assignedIds = new Set<string>();
+      if (workspaceAccess.membershipType !== 'owner') {
+        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(workspaceAccess.workspaceId, user.id).all();
+        for (const item of assigned.results || []) assignedIds.add(String((item as { business_id?: string }).business_id || ''));
+      }
       const recordsByYear: Record<string, unknown[]> = {};
-      for (const row of result.results || []) recordsByYear[String(row.fiscal_year)] = JSON.parse(String(row.records || '[]'));
+      for (const row of result.results || []) {
+        const allRows = JSON.parse(String(row.records || '[]')) as Array<Record<string, unknown>>;
+        recordsByYear[String(row.fiscal_year)] = workspaceAccess.membershipType === 'owner' ? allRows : allRows.filter((record) => assignedIds.has(String(record.id || '')));
+      }
       const availableYears = Object.keys(recordsByYear);
       if (!availableYears.length) {
         recordsByYear['69'] = [];
@@ -635,7 +642,6 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const workspaceAccess = await getWorkspaceAccess(authenticatedUser, env);
       if (!workspaceAccess) return json({ error: 'บัญชีนี้ไม่มีสิทธิ์เข้า Workspace M101' }, 403);
       const user = workspaceAccess.user;
-      if (workspaceAccess.membershipType !== 'owner') return json({ error: 'การเข้าถึงทะเบียนกิจการของผู้ร่วมงานจะเปิดหลังระบบกำหนดกิจการที่ได้รับมอบหมาย' }, 403);
       if (!user) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
 
       const body = await request.json() as {
@@ -648,14 +654,30 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
       }
 
-      const years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
+      let years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
       const records = body.recordsByYear || {};
-      for (const year of years) {
-        const rows = Array.isArray(records[year]) ? records[year] : [];
-        if (rows.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
+      const recordsToWrite: Record<string, unknown[]> = {};
+      if (workspaceAccess.membershipType === 'owner') {
+        for (const year of years) recordsToWrite[year] = Array.isArray(records[year]) ? records[year] : [];
+      } else {
+        const assigned = await env.DB.prepare('SELECT business_id FROM business_assignments WHERE workspace_id = ? AND user_id = ?').bind(workspaceAccess.workspaceId, user.id).all();
+        const assignedIds = new Set<string>((assigned.results || []).map((item: { business_id?: string }) => String(item.business_id || '')));
+        const existing = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceAccess.workspaceId).all();
+        const existingByYear = new Map<string, Array<Record<string, unknown>>>();
+        for (const row of existing.results || []) existingByYear.set(String((row as { fiscal_year: string }).fiscal_year), JSON.parse(String((row as { records?: string }).records || '[]')));
+        for (const year of years) {
+          const incoming = Array.isArray(records[year]) ? records[year] as Array<Record<string, unknown>> : [];
+          if (incoming.some((record) => !record || typeof record !== 'object' || !assignedIds.has(String(record.id || '')))) return json({ error: 'บันทึกไม่ได้: มีรายการที่ไม่ได้รับมอบหมายให้บัญชีนี้' }, 403);
+          if (incoming.length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
+          const preserved = (existingByYear.get(year) || []).filter((record) => !assignedIds.has(String(record.id || '')));
+          recordsToWrite[year] = [...preserved, ...incoming];
+        }
+        years = Array.from(new Set([...existingByYear.keys(), ...years])).slice(0, 100);
+        for (const year of existingByYear.keys()) if (!Object.prototype.hasOwnProperty.call(recordsToWrite, year)) recordsToWrite[year] = existingByYear.get(year) || [];
       }
+      for (const year of years) if ((recordsToWrite[year] || []).length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
 
       // The first statement claims the exact snapshot revision using a unique
       // write token. Revision alone is insufficient: a stale competing batch could
@@ -668,13 +690,13 @@ export async function onRequest(context: { request: Request; env: Env }) {
           .bind(writeToken, now, workspaceAccess.workspaceId, expectedRevision),
         ...years.map((year: string) => env.DB.prepare(
           'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) SELECT ?, ?, ?, 1, ?, ? WHERE EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?) ON CONFLICT(workspace_id, fiscal_year) DO UPDATE SET records = excluded.records, revision = workspace_directory_year_data.revision + 1, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
-        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(Array.isArray(records[year]) ? records[year] : []), user.id, now, workspaceAccess.workspaceId, nextRevision, writeToken)),
+        ).bind(workspaceAccess.workspaceId, year, JSON.stringify(recordsToWrite[year] || []), user.id, now, workspaceAccess.workspaceId, nextRevision, writeToken)),
       ];
 
       const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?')
         .bind(workspaceAccess.workspaceId).all();
       const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
-      for (const removed of existingYears.filter((year: string) => !years.includes(year))) {
+      for (const removed of (workspaceAccess.membershipType === 'owner' ? existingYears.filter((year: string) => !years.includes(year)) : [])) {
         statements.push(env.DB.prepare(
           'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)'
         ).bind(workspaceAccess.workspaceId, removed, workspaceAccess.workspaceId, nextRevision, writeToken));
