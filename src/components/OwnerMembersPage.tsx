@@ -200,7 +200,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
         </section>
 
         <nav className="flex gap-1 border-b border-slate-200" aria-label="ส่วนจัดการสมาชิก">
-          {([['members','สมาชิก'],['permissions','สิทธิ์กิจการ'],['login','เข้า–ออกระบบ'],['activity','กิจกรรมในระบบ']] as Array<[Tab,string]>).map(([key,label]) => (
+          {([['members','สมาชิก'],['login','เข้า–ออกระบบ'],['activity','กิจกรรมในระบบ']] as Array<[Tab,string]>).map(([key,label]) => (
             <button key={key} type="button" onClick={() => { setTab(key); setError(''); setNotice(''); }} className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${tab === key ? 'border-slate-800 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{label}</button>
           ))}
         </nav>
