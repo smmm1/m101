@@ -13,16 +13,34 @@ export function UserManagementPanel({ onClose }: { onClose: () => void }) {
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [creating, setCreating] = useState(false);
+  const [assignments, setAssignments] = useState<Array<{ id: string; business_id: string; user_id: string; display_name: string }>>([]);
+  const [businesses, setBusinesses] = useState<Array<{ id: string; companyName: string }>>([]);
+  const [assignmentUserId, setAssignmentUserId] = useState('');
+  const [assignmentBusinessId, setAssignmentBusinessId] = useState('');
+  const [assignmentBusy, setAssignmentBusy] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const response = await fetch('/api/admin/users', { credentials: 'same-origin' });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ');
+      const [usersResponse, assignmentsResponse, dataResponse] = await Promise.all([
+        fetch('/api/admin/users', { credentials: 'same-origin' }),
+        fetch('/api/workspace/assignments', { credentials: 'same-origin' }),
+        fetch('/api/data', { credentials: 'same-origin' }),
+      ]);
+      const [payload, assignmentPayload, dataPayload] = await Promise.all([usersResponse.json(), assignmentsResponse.json(), dataResponse.json()]);
+      if (!usersResponse.ok) throw new Error(payload.error || 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ');
+      if (!assignmentsResponse.ok) throw new Error(assignmentPayload.error || 'โหลดการมอบหมายกิจการไม่สำเร็จ');
+      if (!dataResponse.ok) throw new Error(dataPayload.error || 'โหลดทะเบียนกิจการเพื่อกำหนดสิทธิ์ไม่สำเร็จ');
       const rows = (payload.users || []) as ManagedUser[];
       setUsers(rows);
       setDrafts(Object.fromEntries(rows.map((user) => [user.id, { username: user.username, displayName: user.display_name, accountStatus: user.account_status, newPassword: '' }])));
+      setAssignments(assignmentPayload.assignments || []);
+      const uniqueBusinesses = new Map();
+      Object.values(dataPayload.recordsByYear || {}).flat().forEach((record) => {
+        if (record?.id && record?.companyName) uniqueBusinesses.set(String(record.id), { id: String(record.id), companyName: String(record.companyName) });
+      });
+      setBusinesses(Array.from(uniqueBusinesses.values()).sort((a, b) => a.companyName.localeCompare(b.companyName, 'th')));
+      if (!assignmentUserId && rows.some((user) => user.role === 'member')) setAssignmentUserId(rows.find((user) => user.role === 'member').id);
     } catch (err) { setError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'); }
     finally { setLoading(false); }
   }, []);
@@ -39,6 +57,31 @@ export function UserManagementPanel({ onClose }: { onClose: () => void }) {
     } catch (err) { setError(err instanceof Error ? err.message : 'สร้างบัญชีไม่สำเร็จ'); }
     finally { setCreating(false); }
   };
+  const saveAssignment = async () => {
+    if (!assignmentUserId || !assignmentBusinessId) return;
+    setAssignmentBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/workspace/assignments', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: assignmentUserId, businessId: assignmentBusinessId }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'มอบหมายกิจการไม่สำเร็จ');
+      setNotice(payload.alreadyAssigned ? 'สมาชิกได้รับมอบหมายกิจการนี้อยู่แล้ว' : 'มอบหมายกิจการให้สมาชิกเรียบร้อยแล้ว');
+      setAssignmentBusinessId('');
+      await loadUsers();
+    } catch (err) { setError(err instanceof Error ? err.message : 'มอบหมายกิจการไม่สำเร็จ'); }
+    finally { setAssignmentBusy(false); }
+  };
+  const revokeAssignment = async (id: string) => {
+    setAssignmentBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/workspace/assignments/' + encodeURIComponent(id), { method: 'DELETE', credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'ยกเลิกการมอบหมายไม่สำเร็จ');
+      setNotice('ยกเลิกการมอบหมายแล้ว');
+      await loadUsers();
+    } catch (err) { setError(err instanceof Error ? err.message : 'ยกเลิกการมอบหมายไม่สำเร็จ'); }
+    finally { setAssignmentBusy(false); }
+  };
+
   const saveUser = async (id: string) => {
     const draft = drafts[id]; if (!draft) return;
     setBusyId(id); setError(''); setNotice('');
@@ -68,6 +111,29 @@ export function UserManagementPanel({ onClose }: { onClose: () => void }) {
             </div>
             <div className="mt-4 flex justify-end"><button type="submit" disabled={creating} className="rounded-lg bg-[#172b4d] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#10213d] disabled:opacity-50">{creating ? 'กำลังสร้าง…' : 'สร้างบัญชี'}</button></div>
           </form>
+          <section className="mt-6 rounded-xl border border-slate-200 p-4 sm:p-5">
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">มอบหมายกิจการให้สมาชิก</h3><p className="mt-1 text-xs text-slate-500">สมาชิกจะเห็นและแก้ไขได้เฉพาะกิจการที่ Owner กำหนด</p></div><span className="text-xs text-slate-500">{assignments.length} รายการ</span></div>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1.5fr_auto]">
+              <select value={assignmentUserId} onChange={(e) => setAssignmentUserId(e.target.value)} className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm">
+                <option value="">เลือกสมาชิก</option>{users.filter((user) => user.role === 'member').map((user) => <option key={user.id} value={user.id}>{user.display_name} · {user.username}</option>)}
+              </select>
+              <select value={assignmentBusinessId} onChange={(e) => setAssignmentBusinessId(e.target.value)} className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm">
+                <option value="">เลือกกิจการ</option>{businesses.map((business) => <option key={business.id} value={business.id}>{business.companyName}</option>)}
+              </select>
+              <button type="button" onClick={() => void saveAssignment()} disabled={assignmentBusy || !assignmentUserId || !assignmentBusinessId} className="h-10 rounded-lg bg-[#172b4d] px-4 text-sm font-semibold text-white disabled:opacity-50">มอบหมาย</button>
+            </div>
+            <div className="mt-4 divide-y divide-slate-100">
+              {assignments.map((assignment) => {
+                const member = users.find((user) => user.id === assignment.user_id);
+                const business = businesses.find((item) => item.id === assignment.business_id);
+                return <div key={assignment.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <div className="min-w-0"><p className="truncate font-medium text-slate-800">{business?.companyName || assignment.business_id}</p><p className="text-xs text-slate-500">{member?.display_name || assignment.display_name || assignment.user_id} · {member?.username || ''}</p></div>
+                  <button type="button" onClick={() => void revokeAssignment(assignment.id)} disabled={assignmentBusy} className="rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50">ยกเลิก</button>
+                </div>;
+              })}
+              {!assignments.length && <p className="py-4 text-center text-xs text-slate-400">ยังไม่มีการมอบหมายกิจการ</p>}
+            </div>
+          </section>
           {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{error}</p>}
           {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">{notice}</p>}
           <div className="mt-6 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-slate-900">บัญชีในระบบ <span className="font-normal text-slate-400">({users.length})</span></h3><button type="button" onClick={() => void loadUsers()} className="text-xs font-medium text-slate-500 hover:text-slate-900">รีเฟรช</button></div>
