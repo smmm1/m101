@@ -10,7 +10,7 @@ type Activity = {
 };
 type Assignment = { id: string; business_id: string; user_id: string; display_name: string; created_at: string };
 type BusinessOption = { id: string; companyName: string; fiscalYear: string };
-type Tab = 'members' | 'login' | 'activity';
+type Tab = 'members' | 'permissions' | 'login' | 'activity';
 
 const dateTime = (value: string) => {
   const date = new Date(value);
