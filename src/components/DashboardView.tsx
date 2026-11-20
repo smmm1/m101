@@ -738,7 +738,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <span>รายการ</span>
                   </div>
 
-                  {isLoggedIn && isAdmin && (
+                  {isLoggedIn && (
                     <div className="m101-directory-actions" role="group" aria-label="จัดการทะเบียนกิจการ">
                       <DSButton type="button" variant="primary" onClick={() => setIsAddModalOpen(true)} className="m101-directory-action m101-directory-action--add">
                         <span className="material-symbols-outlined" aria-hidden="true">add</span>
