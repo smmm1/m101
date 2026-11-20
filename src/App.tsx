@@ -91,6 +91,7 @@ function AppContent() {
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
   const pendingDatabaseWriteRef = React.useRef(false);
+  const pendingChangeContextRef = React.useRef<{ type: 'import'; fileName: string; fiscalYear: string } | null>(null);
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const directoryRevisionRef = React.useRef<number | null>(null);
@@ -309,7 +310,7 @@ function AppContent() {
             method: 'PUT',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision }),
+            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision, changeContext: pendingChangeContextRef.current }),
           });
           const payload = await response.json();
           if (response.status === 409 || payload.conflict) {
@@ -336,6 +337,7 @@ function AppContent() {
           }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
           directoryRevisionRef.current = Number(payload.directoryRevision);
+          pendingChangeContextRef.current = null;
           lastSavedSnapshotRef.current = snapshotKey;
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
@@ -636,6 +638,7 @@ function AppContent() {
       setConflictNewItems(newItemsList);
       setIsConflictModalOpen(true);
     } else {
+      pendingChangeContextRef.current = { type: 'import', fileName, fiscalYear: selectedYear };
       const formatted = createNewFormattedRecords(newItemsList, currentRecords);
       updateActiveYearRecords((prev) => [...formatted, ...prev]);
       showToast(`นำเข้าสำเร็จ ${formatted.length} รายการ เข้าสู่ปี ${selectedYear}`, 'นำเข้าไฟล์สำเร็จ');
@@ -648,6 +651,7 @@ function AppContent() {
     setIsConflictModalOpen(false);
 
     if (mode === 'update_existing') {
+      pendingChangeContextRef.current = { type: 'import', fileName: pendingImportFile, fiscalYear: selectedYear };
       const incomingUpdatesMap = new Map<string, Partial<BusinessRecord>>();
       conflictDuplicates.forEach(({ incoming, existing }) => {
         const cleanTax = existing.taxId ? existing.taxId.replace(/\D/g, '').trim() : '';
@@ -689,6 +693,7 @@ function AppContent() {
 
     } else if (mode === 'skip_duplicates') {
       if (conflictNewItems.length > 0) {
+        pendingChangeContextRef.current = { type: 'import', fileName: pendingImportFile, fiscalYear: selectedYear };
         updateActiveYearRecords((prev) => {
           const newFormatted = createNewFormattedRecords(conflictNewItems, prev);
           return [...newFormatted, ...prev];
@@ -706,6 +711,7 @@ function AppContent() {
       }
 
     } else if (mode === 'import_all') {
+      pendingChangeContextRef.current = { type: 'import', fileName: pendingImportFile, fiscalYear: selectedYear };
       const allIncoming = [...conflictDuplicates.map((d) => d.incoming), ...conflictNewItems];
       updateActiveYearRecords((prev) => {
         const newFormatted = createNewFormattedRecords(allIncoming, prev);
