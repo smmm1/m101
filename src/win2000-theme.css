@@ -427,3 +427,12 @@ html.win2000 .m101-settings-card button { min-height: 28px !important; border-ra
   html.win2000 .m101-directory-action { flex: 1 1 auto !important; justify-content: center !important; }
   html.win2000 .m101-directory-list-panel > .px-5.py-4 { padding: 7px !important; }
 }
+
+/* Keep the desktop search and account tools in separate, non-overlapping columns. */
+@media (min-width: 901px) {
+  html.win2000 .m101-topbar {
+    grid-template-columns: 34px minmax(0,1fr) minmax(150px,220px) auto !important;
+  }
+  html.win2000 .m101-global-search { grid-column: 3 !important; grid-row: 1 !important; }
+  html.win2000 .m101-topbar-actions { grid-column: 4 !important; grid-row: 1 !important; }
+}
