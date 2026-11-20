@@ -120,7 +120,7 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   let previewRecordCount = 0;
   let matchedRecordCount = 0;
   let newRecordCount = 0;
-  let filledFieldCount = 0;
+  let previewFieldCount = 0;
   const normalize = (value: unknown) => String(value || '').replace(/\s+/g, '').toLowerCase();
 
   for (const previewRow of previewDirectory) {
@@ -159,11 +159,12 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
         matchedRecordCount++;
         idMap.set(previewId, String(target.id || previewId));
         for (const [key, value] of Object.entries(record)) {
-          if (['id', 'companyName', 'taxId', 'sequenceNo', 'createdAt', 'updatedAt'].includes(key)) continue;
-          const current = target[key];
-          if ((current === undefined || current === null || current === '') && value !== undefined && value !== null && value !== '') {
+          if (key === 'id' || key === 'createdAt') continue;
+          // Preview is the source of truth for fields it actually contains.
+          // Keep Production values only where Preview has no value.
+          if (value !== undefined && value !== null && value !== '') {
             target[key] = value;
-            filledFieldCount++;
+            previewFieldCount++;
           }
         }
       } else {
@@ -234,32 +235,32 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
 
   for (const item of memberships.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).bind(item.id, item.workspace_id, item.user_id, item.membership_type, item.status, item.created_at, item.updated_at));
   }
   for (const item of groups.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
     ).bind(item.id, item.workspace_id, item.name, item.created_at, item.updated_at));
   }
   for (const item of groupMembers.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO business_relationship_group_memberships (group_id, business_id, created_at) VALUES (?, ?, ?)'
+      'INSERT OR REPLACE INTO business_relationship_group_memberships (group_id, business_id, created_at) VALUES (?, ?, ?)'
     ).bind(item.group_id, idMap.get(String(item.business_id)) || item.business_id, item.created_at));
   }
   for (const item of assignments.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(item.id, item.workspace_id, idMap.get(String(item.business_id)) || item.business_id, item.user_id, item.assigned_by, item.created_at));
   }
   for (const item of grants.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO business_credential_grants (id, workspace_id, business_id, user_id, granted_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO business_credential_grants (id, workspace_id, business_id, user_id, granted_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(item.id, item.workspace_id, idMap.get(String(item.business_id)) || item.business_id, item.user_id, item.granted_by, item.created_at));
   }
   for (const item of invitations.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO workspace_invitations (id, workspace_id, email, token_hash, expires_at, invited_by, accepted_by, accepted_at, revoked_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO workspace_invitations (id, workspace_id, email, token_hash, expires_at, invited_by, accepted_by, accepted_at, revoked_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(item.id, item.workspace_id, item.email, item.token_hash, item.expires_at, item.invited_by, item.accepted_by, item.accepted_at, item.revoked_at, item.created_at));
   }
   for (const item of audits.results || []) {
@@ -269,22 +270,26 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   }
   for (const item of annualTasks.results || []) {
     statements.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(item.id, item.fiscal_year, idMap.get(String(item.business_id)) || item.business_id, item.business_name, item.task_code, item.task_name, item.status, item.due_date, item.note, item.created_by, item.updated_by, item.created_at, item.updated_at, workspaceId));
   }
 
-  const directoryRevision = Math.max(Number(productionWorkspace.directory_revision || 1), Number(previewWorkspace.directory_revision || 1)) + 1;
+  // Preview workspace metadata is authoritative; retain Production's database identity.
   const now = new Date().toISOString();
-  statements.push(env.DB.prepare('UPDATE workspaces SET directory_revision = ?, directory_write_token = NULL, updated_at = ? WHERE id = ?')
-    .bind(directoryRevision, now, workspaceId));
+  statements.push(env.DB.prepare('UPDATE workspaces SET name = ?, owner_user_id = ?, status = ?, directory_revision = ?, directory_write_token = NULL, updated_at = ? WHERE id = ?')
+    .bind(previewWorkspace.name, previewWorkspace.owner_user_id, previewWorkspace.status, Math.max(Number(productionWorkspace.directory_revision || 1), Number(previewWorkspace.directory_revision || 1)) + 1, now, workspaceId));
   statements.push(env.DB.prepare('DELETE FROM sessions'));
   statements.push(env.DB.prepare('DELETE FROM auth_rate_limit_attempts'));
   statements.push(env.DB.prepare('INSERT OR REPLACE INTO app_config (config_key, config_value, updated_at) VALUES (?, ?, ?)')
-    .bind(migrationKey, JSON.stringify({ migratedAt: now, previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, filledFields: filledFieldCount }), now));
+    .bind(migrationKey, JSON.stringify({ migratedAt: now, previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, previewFieldsApplied: previewFieldCount, users: previewUsers.length }), now));
 
-  const result = await env.DB.batch(statements);
-  if (result.some((item: { success?: boolean }) => item.success === false)) throw new Error('Preview workspace migration did not complete');
-  return { previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, filledFields: filledFieldCount, users: previewUsers.length };
+  // Keep each D1 transaction below the statement limit. All imported rows are
+  // idempotent upserts, so a retry can safely resume after a partial run.
+  for (let offset = 0; offset < statements.length; offset += 80) {
+    const result = await env.DB.batch(statements.slice(offset, offset + 80));
+    if (result.some((item: { success?: boolean }) => item.success === false)) throw new Error('Preview workspace migration did not complete');
+  }
+  return { previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, previewFieldsApplied: previewFieldCount, users: previewUsers.length };
 }
 
 async function findWorkspaceBusiness(workspaceId: string, businessId: string, env: Env): Promise<{ id: string; companyName: string } | null> {
