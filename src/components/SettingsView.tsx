@@ -453,23 +453,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     : 'คุณอยู่ในสถานะผู้เยี่ยมชมทั่วไป (ซ่อนปากกาพิเศษ แสดงหน้าเว็บแบบมาตรฐานเดิม)'}
                 </p>
               </div>
-              <DSButton
-                type="button"
-                onClick={() => {
-                  onToggleLogin();
-                  onShowToast(
-                    isLoggedIn ? 'ออกจากระบบผู้ดูแลแล้ว (ซ่อนปากกาพิเศษ)' : 'เข้าสู่ระบบผู้ดูแลแล้ว (แสดงปากกาพิเศษ)',
-                    'สถานะผู้ใช้',
-                    'success'
-                  );
-                }}
-                variant={isLoggedIn ? "danger" : "primary"} className="w-fit flex items-center gap-1.5"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  {isLoggedIn ? 'logout' : 'login'}
-                </span>
-                <span>{isLoggedIn ? 'ออกจากระบบ (Log Out)' : 'เข้าสู่ระบบ Admin (Log In)'}</span>
-              </DSButton>
+
             </div>
           </div>
         </div>
