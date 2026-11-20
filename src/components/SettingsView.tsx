@@ -166,7 +166,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
               <div>
                 <h3 id="appearance-settings-title" className="text-sm font-semibold text-[var(--ds-color-text)]">รูปแบบการแสดงผล</h3>
-                <p className="mt-1 text-xs text-[var(--ds-color-text-secondary)]">เลือกธีมที่ต้องการใช้กับพื้นที่ทำงานนี้</p>
+                <p className="mt-1 text-xs text-[var(--ds-color-text-secondary)]">เลือกธีมของพื้นที่ทำงาน โดย Windows 2000 เป็นรูปแบบคลาสสิกแยกจากธีมหลัก</p>
               </div>
             </div>
             <div className="flex w-full flex-wrap gap-2 sm:w-auto" role="group" aria-label="เลือกรูปแบบธีม">
@@ -174,6 +174,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 { value: 'light', label: 'สว่าง', icon: 'light_mode' },
                 { value: 'dark', label: 'มืด', icon: 'dark_mode' },
                 { value: 'system', label: 'ตามอุปกรณ์', icon: 'desktop_windows' },
+                { value: 'win2000', label: 'Windows 2000', icon: 'window' },
               ] as { value: ThemeMode; label: string; icon: string }[]).map((option) => (
                 <button key={option.value} type="button" aria-pressed={theme === option.value} onClick={() => setTheme(option.value)}
                   className={theme === option.value ? 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--ds-color-primary)] bg-[var(--ds-color-primary)] px-3 py-2 text-xs font-medium text-white sm:flex-none' : 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--ds-color-border)] bg-[var(--ds-color-surface)] px-3 py-2 text-xs font-medium text-[var(--ds-color-text-secondary)] hover:bg-[var(--ds-color-surface-subtle)] sm:flex-none'}>
