@@ -629,10 +629,10 @@ function AppContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authMode === 'pin'
           ? { pin: authPin }
-          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
+          : { email: authEmail.trim(), password: authPassword }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      if (!response.ok) throw new Error(payload.error || 'บัญชีผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       setSessionUser(payload.user as SessionUser);
       setUserName(payload.user?.email || 'ผู้ดูแลระบบ');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
@@ -693,124 +693,45 @@ function AppContent() {
 
   if ((!sessionUser || !isLoggedIn) && !isVisitor) {
     return (
-      <main className="min-h-screen bg-[#f8f8f8] text-slate-900">
-        <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
-          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold tracking-tight">M</div>
-              <div>
-                <p className="text-sm font-semibold tracking-[0.16em]">WORKSPACE</p>
-                <p className="mt-0.5 text-[11px] tracking-wide text-zinc-100/70">ระบบจัดการข้อมูล</p>
-              </div>
+      <main className="grid min-h-screen place-items-center bg-[#f7f8fb] px-5 py-10 text-slate-900">
+        <section aria-label="เข้าสู่ระบบ M101" className="w-full max-w-[380px] rounded-2xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_55px_rgba(30,55,90,0.10)] sm:p-8">
+          <form onSubmit={handleLoginSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="m101-login-username" className="block text-sm font-medium text-slate-700">บัญชีผู้ใช้</label>
+              <input
+                id="m101-login-username"
+                type="text"
+                autoComplete="username"
+                required
+                value={authEmail}
+                onChange={(event) => setAuthEmail(event.target.value)}
+                placeholder="กรอกบัญชีผู้ใช้"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#5268c8] focus:ring-4 focus:ring-[#5268c8]/10"
+              />
             </div>
-
-            <div className="relative z-10 mt-12 max-w-xl lg:my-auto lg:py-16">
-              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-zinc-100/20 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-zinc-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" /> พื้นที่จัดการข้อมูลกิจการ
-              </p>
-              <h1 className="max-w-lg text-3xl font-semibold leading-[1.25] tracking-tight sm:text-4xl lg:text-[2.8rem]">
-                ข้อมูลสำคัญ<br className="hidden sm:block" /> จัดการได้อย่างเป็นระบบ
-              </h1>
-              <p className="mt-5 max-w-md text-sm leading-7 text-zinc-50/75 sm:text-base">
-                รวมรายการ เอกสาร และข้อมูลกิจการไว้ในพื้นที่เดียว พร้อมเครื่องมือนำเข้าข้อมูลที่ตรวจสอบได้ก่อนบันทึก
-              </p>
-
-              <div className="mt-10 hidden max-w-md rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:block">
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-50/80">WORKSPACE OVERVIEW</span>
-                  <span className="rounded-full bg-zinc-300/15 px-2.5 py-1 text-[10px] font-medium text-zinc-100">พร้อมใช้งาน</span>
-                </div>
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-200/15 text-zinc-100">01</span>
-                    <div className="flex-1"><div className="h-2 w-28 rounded-full bg-white/70" /><div className="mt-2 h-1.5 w-40 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-zinc-300" />
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-zinc-100">02</span>
-                    <div className="flex-1"><div className="h-2 w-20 rounded-full bg-white/55" /><div className="mt-2 h-1.5 w-32 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-zinc-200" />
-                  </div>
-                </div>
-                <p className="mt-3 text-[10px] tracking-wide text-zinc-50/45">A CLEAR VIEW OF YOUR WORK</p>
-              </div>
+            <div className="space-y-2">
+              <label htmlFor="m101-login-password" className="block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+              <input
+                id="m101-login-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={authPassword}
+                onChange={(event) => setAuthPassword(event.target.value)}
+                placeholder="กรอกรหัสผ่าน"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#5268c8] focus:ring-4 focus:ring-[#5268c8]/10"
+              />
             </div>
-
-            <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-zinc-50/55">
-              <span>จัดระเบียบงาน ให้เห็นภาพชัดขึ้น</span>
-              <span>พื้นที่ทำงานส่วนตัว</span>
-            </div>
-          </section>
-
-          <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
-            <div className="w-full max-w-[420px]">
-              <div className="mb-8">
-                <p className="text-xs font-semibold tracking-[0.16em] text-[#686868]">ยินดีต้อนรับกลับ</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
-              </div>
-
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
-                  <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
-                  <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
-                </div>
-
-                {authMode === 'password' ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
-                    </div>
-                    <div>
-                      <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5">
-                    <label className="mb-4 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
-                    <div className="mb-5 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
-                      {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3.5 w-3.5 rounded-full border transition-colors ${index < authPin.length ? 'border-[#5a5a5a] bg-[#5a5a5a]' : 'border-slate-300 bg-white'}`} />)}
-                    </div>
-                    <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
-                      {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
-                        <button key={key} type="button" disabled={authBusy} onClick={() => {
-                          setAuthError('');
-                          if (key === 'clear') setAuthPin('');
-                          else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
-                          else setAuthPin((value) => value.length < 6 ? value + key : value);
-                        }} className="h-12 rounded-xl border border-slate-200 bg-[#fcfcfc] text-lg font-semibold text-slate-800 transition hover:border-[#b5b5b5] hover:bg-[#f3f3f3] active:scale-[0.98] disabled:opacity-50">
-                          {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-4 text-center text-xs leading-5 text-slate-500">ใช้แป้นตัวเลขบนหน้าจอหรือคีย์บอร์ดได้ · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
-                  </div>
-                )}
-
-                {authError && <p role="alert" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 text-sm leading-6 text-zinc-700">{authError}</p>}
-
-                <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4b4b4b] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3d3d3d] focus:outline-none focus:ring-4 focus:ring-[#686868]/20 disabled:cursor-not-allowed disabled:opacity-60">
-                  {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
-                </button>
-
-                <div className="flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>หรือ</span><span className="h-px flex-1 bg-slate-200" /></div>
-
-                <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
-              </form>
-
-              <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#f2f2f2] px-3.5 py-3 text-xs leading-5 text-[#5a5a5a]">
-                <span aria-hidden="true" className="mt-0.5">●</span>
-                <p>การเข้าสู่ระบบใช้การยืนยันตัวตนที่ตั้งค่าไว้ และเชื่อมต่อข้อมูลอย่างปลอดภัย</p>
-              </div>
-              <p className="mt-6 text-center text-[11px] text-slate-400">พื้นที่จัดการข้อมูล</p>
-            </div>
-          </section>
-        </div>
+            {authError && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
+            <button
+              type="submit"
+              disabled={authBusy}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#5268c8] px-4 text-sm font-semibold text-white transition hover:bg-[#455ab5] focus:outline-none focus:ring-4 focus:ring-[#5268c8]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : 'เข้าสู่ระบบ'}
+            </button>
+          </form>
+        </section>
       </main>
     );
   }
