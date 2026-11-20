@@ -1002,7 +1002,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <PremiumDashboard
               records={records}
               year={selectedYear}
-              isLoggedIn={isLoggedIn && isAdmin}
+              isLoggedIn={isLoggedIn}
               onNavigate={navigateToTab}
               onAddBusiness={() => setIsAddModalOpen(true)}
               onOpenRecord={(record) => { setSelectedId(record.id); setIsDetailModalOpen(true); }}
