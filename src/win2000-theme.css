@@ -1,0 +1,154 @@
+/* Windows 2000 Classic — optional theme, scoped to html.win2000 only.
+   The default M101 design tokens and components remain untouched when inactive. */
+html.win2000 {
+  color-scheme: light;
+  --ds-color-canvas: #d4d0c8;
+  --ds-color-surface: #ece9d8;
+  --ds-color-surface-subtle: #e3e0d5;
+  --ds-color-border: #808080;
+  --ds-color-border-strong: #404040;
+  --ds-color-text: #111111;
+  --ds-color-text-secondary: #333333;
+  --ds-color-text-muted: #666666;
+  --ds-color-primary: #0a246a;
+  --ds-color-primary-hover: #123b91;
+  --ds-color-primary-soft: #c7d4eb;
+  --ds-color-success: #176b35;
+  --ds-color-success-soft: #dcebdc;
+  --ds-color-warning: #805600;
+  --ds-color-warning-soft: #f5ebc7;
+  --ds-color-danger: #9d1d1d;
+  --ds-color-danger-soft: #f2dada;
+  --ds-color-info: #174a83;
+  --ds-color-info-soft: #dce7f4;
+  --ds-radius-sm: 0px;
+  --ds-radius-md: 0px;
+  --ds-radius-lg: 2px;
+  --ds-radius-xl: 2px;
+  --ds-shadow-sm: 1px 1px 0 #ffffff inset, -1px -1px 0 #808080 inset;
+  --ds-shadow-dialog: 2px 2px 0 rgba(0,0,0,.35);
+  --ds-focus-ring: 0 0 0 1px #0a246a;
+  --m101-bg: #d4d0c8;
+  --m101-surface: #ece9d8;
+  --m101-text: #111111;
+  --m101-muted: #333333;
+  --m101-border: #808080;
+  --m101-border-strong: #404040;
+  --m101-primary: #0a246a;
+  --m101-primary-soft: #c7d4eb;
+  --m101-success: #176b35;
+  --m101-danger: #9d1d1d;
+  font-family: Tahoma, "MS Sans Serif", "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 body { background: #d4d0c8 !important; color: #111 !important; font-family: Tahoma, "MS Sans Serif", "Noto Sans Thai", sans-serif !important; transition: none !important; }
+html.win2000 *, html.win2000 *::before, html.win2000 *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+  box-shadow: none;
+}
+html.win2000 .m101-app-shell,
+html.win2000 .m101-workspace-shell { background: #d4d0c8 !important; color: #111 !important; }
+html.win2000 .m101-topbar {
+  background: #c6c3bb !important;
+  border: 1px solid #ffffff !important;
+  border-right-color: #404040 !important;
+  border-bottom-color: #404040 !important;
+  border-radius: 0 !important;
+}
+html.win2000 .m101-brand-mark {
+  background: #0a246a !important; color: #fff !important;
+  border: 2px outset #d4d0c8 !important; border-radius: 0 !important;
+}
+html.win2000 .m101-nav-item,
+html.win2000 .m101-nav-more {
+  color: #111 !important; border: 1px solid transparent !important; border-radius: 0 !important;
+}
+html.win2000 .m101-nav-item.is-active,
+html.win2000 .m101-nav-more.has-active-child {
+  color: #fff !important; background: #0a246a !important;
+  border: 1px solid #0a246a !important; border-radius: 0 !important;
+}
+html.win2000 .m101-nav-more-menu,
+html.win2000 .m101-command-palette,
+html.win2000 .m101-settings-card,
+html.win2000 .m101-dashboard-card,
+html.win2000 [class*="rounded-2xl"],
+html.win2000 [class*="rounded-3xl"],
+html.win2000 [class*="rounded-xl"] {
+  border-radius: 2px !important;
+}
+html.win2000 .m101-nav-more-menu {
+  background: #ece9d8 !important; border: 1px solid #404040 !important;
+}
+html.win2000 .m101-nav-more-menu button { border-radius: 0 !important; color: #111 !important; }
+html.win2000 .m101-page-context strong { color: #0a246a !important; }
+html.win2000 .m101-settings-card,
+html.win2000 .m101-command-palette,
+html.win2000 .m101-dashboard-card,
+html.win2000 .m101-app-shell section,
+html.win2000 .m101-app-shell article {
+  background-color: #ece9d8 !important;
+  border-color: #808080 !important;
+  border-radius: 2px !important;
+}
+html.win2000 button:not(:disabled),
+html.win2000 [role="button"],
+html.win2000 .ds-button {
+  border-radius: 2px !important;
+}
+html.win2000 button:not(:disabled):not(.m101-nav-item):not(.m101-nav-more),
+html.win2000 .ds-button {
+  background-color: #d4d0c8;
+  color: #111;
+  border: 1px solid #404040 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  border-right-color: #404040 !important;
+  border-bottom-color: #404040 !important;
+}
+html.win2000 button:active:not(:disabled) {
+  border-top-color: #404040 !important;
+  border-left-color: #404040 !important;
+  border-right-color: #fff !important;
+  border-bottom-color: #fff !important;
+}
+html.win2000 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.win2000 select,
+html.win2000 textarea {
+  background: #fff !important; color: #111 !important;
+  border: 1px solid #7f7f7f !important; border-radius: 0 !important;
+  box-shadow: 1px 1px 0 #d4d0c8 inset !important;
+}
+html.win2000 input:focus,
+html.win2000 select:focus,
+html.win2000 textarea:focus { outline: 1px dotted #0a246a !important; outline-offset: -3px; box-shadow: none !important; }
+html.win2000 table { border-collapse: collapse !important; background: #fff !important; }
+html.win2000 th {
+  background: #d4d0c8 !important; color: #111 !important;
+  border: 1px solid #808080 !important; font-weight: 700 !important;
+}
+html.win2000 td { background: #fff !important; color: #111 !important; border: 1px solid #c0c0c0 !important; }
+html.win2000 tr:hover td { background: #e8f0fb !important; }
+html.win2000 .m101-app-shell [class*="bg-white"],
+html.win2000 .m101-app-shell [class*="bg-slate-50"],
+html.win2000 .m101-app-shell [class*="bg-slate-100"],
+html.win2000 .m101-settings [class*="bg-white"] { background-color: #ece9d8 !important; }
+html.win2000 .m101-app-shell [class*="text-slate-900"],
+html.win2000 .m101-app-shell [class*="text-slate-800"],
+html.win2000 .m101-app-shell [class*="text-slate-700"],
+html.win2000 .m101-settings [class*="text-slate-900"] { color: #111 !important; }
+html.win2000 .m101-app-shell [class*="border-slate-100"],
+html.win2000 .m101-app-shell [class*="border-slate-200"],
+html.win2000 .m101-settings [class*="border-slate-200"] { border-color: #808080 !important; }
+html.win2000 .m101-settings .m101-settings-card { border: 2px solid #fff !important; border-right-color: #404040 !important; border-bottom-color: #404040 !important; }
+html.win2000 .m101-settings-header { color: #111 !important; }
+html.win2000 .m101-settings button[aria-pressed="true"] {
+  background: #0a246a !important; color: #fff !important; border: 1px solid #0a246a !important;
+}
+html.win2000 .m101-settings button[aria-pressed="false"] { background: #d4d0c8 !important; color: #111 !important; }
+html.win2000 ::selection { background: #0a246a !important; color: #fff !important; }
+html.win2000 :focus-visible { outline: 1px dotted #0a246a !important; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) {
+  html.win2000 *, html.win2000 *::before, html.win2000 *::after { animation: none !important; transition: none !important; }
+}
