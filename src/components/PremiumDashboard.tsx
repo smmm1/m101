@@ -76,7 +76,7 @@ export const PremiumDashboard: React.FC<Props> = ({ records, year, isLoggedIn, o
           </div>
           <div className="m101-status-total-line"><span>รายการทั้งหมด</span><b>{count(records.length)} รายการ</b></div>
           <div className="m101-progress-stack m101-progress-stack-large" role="img" aria-label={`เสร็จสิ้น ${stats.completed} กำลังดำเนินการ ${stats.inProgress} รอดำเนินการ ${stats.pending}`}>
-            <span className="m101-progress-done" style={{ width: `${stats.percent * stats.completed / Math.max(stats.completed, 1)}%` }} />
+            <span className="m101-progress-done" style={{ width: `${records.length ? stats.completed / records.length * 100 : 0}%` }} />
             <span className="m101-progress-active" style={{ width: `${records.length ? stats.inProgress / records.length * 100 : 0}%` }} />
             <span className="m101-progress-waiting" style={{ width: `${records.length ? stats.pending / records.length * 100 : 0}%` }} />
           </div>
