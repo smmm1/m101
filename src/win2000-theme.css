@@ -436,3 +436,32 @@ html.win2000 .m101-settings-card button { min-height: 28px !important; border-ra
   html.win2000 .m101-global-search { grid-column: 3 !important; grid-row: 1 !important; }
   html.win2000 .m101-topbar-actions { grid-column: 4 !important; grid-row: 1 !important; }
 }
+
+
+/* Windows 2000 mobile bottom navigation — classic beveled taskbar palette */
+@media (max-width: 760px) {
+  html.win2000 .m101-mobile-bottom-nav {
+    background: #d4d0c8 !important;
+    border-top: 2px solid #fff !important;
+    box-shadow: 0 -1px 0 #808080 !important;
+    padding-bottom: calc(7px + env(safe-area-inset-bottom)) !important;
+  }
+  html.win2000 .m101-mobile-bottom-nav button {
+    border: 1px solid transparent !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #222 !important;
+    font: 11px Tahoma, "MS Sans Serif", sans-serif !important;
+  }
+  html.win2000 .m101-mobile-bottom-nav button.is-active {
+    background: #0a246a !important;
+    border: 1px solid #0a246a !important;
+    color: #fff !important;
+  }
+  html.win2000 .m101-mobile-bottom-nav button span {
+    font: 10px Tahoma, "MS Sans Serif", sans-serif !important;
+  }
+  html.win2000 .mobile-main-content {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+}
