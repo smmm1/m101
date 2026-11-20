@@ -133,7 +133,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     { id: 'directory', label: 'ทะเบียนกิจการ', hint: 'เปิดรายการกิจการ', icon: 'folder_open', action: () => navigateToTab('directory') },
     { id: 'dashboard', label: 'ภาพรวม', hint: 'ดูสถิติและสถานะงาน', icon: 'space_dashboard', action: () => navigateToTab('dashboard') },
     ...(isLoggedIn ? [{ id: 'tasks', label: 'งานประจำปี', hint: 'จัดการงานประจำปี', icon: 'task_alt', action: () => navigateToTab('tasks') }] : []),
-    ...(isLoggedIn ? [{ id: 'import', label: 'นำเข้าข้อมูล', hint: 'นำเข้า Excel หรือ CSV', icon: 'file_upload', action: () => navigateToTab('import') }] : []),
+    ...(isLoggedIn && isAdmin ? [{ id: 'import', label: 'นำเข้าข้อมูล', hint: 'นำเข้า Excel หรือ CSV', icon: 'file_upload', action: () => navigateToTab('import') }] : []),
     ...(isLoggedIn ? [{ id: 'settings', label: 'ตั้งค่าระบบ', hint: 'การตั้งค่าและสำรองข้อมูล', icon: 'settings', action: () => navigateToTab('settings') }] : []),
     { id: 'search', label: 'ค้นหากิจการ', hint: 'ค้นหาจากชื่อ เลขทะเบียน หรือรหัส', icon: 'search', action: () => { navigateToTab('directory'); window.setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder*="ค้นหา"], input[placeholder*="Search"]')?.focus(), 80); } },
   ];
@@ -465,13 +465,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button type="button" aria-current={activeTab === 'dashboard' ? 'page' : undefined} onClick={() => navigateToTab('dashboard')} className={`m101-nav-item ${activeTab === 'dashboard' ? 'is-active' : ''}`}><LayoutDashboard size={16} aria-hidden="true" /><span>ภาพรวม</span></button>
           <button type="button" aria-current={activeTab === 'directory' ? 'page' : undefined} onClick={() => navigateToTab('directory')} className={`m101-nav-item ${activeTab === 'directory' ? 'is-active' : ''}`}><Building2 size={16} aria-hidden="true" /><span>ทะเบียนกิจการ</span></button>
           {isLoggedIn && <button type="button" aria-current={activeTab === 'tasks' ? 'page' : undefined} onClick={() => navigateToTab('tasks')} className={`m101-nav-item ${activeTab === 'tasks' ? 'is-active' : ''}`}><ClipboardList size={16} aria-hidden="true" /><span>งานประจำปี</span></button>}
-          {isLoggedIn && <button type="button" aria-current={activeTab === 'import' ? 'page' : undefined} onClick={() => navigateToTab('import')} className={`m101-nav-item ${activeTab === 'import' ? 'is-active' : ''}`}><FileSpreadsheet size={16} aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
+          {isLoggedIn && isAdmin && <button type="button" aria-current={activeTab === 'import' ? 'page' : undefined} onClick={() => navigateToTab('import')} className={`m101-nav-item ${activeTab === 'import' ? 'is-active' : ''}`}><FileSpreadsheet size={16} aria-hidden="true" /><span>นำเข้า / ส่งออก</span></button>}
           {isLoggedIn && <button type="button" aria-current={activeTab === 'settings' ? 'page' : undefined} onClick={() => navigateToTab('settings')} className={`m101-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}><Settings size={16} aria-hidden="true" /><span>ตั้งค่าระบบ</span></button>}
           <div className="m101-nav-more-wrap">
             <button type="button" className={`m101-nav-more ${showMoreNavigation ? 'is-open' : ''} ${activeTab === 'tasks' || activeTab === 'import' || activeTab === 'settings' ? 'has-active-child' : ''}`} aria-expanded={showMoreNavigation} aria-haspopup="menu" onClick={() => setShowMoreNavigation((open) => !open)}><MoreHorizontal size={17} aria-hidden="true" /><span>เพิ่มเติม</span></button>
             {showMoreNavigation && <div className="m101-nav-more-menu" role="menu" aria-label="เมนูเพิ่มเติม">
               {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'tasks' ? 'page' : undefined} className={activeTab === 'tasks' ? 'is-active' : ''} onClick={() => { navigateToTab('tasks'); setShowMoreNavigation(false); }}><ClipboardList size={16} />งานประจำปี</button>}
-              {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'import' ? 'page' : undefined} className={activeTab === 'import' ? 'is-active' : ''} onClick={() => { navigateToTab('import'); setShowMoreNavigation(false); }}><FileSpreadsheet size={16} />นำเข้า / ส่งออก</button>}
+              {isLoggedIn && isAdmin && <button type="button" role="menuitem" aria-current={activeTab === 'import' ? 'page' : undefined} className={activeTab === 'import' ? 'is-active' : ''} onClick={() => { navigateToTab('import'); setShowMoreNavigation(false); }}><FileSpreadsheet size={16} />นำเข้า / ส่งออก</button>}
               {isLoggedIn && <button type="button" role="menuitem" aria-current={activeTab === 'settings' ? 'page' : undefined} className={activeTab === 'settings' ? 'is-active' : ''} onClick={() => { navigateToTab('settings'); setShowMoreNavigation(false); }}><Settings size={16} />ตั้งค่าระบบ</button>}
             </div>}
           </div>
@@ -505,7 +505,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">
                     เลือกรอบปีบัญชี (Fiscal Years)
                   </span>
-                  {isLoggedIn && onOpenYearModal && (
+                  {isLoggedIn && isAdmin && onOpenYearModal && (
                     <button
                       type="button"
                       onClick={() => {
@@ -542,7 +542,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <span>ปีบัญชี {yr}</span>
                       </button>
 
-                      {isLoggedIn && availableYears.length > 1 && onDeleteYear && (
+                      {isLoggedIn && isAdmin && availableYears.length > 1 && onDeleteYear && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -562,7 +562,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   ))}
                 </div>
 
-                {isLoggedIn && (
+                {isLoggedIn && isAdmin && (
                 <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <input
                     type="text"
@@ -992,7 +992,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               year={selectedYear}
               isLoggedIn={isLoggedIn}
               onNavigate={navigateToTab}
-              onAddBusiness={() => setIsAddModalOpen(true)}
+              onAddBusiness={isAdmin ? () => setIsAddModalOpen(true) : undefined}
               onOpenRecord={(record) => { setSelectedId(record.id); setIsDetailModalOpen(true); }}
             />
             {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} mode="summary" />}
