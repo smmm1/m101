@@ -1,4 +1,4 @@
-type Env = { DB: any; M101_BOOTSTRAP_KEY?: string };
+type Env = { DB: any; PREVIEW_DB?: any; M101_BOOTSTRAP_KEY?: string };
 type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; local_password_set: number; password_hash: string; password_salt: string };
 
 const COOKIE_NAME = 'm101_session';
@@ -89,6 +89,197 @@ async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAcc
   ).bind(user.id).first() as { workspace_id?: string; membership_type?: 'owner' | 'collaborator' } | null;
   if (!row?.workspace_id || !row.membership_type) return null;
   return { user, workspaceId: String(row.workspace_id), membershipType: row.membership_type };
+}
+
+
+async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
+  if (!env.PREVIEW_DB || authenticatedOwner.role !== 'admin') throw new Error('Preview account migration is unavailable');
+  const migrationKey = 'preview_workspace_migration_v1';
+  const alreadyMigrated = await env.DB.prepare('SELECT config_value FROM app_config WHERE config_key = ?').bind(migrationKey).first();
+  if (alreadyMigrated) return;
+
+  const workspaceId = 'm101-primary-workspace';
+  const previewUsersResult = await env.PREVIEW_DB.prepare('SELECT * FROM users').all();
+  const previewUsers = (previewUsersResult.results || []) as UserRow[];
+  const previewOwner = previewUsers.find((user) => user.id === authenticatedOwner.id && user.role === 'admin' && Number(user.local_password_set) === 1);
+  if (!previewOwner) throw new Error('Preview Owner account mapping could not be verified');
+
+  const [previewWorkspace, productionWorkspace, previewDirectoryResult, productionDirectoryResult] = await Promise.all([
+    env.PREVIEW_DB.prepare('SELECT * FROM workspaces WHERE id = ? AND status = ?').bind(workspaceId, 'active').first(),
+    env.DB.prepare('SELECT * FROM workspaces WHERE id = ? AND status = ?').bind(workspaceId, 'active').first(),
+    env.PREVIEW_DB.prepare('SELECT fiscal_year, records, revision, updated_at FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceId).all(),
+    env.DB.prepare('SELECT fiscal_year, records, revision, updated_at FROM workspace_directory_year_data WHERE workspace_id = ? ORDER BY fiscal_year').bind(workspaceId).all(),
+  ]);
+  if (!previewWorkspace || !productionWorkspace) throw new Error('M101 workspace mapping could not be verified');
+
+  const previewDirectory = (previewDirectoryResult.results || []) as Array<{ fiscal_year: string; records: string; revision: number; updated_at: string }>;
+  const productionDirectory = (productionDirectoryResult.results || []) as Array<{ fiscal_year: string; records: string; revision: number; updated_at: string }>;
+  const productionByYear = new Map(productionDirectory.map((row) => [String(row.fiscal_year), row]));
+  const idMap = new Map<string, string>();
+  const directoryWrites: Array<{ fiscalYear: string; records: unknown[]; revision: number; updatedAt: string; insert: boolean }> = [];
+  let previewRecordCount = 0;
+  let matchedRecordCount = 0;
+  let newRecordCount = 0;
+  let filledFieldCount = 0;
+  const normalize = (value: unknown) => String(value || '').replace(/\s+/g, '').toLowerCase();
+
+  for (const previewRow of previewDirectory) {
+    const fiscalYear = String(previewRow.fiscal_year);
+    const currentRow = productionByYear.get(fiscalYear);
+    const productionRecords = currentRow ? JSON.parse(String(currentRow.records || '[]')) as Array<Record<string, unknown>> : [];
+    const previewRecords = JSON.parse(String(previewRow.records || '[]')) as Array<Record<string, unknown>>;
+    const byName = new Map<string, Array<Record<string, unknown>>>();
+    const byTaxId = new Map<string, Array<Record<string, unknown>>>();
+    const addIndex = (index: Map<string, Array<Record<string, unknown>>>, key: string, record: Record<string, unknown>) => {
+      if (!key) return;
+      const rows = index.get(key) || [];
+      rows.push(record);
+      index.set(key, rows);
+    };
+    for (const record of productionRecords) {
+      addIndex(byName, normalize(record.companyName), record);
+      addIndex(byTaxId, normalize(record.taxId), record);
+    }
+    const existingIds = new Set(productionRecords.map((record) => String(record.id || '')));
+    for (const record of previewRecords) {
+      previewRecordCount++;
+      const nameMatches = byName.get(normalize(record.companyName)) || [];
+      let target = nameMatches.length === 1 ? nameMatches[0] : null;
+      if (!target) {
+        const taxMatches = byTaxId.get(normalize(record.taxId)) || [];
+        if (taxMatches.length === 1) target = taxMatches[0];
+      }
+      const previewId = String(record.id || '');
+      if (target) {
+        matchedRecordCount++;
+        idMap.set(previewId, String(target.id || previewId));
+        for (const [key, value] of Object.entries(record)) {
+          if (['id', 'companyName', 'taxId', 'sequenceNo', 'createdAt', 'updatedAt'].includes(key)) continue;
+          const current = target[key];
+          if ((current === undefined || current === null || current === '') && value !== undefined && value !== null && value !== '') {
+            target[key] = value;
+            filledFieldCount++;
+          }
+        }
+      } else {
+        if (!previewId || existingIds.has(previewId)) throw new Error('Preview business ID conflicts with Production data');
+        const copy = { ...record };
+        productionRecords.push(copy);
+        existingIds.add(previewId);
+        idMap.set(previewId, previewId);
+        addIndex(byName, normalize(copy.companyName), copy);
+        addIndex(byTaxId, normalize(copy.taxId), copy);
+        newRecordCount++;
+      }
+    }
+    directoryWrites.push({
+      fiscalYear,
+      records: productionRecords,
+      revision: currentRow ? Number(currentRow.revision || 1) + 1 : Math.max(1, Number(previewRow.revision || 1)),
+      updatedAt: new Date().toISOString(),
+      insert: !currentRow,
+    });
+  }
+
+  const statements: any[] = [];
+  for (const row of directoryWrites) {
+    if (row.insert) {
+      statements.push(env.DB.prepare(
+        'INSERT INTO workspace_directory_year_data (workspace_id, fiscal_year, records, revision, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(workspaceId, row.fiscalYear, JSON.stringify(row.records), row.revision, previewOwner.id, row.updatedAt));
+    } else {
+      statements.push(env.DB.prepare(
+        'UPDATE workspace_directory_year_data SET records = ?, revision = ?, updated_by = ?, updated_at = ? WHERE workspace_id = ? AND fiscal_year = ?'
+      ).bind(JSON.stringify(row.records), row.revision, previewOwner.id, row.updatedAt, workspaceId, row.fiscalYear));
+    }
+  }
+
+  for (const user of previewUsers) {
+    if (user.id === previewOwner.id) {
+      statements.push(env.DB.prepare(
+        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, account_status = 'active', local_password_set = 1 WHERE id = ? AND role = 'admin'"
+      ).bind(user.username, user.password_hash, user.password_salt, user.id));
+      continue;
+    }
+    const existing = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();
+    if (existing) {
+      statements.push(env.DB.prepare(
+        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, account_status = ?, local_password_set = ? WHERE id = ?"
+      ).bind(user.username, user.password_hash, user.password_salt, user.account_status, Number(user.local_password_set), user.id));
+    } else {
+      const conflict = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ? COLLATE NOCASE LIMIT 1')
+        .bind(user.username, user.email).first();
+      if (conflict) throw new Error('Preview user identity conflicts with an existing Production account');
+      statements.push(env.DB.prepare(
+        'INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, pin_hash, pin_salt, username, account_status, local_password_set) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(user.id, user.email, user.display_name, user.role, user.password_hash, user.password_salt, user.created_at, null, null, user.username, user.account_status, Number(user.local_password_set)));
+    }
+  }
+
+  const [memberships, groups, groupMembers, assignments, grants, invitations, audits, annualTasks] = await Promise.all([
+    env.PREVIEW_DB.prepare('SELECT * FROM workspace_memberships WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM business_relationship_groups WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT gm.* FROM business_relationship_group_memberships gm JOIN business_relationship_groups g ON g.id = gm.group_id WHERE g.workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM business_assignments WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM business_credential_grants WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM workspace_invitations WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM audit_events WHERE workspace_id = ?').bind(workspaceId).all(),
+    env.PREVIEW_DB.prepare('SELECT * FROM annual_tasks WHERE workspace_id = ?').bind(workspaceId).all(),
+  ]);
+
+  for (const item of memberships.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO workspace_memberships (id, workspace_id, user_id, membership_type, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, item.user_id, item.membership_type, item.status, item.created_at, item.updated_at));
+  }
+  for (const item of groups.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO business_relationship_groups (id, workspace_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, item.name, item.created_at, item.updated_at));
+  }
+  for (const item of groupMembers.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO business_relationship_group_memberships (group_id, business_id, created_at) VALUES (?, ?, ?)'
+    ).bind(item.group_id, idMap.get(String(item.business_id)) || item.business_id, item.created_at));
+  }
+  for (const item of assignments.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO business_assignments (id, workspace_id, business_id, user_id, assigned_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, idMap.get(String(item.business_id)) || item.business_id, item.user_id, item.assigned_by, item.created_at));
+  }
+  for (const item of grants.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO business_credential_grants (id, workspace_id, business_id, user_id, granted_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, idMap.get(String(item.business_id)) || item.business_id, item.user_id, item.granted_by, item.created_at));
+  }
+  for (const item of invitations.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO workspace_invitations (id, workspace_id, email, token_hash, expires_at, invited_by, accepted_by, accepted_at, revoked_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, item.email, item.token_hash, item.expires_at, item.invited_by, item.accepted_by, item.accepted_at, item.revoked_at, item.created_at));
+  }
+  for (const item of audits.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.workspace_id, item.actor_user_id, item.action, item.resource_type, idMap.get(String(item.resource_id || '')) || item.resource_id, item.metadata_json, item.created_at));
+  }
+  for (const item of annualTasks.results || []) {
+    statements.push(env.DB.prepare(
+      'INSERT OR IGNORE INTO annual_tasks (id, fiscal_year, business_id, business_name, task_code, task_name, status, due_date, note, created_by, updated_by, created_at, updated_at, workspace_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(item.id, item.fiscal_year, idMap.get(String(item.business_id)) || item.business_id, item.business_name, item.task_code, item.task_name, item.status, item.due_date, item.note, item.created_by, item.updated_by, item.created_at, item.updated_at, workspaceId));
+  }
+
+  const directoryRevision = Math.max(Number(productionWorkspace.directory_revision || 1), Number(previewWorkspace.directory_revision || 1)) + 1;
+  const now = new Date().toISOString();
+  statements.push(env.DB.prepare('UPDATE workspaces SET directory_revision = ?, directory_write_token = NULL, updated_at = ? WHERE id = ?')
+    .bind(directoryRevision, now, workspaceId));
+  statements.push(env.DB.prepare('DELETE FROM sessions'));
+  statements.push(env.DB.prepare('DELETE FROM auth_rate_limit_attempts'));
+  statements.push(env.DB.prepare('INSERT OR REPLACE INTO app_config (config_key, config_value, updated_at) VALUES (?, ?, ?)')
+    .bind(migrationKey, JSON.stringify({ migratedAt: now, previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, filledFields: filledFieldCount }), now));
+
+  const result = await env.DB.batch(statements);
+  if (result.some((item: { success?: boolean }) => item.success === false)) throw new Error('Preview workspace migration did not complete');
+  return { previewRecords: previewRecordCount, matchedRecords: matchedRecordCount, newRecords: newRecordCount, filledFields: filledFieldCount, users: previewUsers.length };
 }
 
 async function findWorkspaceBusiness(workspaceId: string, businessId: string, env: Env): Promise<{ id: string; companyName: string } | null> {
@@ -251,7 +442,16 @@ export async function onRequest(context: { request: Request; env: Env }) {
       ).bind(attemptKey, now, attemptKey, now - 15 * 60).run();
       if (Number(reservation.meta?.changes || 0) !== 1) return json({ error: 'เข้าสู่ระบบผิดหลายครั้ง กรุณารอ 15 นาที' }, 429);
 
-      const user = await env.DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
+      let user = await env.DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
+      if ((!user || Number(user.local_password_set) !== 1) && env.PREVIEW_DB) {
+        const previewUser = await env.PREVIEW_DB.prepare('SELECT * FROM users WHERE username = ? COLLATE NOCASE').bind(username).first() as UserRow | null;
+        const previewCandidate = await hashPassword(password, previewUser?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
+        if (previewUser && previewUser.role === 'admin' && previewUser.account_status === 'active'
+          && Number(previewUser.local_password_set) === 1 && constantTimeEqual(previewCandidate.hash, previewUser.password_hash)) {
+          await migratePreviewWorkspace(env, previewUser);
+          user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(previewUser.id).first() as UserRow | null;
+        }
+      }
       // Perform the same PBKDF2 work for unknown, suspended, and active accounts
       // so login timing does not reveal whether a username exists or is enabled.
       const candidate = await hashPassword(password, user?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
