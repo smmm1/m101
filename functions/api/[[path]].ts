@@ -476,6 +476,8 @@ export async function onRequest(context: { request: Request; env: Env }) {
       const createdAt = new Date().toISOString();
       await env.DB.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
         .bind(await digest(token), user.id, now + SESSION_SECONDS, createdAt).run();
+      await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.login', 'session', ?, ?, ?)")
+        .bind(randomToken(18), workspaceAccess.workspaceId, user.id, user.id, JSON.stringify({ username: user.username }), createdAt).run();
       return json({ user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
     }
 
@@ -509,8 +511,51 @@ export async function onRequest(context: { request: Request; env: Env }) {
 
     if (path === '/api/auth/logout' && request.method === 'POST') {
       const token = getCookie(request, COOKIE_NAME);
-      if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await digest(token)).run();
+      if (token) {
+        const tokenHash = await digest(token);
+        const activeUser = await getUser(request, env);
+        if (activeUser) {
+          const access = await getWorkspaceAccess(activeUser, env);
+          if (access) await env.DB.prepare("INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, 'auth.logout', 'session', ?, ?, ?)")
+            .bind(randomToken(18), access.workspaceId, activeUser.id, activeUser.id, JSON.stringify({ username: activeUser.username, logoutType: 'explicit' }), new Date().toISOString()).run();
+        }
+        await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
+      }
       return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0` });
+    }
+
+    if (path === '/api/admin/activity' && request.method === 'GET') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      if (access.membershipType !== 'owner' || access.user.role !== 'admin') return json({ error: 'เฉพาะ Owner เท่านั้นที่ดูประวัติกิจกรรมได้' }, 403);
+      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit') || 250)));
+      const memberId = String(url.searchParams.get('memberId') || '').slice(0, 100);
+      const result = await env.DB.prepare(
+        `SELECT e.id, e.actor_user_id, e.action, e.resource_type, e.resource_id, e.metadata_json, e.created_at,
+          u.username AS actor_username, u.display_name AS actor_display_name
+         FROM audit_events e LEFT JOIN users u ON u.id = e.actor_user_id
+         WHERE e.workspace_id = ? AND (? = '' OR e.actor_user_id = ?)
+         ORDER BY e.created_at DESC LIMIT ?`
+      ).bind(access.workspaceId, memberId, memberId, limit).all();
+      return json({ events: result.results || [] });
+    }
+
+    if (path === '/api/activity' && request.method === 'POST') {
+      const access = await requireWorkspaceAccess(request, env);
+      if (!access) return json({ error: 'กรุณาเข้าสู่ระบบใหม่' }, 401);
+      const body = await request.json() as { action?: string; resourceType?: string; resourceId?: string; label?: string; fiscalYear?: string };
+      const action = String(body.action || '');
+      if (!['business.viewed', 'navigation.opened', 'report.exported'].includes(action)) return json({ error: 'กิจกรรมนี้ไม่อนุญาตให้บันทึก' }, 400);
+      const resourceType = String(body.resourceType || (action === 'business.viewed' ? 'business' : 'workspace')).slice(0, 40);
+      const resourceId = String(body.resourceId || '').slice(0, 160);
+      const metadata = {
+        username: access.user.username,
+        label: String(body.label || '').slice(0, 160),
+        fiscalYear: String(body.fiscalYear || '').slice(0, 8),
+      };
+      await env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(randomToken(18), access.workspaceId, access.user.id, action, resourceType, resourceId || null, JSON.stringify(metadata), new Date().toISOString()).run();
+      return json({ ok: true }, 201);
     }
 
     if (path === '/api/admin/users' && request.method === 'GET') {
@@ -699,9 +744,11 @@ export async function onRequest(context: { request: Request; env: Env }) {
         ).bind(workspaceAccess.workspaceId, year, JSON.stringify(recordsToWrite[year] || []), user.id, now, workspaceAccess.workspaceId, nextRevision, writeToken)),
       ];
 
-      const existing = await env.DB.prepare('SELECT fiscal_year FROM workspace_directory_year_data WHERE workspace_id = ?')
+      const existing = await env.DB.prepare('SELECT fiscal_year, records FROM workspace_directory_year_data WHERE workspace_id = ?')
         .bind(workspaceAccess.workspaceId).all();
-      const existingYears = (existing.results || []).map((row: { fiscal_year: string }) => String(row.fiscal_year));
+      const previousByYear = new Map<string, Array<Record<string, unknown>>>();
+      for (const row of existing.results || []) previousByYear.set(String((row as { fiscal_year: string }).fiscal_year), JSON.parse(String((row as { records?: string }).records || '[]')));
+      const existingYears = Array.from(previousByYear.keys());
       for (const removed of (workspaceAccess.membershipType === 'owner' ? existingYears.filter((year: string) => !years.includes(year)) : [])) {
         statements.push(env.DB.prepare(
           'DELETE FROM workspace_directory_year_data WHERE workspace_id = ? AND fiscal_year = ? AND EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND directory_revision = ? AND directory_write_token = ?)'
@@ -716,6 +763,33 @@ export async function onRequest(context: { request: Request; env: Env }) {
           conflict: true,
         }, 409);
       }
+
+      // Record meaningful business changes only after the guarded D1 write succeeds.
+      const auditStatements: any[] = [];
+      const trackedFields = ['companyName', 'taxId', 'sequenceNo', 'eFilingCode', 'ssoCode', 'remark', 'topic', 'auditorDate', 'type', 'status'];
+      for (const year of years) {
+        const before = previousByYear.get(year) || [];
+        const after = recordsToWrite[year] || [];
+        const beforeById = new Map(before.map((record) => [String(record.id || ''), record]));
+        const afterById = new Map(after.map((record) => [String(record.id || ''), record]));
+        for (const [id, record] of afterById) {
+          if (!id) continue;
+          const previous = beforeById.get(id);
+          if (!previous) {
+            auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.created', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year }), now));
+          } else {
+            const changedFields = trackedFields.filter((field) => JSON.stringify(previous[field] ?? null) !== JSON.stringify(record[field] ?? null));
+            if (changedFields.length) auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+              .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.updated', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || previous.companyName || '').slice(0, 200), fiscalYear: year, changedFields }), now));
+          }
+        }
+        for (const [id, record] of beforeById) {
+          if (id && !afterById.has(id)) auditStatements.push(env.DB.prepare('INSERT INTO audit_events (id, workspace_id, actor_user_id, action, resource_type, resource_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+            .bind(randomToken(18), workspaceAccess.workspaceId, user.id, 'business.deleted', 'business', id, JSON.stringify({ username: user.username, businessName: String(record.companyName || '').slice(0, 200), fiscalYear: year }), now));
+        }
+      }
+      if (auditStatements.length) await env.DB.batch(auditStatements.slice(0, 500));
       return json({ ok: true, savedYears: years.length, directoryRevision: nextRevision });
     }
 
