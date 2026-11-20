@@ -19,7 +19,7 @@ import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
 import { SmartIdleScreen } from './components/SmartIdleScreen';
 import { AdminControlCenter } from './components/AdminControlCenter';
-import { UserManagementPanel } from './components/UserManagementPanel';
+import { OwnerMembersPage } from './components/OwnerMembersPage';
 
 interface SessionUser { id: string; username: string; role: 'admin' | 'member' }
 
@@ -62,7 +62,26 @@ function AppContent() {
   const [bootstrapError, setBootstrapError] = useState('');
   const [bootstrapBusy, setBootstrapBusy] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
-  const [userManagementOpen, setUserManagementOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(() => window.location.pathname === '/admin/members');
+  const openMembersPage = () => {
+    openMembersPage();
+    if (window.location.pathname !== '/admin/members') window.history.pushState({ m101OwnerMembers: true }, '', '/admin/members');
+  };
+  const closeMembersPage = () => {
+    setUserManagementOpen(false);
+    if (window.location.pathname === '/admin/members') window.history.pushState({}, '', '/');
+  };
+  useEffect(() => {
+    const handleHistoryChange = () => setUserManagementOpen(window.location.pathname === '/admin/members');
+    window.addEventListener('popstate', handleHistoryChange);
+    return () => window.removeEventListener('popstate', handleHistoryChange);
+  }, []);
+  useEffect(() => {
+    if (authReady && window.location.pathname === '/admin/members' && (!sessionUser || sessionUser.role !== 'admin')) {
+      setUserManagementOpen(false);
+      window.history.replaceState({}, '', '/');
+    }
+  }, [authReady, sessionUser]);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authUsername, setAuthUsername] = useState('');
@@ -819,10 +838,10 @@ function AppContent() {
           onClose={() => setAdminPanelOpen(false)}
           onNavigate={(tab) => { window.dispatchEvent(new CustomEvent('m101:owner-navigate', { detail: { tab } })); setAdminPanelOpen(false); }}
           onPreviewAfk={() => { setAdminPanelOpen(false); window.dispatchEvent(new Event('m101:owner-preview-afk')); }}
-          onManageUsers={() => { setAdminPanelOpen(false); setUserManagementOpen(true); }}
+          onManageUsers={() => { setAdminPanelOpen(false); openMembersPage(); }}
         />
       )}
-      {userManagementOpen && isLoggedIn && userRole === 'admin' && <UserManagementPanel onClose={() => setUserManagementOpen(false)} />}
+      {userManagementOpen && isLoggedIn && userRole === 'admin' && <OwnerMembersPage onClose={closeMembersPage} />}
       {saveConflict && (
         <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="m101-save-conflict-title">
           <section className="w-full max-w-xl rounded-2xl border border-amber-200 bg-white p-5 shadow-2xl sm:p-6">
@@ -890,7 +909,7 @@ function AppContent() {
         }}
         isLoggedIn={isLoggedIn}
         isAdmin={userRole === 'admin'}
-        onManageUsers={() => setUserManagementOpen(true)}
+        onManageUsers={() => openMembersPage()}
         onToggleLogin={() => {
           void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
             .finally(() => {
