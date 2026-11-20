@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'system' | 'win2000';
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const readSavedTheme = (): ThemeMode => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'light';
+    return saved === 'light' || saved === 'dark' || saved === 'system' || saved === 'win2000' ? saved : 'light';
   } catch { return 'light'; }
 };
 
@@ -36,6 +36,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
     root.classList.toggle('dark', isDark);
     root.classList.toggle('light', !isDark);
+    root.classList.toggle('win2000', theme === 'win2000');
     root.style.colorScheme = isDark ? 'dark' : 'light';
     try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* Session-only fallback. */ }
   }, [theme, isDark]);
