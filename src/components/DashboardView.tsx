@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Building2, FileText, CalendarCheck2, FileSpreadsheet, ShieldCheck, Search, Upload, Plus, ArrowRight, LayoutDashboard, ClipboardList, Settings, CalendarDays, History, MoreHorizontal } from 'lucide-react';
 import { BusinessRecord } from '../types';
+import { PremiumDashboard } from './PremiumDashboard';
 import { AnnualTasksView } from './AnnualTasksView';
 import { AddBusinessModal } from './AddBusinessModal';
 import { BusinessDetailModal } from './BusinessDetailModal';
@@ -959,108 +960,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         )}
 
-        {/* Redesigned overview workspace */}
         {activeTab === 'dashboard' && (
-          <section className="m101-overview w-full max-w-[1500px] mx-auto flex flex-col gap-6">
-            <header className="m101-overview-header">
-              <div>
-                <p className="m101-eyebrow">WORKSPACE OVERVIEW</p>
-                <h1>ภาพรวมทะเบียนกิจการ</h1>
-                <p>สรุปสถานะงานและเข้าถึงข้อมูลที่ต้องจัดการในรอบปีบัญชี {selectedYear}</p>
-              </div>
-              <div className="m101-overview-actions">
-                <button type="button" onClick={() => navigateToTab('directory')} className="m101-button-secondary" onPointerMove={handleMagneticMove} onPointerLeave={resetMagnetic}><Building2 size={16} aria-hidden="true" /> ทะเบียน <ArrowRight size={15} aria-hidden="true" /></button>
-                {isLoggedIn && <button type="button" onClick={() => navigateToTab('import')} className="m101-button-primary" onPointerMove={handleMagneticMove} onPointerLeave={resetMagnetic}><Upload size={16} aria-hidden="true" /> นำเข้าข้อมูล</button>}
-              </div>
-            </header>
-
-            <div className="m101-overview-metrics" aria-label="สรุปจำนวนกิจการ">
-              <article className="m101-metric-card m101-metric-total" onPointerMove={updateSpotlight}>
-                <span className="m101-metric-label">กิจการทั้งหมด</span>
-                <strong><AnimatedCount value={totalCount} /></strong>
-                <span className="m101-metric-foot">รายการในปีบัญชี {selectedYear}</span>
-              </article>
-              <article className="m101-metric-card" onPointerMove={updateSpotlight}>
-                <span className="m101-metric-label">เสร็จสิ้น</span>
-                <strong><AnimatedCount value={completedCount} /></strong>
-                <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-done" /> ดำเนินการเรียบร้อย</span>
-              </article>
-              <article className="m101-metric-card">
-                <span className="m101-metric-label">กำลังดำเนินการ</span>
-                <strong><AnimatedCount value={inProgressCount} /></strong>
-                <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-progress" /> อยู่ระหว่างจัดการ</span>
-              </article>
-              <article className="m101-metric-card">
-                <span className="m101-metric-label">รอดำเนินการ</span>
-                <strong><AnimatedCount value={pendingCount} /></strong>
-                <span className="m101-metric-foot"><i className="m101-status-dot m101-dot-pending" /> ยังไม่เริ่มดำเนินการ</span>
-              </article>
-            </div>
-
+          <>
+            <PremiumDashboard
+              records={records}
+              year={selectedYear}
+              isLoggedIn={isLoggedIn}
+              onNavigate={navigateToTab}
+              onAddBusiness={() => setIsAddModalOpen(true)}
+              onOpenRecord={(record) => { setSelectedId(record.id); setIsDetailModalOpen(true); }}
+            />
             {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} mode="summary" />}
-
-            <div className="m101-overview-grid">
-              <section className="m101-overview-panel m101-status-panel">
-                <div className="m101-panel-heading m101-status-heading">
-                  <div><p className="m101-eyebrow">ANNUAL WORK STATUS</p><h2>ความคืบหน้ารอบปีบัญชี</h2><p className="m101-panel-subtitle">ภาพรวมสถานะการจัดการทะเบียนกิจการ</p></div>
-                  <div className="m101-status-completion"><strong>{completionPercent}%</strong><span>เสร็จแล้ว</span></div>
-                </div>
-                <div className="m101-status-total-line"><span>รายการทั้งหมด</span><b>{totalCount.toLocaleString('th-TH')} รายการ</b></div>
-                <div className="m101-progress-stack m101-progress-stack-large" role="img" aria-label={`เสร็จสิ้น ${completedCount} กำลังดำเนินการ ${inProgressCount} รอดำเนินการหรือยังไม่ระบุ ${pendingCount}`}>
-                  <span className="m101-progress-done" style={{ width: `${totalCount ? completedCount / totalCount * 100 : 0}%` }} />
-                  <span className="m101-progress-active" style={{ width: `${totalCount ? inProgressCount / totalCount * 100 : 0}%` }} />
-                  <span className="m101-progress-waiting" style={{ width: `${totalCount ? pendingCount / totalCount * 100 : 0}%` }} />
-                </div>
-                <div className="m101-status-legend m101-status-legend-counts">
-                  <span><i className="m101-status-dot m101-dot-done" />เสร็จสิ้น <b>{completedCount.toLocaleString('th-TH')} · {totalCount ? Math.round(completedCount / totalCount * 100) : 0}%</b></span>
-                  <span><i className="m101-status-dot m101-dot-progress" />กำลังดำเนินการ <b>{inProgressCount.toLocaleString('th-TH')} · {totalCount ? Math.round(inProgressCount / totalCount * 100) : 0}%</b></span>
-                  <span><i className="m101-status-dot m101-dot-pending" />รอดำเนินการ / ยังไม่ระบุ <b>{pendingCount.toLocaleString('th-TH')} · {totalCount ? Math.round(pendingCount / totalCount * 100) : 0}%</b></span>
-                </div>
-                <div className="m101-category-breakdown">
-                  <div className="m101-category-heading"><div><p className="m101-eyebrow">BY BUSINESS TYPE</p><h3>เสร็จแล้วเทียบกับยังไม่เสร็จ</h3></div><div className="m101-category-key"><span><i className="m101-category-done" />เสร็จ</span><span><i className="m101-category-notdone" />ยังไม่เสร็จ</span></div></div>
-                  {businessTypeBreakdown.length > 0 ? businessTypeBreakdown.map((group) => (
-                    <div className="m101-category-row" key={group.key}>
-                      <div className="m101-category-row-head"><b>{group.label}</b><span>{group.done}/{group.total} รายการ <strong>{group.donePercent}%</strong></span></div>
-                      <div className="m101-category-bar" role="img" aria-label={`${group.label}: เสร็จ ${group.done} จาก ${group.total} รายการ, ยังไม่เสร็จ ${group.notDone} รายการ`}>
-                        <span className="m101-category-done" style={{ width: `${group.donePercent}%` }} />
-                        <span className="m101-category-notdone" style={{ width: `${100 - group.donePercent}%` }} />
-                      </div>
-                    </div>
-                  )) : <p className="m101-empty-hint">เพิ่มข้อมูลกิจการเพื่อดูกราฟเปรียบเทียบตามประเภท</p>}
-                </div>
-                <p className="m101-dashboard-data-note">สถานะส่วนนี้ใช้สรุปความคืบหน้าการจัดการทะเบียนกิจการ ไม่ใช่สถานะการยื่นแบบภาษี</p>
-                {totalCount === 0 && <p className="m101-empty-hint">ยังไม่มีข้อมูลในรอบปีนี้ เริ่มต้นด้วยการเพิ่มกิจการหรือนำเข้าไฟล์</p>}
-              </section>
-
-              <section className="m101-overview-panel m101-quick-panel">
-                <div className="m101-panel-heading"><div><p className="m101-eyebrow">QUICK ACCESS</p><h2>ทางลัดการทำงาน</h2></div></div>
-                <button type="button" className="m101-quick-action" onClick={() => navigateToTab('directory')}><span className="m101-quick-icon"><Search size={19} aria-hidden="true" /></span><span><b>ค้นหาทะเบียนกิจการ</b><small>ค้นหาและดูข้อมูลกิจการ</small></span><span className="m101-quick-arrow"><ArrowRight size={16} aria-hidden="true" /></span></button>
-                {isLoggedIn && <button type="button" className="m101-quick-action" onClick={() => navigateToTab('import')}><span className="m101-quick-icon"><FileSpreadsheet size={19} aria-hidden="true" /></span><span><b>นำเข้าจาก Excel / CSV</b><small>นำเข้าและตรวจสอบไฟล์ก่อนบันทึก</small></span><span className="m101-quick-arrow">→</span></button>}
-                {isLoggedIn && <button type="button" className="m101-quick-action" onClick={() => setIsAddModalOpen(true)}><span className="m101-quick-icon"><Plus size={19} aria-hidden="true" /></span><span><b>เพิ่มกิจการใหม่</b><small>เพิ่มรายการใหม่ด้วยตนเอง</small></span><span className="m101-quick-arrow">→</span></button>}
-              </section>
-            </div>
-
-            <section className="m101-overview-panel m101-recent-panel">
-              <div className="m101-panel-heading">
-                <div><p className="m101-eyebrow">RECENT RECORDS</p><h2>รายการกิจการล่าสุด</h2><p className="m101-panel-subtitle">เลือกกิจการเพื่อเปิดดูรายละเอียด</p></div>
-                <button type="button" className="m101-text-action" onClick={() => navigateToTab('directory')}>ดูทะเบียนทั้งหมด →</button>
-              </div>
-              {records.length === 0 ? (
-                <div className="m101-overview-empty"><span>▤</span><b>ยังไม่มีรายการกิจการ</b><p>เพิ่มข้อมูลใหม่หรือนำเข้าไฟล์เพื่อเริ่มใช้งานทะเบียน</p></div>
-              ) : (
-                <div className="m101-recent-list">
-                  {[...records].slice().sort((a, b) => String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''))).slice(0, 6).map((record) => (
-                    <button type="button" key={record.id} className="m101-recent-row" onClick={() => { setSelectedId(record.id); setIsDetailModalOpen(true); }}>
-                      <span className="m101-recent-sequence">{record.sequenceNo || '—'}</span>
-                      <span className="m101-recent-main"><b>{record.companyName || 'ไม่ระบุชื่อกิจการ'}</b><small>{record.taxId || 'ไม่มีเลขประจำตัวผู้เสียภาษี'}</small></span>
-                      <span className={`m101-recent-status status-${record.status || 'pending'}`}>{record.status === 'completed' ? 'เสร็จสิ้น' : record.status === 'in_progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}</span>
-                      <span className="m101-recent-chevron">→</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-          </section>
+          </>
         )}
 
         {activeTab === 'tasks' && isLoggedIn && (
