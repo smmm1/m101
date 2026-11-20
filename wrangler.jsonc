@@ -9,6 +9,12 @@
       "database_name": "m101_db",
       "database_id": "9c038af7-d150-4628-93a6-0dcd5c125398",
       "migrations_dir": "./migrations"
+    },
+    {
+      "binding": "PREVIEW_DB",
+      "database_name": "m101-preview-isolated",
+      "database_id": "f945e064-a72f-403a-aaf4-557ebef99f46",
+      "migrations_dir": "./migrations"
     }
   ],
   "env": {
