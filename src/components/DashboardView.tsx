@@ -990,9 +990,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <PremiumDashboard
               records={records}
               year={selectedYear}
-              isLoggedIn={isLoggedIn}
+              isLoggedIn={isLoggedIn && isAdmin}
               onNavigate={navigateToTab}
-              onAddBusiness={isAdmin ? () => setIsAddModalOpen(true) : undefined}
+              onAddBusiness={() => setIsAddModalOpen(true)}
               onOpenRecord={(record) => { setSelectedId(record.id); setIsDetailModalOpen(true); }}
             />
             {isLoggedIn && <AnnualTasksView records={records} selectedYear={selectedYear} isLoggedIn={isLoggedIn} onShowToast={onShowToast} onOpenTasks={() => navigateToTab('tasks')} mode="summary" />}
