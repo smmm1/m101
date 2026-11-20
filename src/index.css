@@ -496,9 +496,9 @@ button:disabled {
 }
 
 /* M101 dark-mode compatibility for legacy Tailwind surfaces in the workspace shell. */
-html.dark .bg-\\[\\#f5f5f5\\],
-html.dark .bg-\\[\\#f8f8f8\\],
-html.dark .bg-\\[\\#fcfcfc\\],
+html.dark .bg-\[\#f5f5f5\],
+html.dark .bg-\[\#f8f8f8\],
+html.dark .bg-\[\#fcfcfc\],
 html.dark .bg-slate-50,
 html.dark .bg-slate-100 { background-color: var(--ds-color-canvas) !important; }
 html.dark .bg-slate-200 { background-color: var(--ds-color-surface-subtle) !important; }
@@ -511,5 +511,5 @@ html.dark .text-slate-400 { color: var(--ds-color-text-secondary) !important; }
 html.dark .border-slate-100,
 html.dark .border-slate-200,
 html.dark .border-slate-300 { border-color: var(--ds-color-border) !important; }
-html.dark .hover\\:bg-slate-50:hover,
-html.dark .hover\\:bg-slate-100:hover { background-color: var(--ds-color-surface-subtle) !important; }
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover { background-color: var(--ds-color-surface-subtle) !important; }
