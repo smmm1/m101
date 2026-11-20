@@ -19,8 +19,9 @@ import { SystemConfigProvider } from './context/SystemConfigContext';
 import { initCuteClickSound } from './utils/cuteAudio';
 import { SmartIdleScreen } from './components/SmartIdleScreen';
 import { AdminControlCenter } from './components/AdminControlCenter';
+import { UserManagementPanel } from './components/UserManagementPanel';
 
-interface SessionUser { id: string; email: string; role: 'admin' | 'member' }
+interface SessionUser { id: string; username: string; role: 'admin' | 'member' }
 
 function WorkspaceLoadingSkeleton({ label = 'กำลังโหลดข้อมูล…' }: { label?: string }) {
   return (
@@ -51,26 +52,36 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [bootstrapRequired, setBootstrapRequired] = useState(false);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [bootstrapMode, setBootstrapMode] = useState<'create' | 'claim-existing-owner' | 'unavailable'>('create');
+  const [bootstrapKey, setBootstrapKey] = useState('');
+  const [bootstrapUsername, setBootstrapUsername] = useState('owner');
+  const [bootstrapPassword, setBootstrapPassword] = useState('');
+  const [bootstrapPasswordConfirm, setBootstrapPasswordConfirm] = useState('');
+  const [bootstrapError, setBootstrapError] = useState('');
+  const [bootstrapBusy, setBootstrapBusy] = useState(false);
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [accessReady, setAccessReady] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [authEmail, setAuthEmail] = useState('');
+  const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
-  const [authMode, setAuthMode] = useState<'password' | 'pin'>('password');
-  const [authPin, setAuthPin] = useState('');
-  const [pinEnabled, setPinEnabled] = useState(false);
-  const [pinSetupOpen, setPinSetupOpen] = useState(false);
-  const [pinSetupValue, setPinSetupValue] = useState('');
-  const [pinSetupConfirm, setPinSetupConfirm] = useState('');
-  const [pinSetupError, setPinSetupError] = useState('');
-  const [pinSetupBusy, setPinSetupBusy] = useState(false);
   const [dataReady, setDataReady] = useState(false);
   const [dataError, setDataError] = useState('');
   const [dataReloadKey, setDataReloadKey] = useState(0);
   const pendingDatabaseWriteRef = React.useRef(false);
   const pendingSuccessToastsRef = React.useRef<Array<{ message: string; title?: string }>>([]);
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const directoryRevisionRef = React.useRef<number | null>(null);
+  const lastSavedSnapshotRef = React.useRef<string | null>(null);
+  const saveInFlightRef = React.useRef(false);
+  const saveRequestedRef = React.useRef(false);
+  const saveBlockedRef = React.useRef(false);
+  const [dataSaveCycle, setDataSaveCycle] = useState(0);
+  const [saveConflict, setSaveConflict] = useState<{ changedYears: string[]; availableYears: string[]; recordsByYear: Record<string, BusinessRecord[]> } | null>(null);
+  const [loadingLatestAfterConflict, setLoadingLatestAfterConflict] = useState(false);
   type UndoSnapshot = { recordsByYear: Record<string, BusinessRecord[]>; availableYears: string[]; selectedYear: string };
   const undoStackRef = React.useRef<UndoSnapshot[]>([]);
   const recordsByYearRef = React.useRef<Record<string, BusinessRecord[]>>({ '69': [] });
@@ -80,7 +91,6 @@ function AppContent() {
   // Cloudflare D1 is the source of truth. Browser storage is never imported.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'member'>('member');
-  const [isVisitor, setIsVisitor] = useState(false);
 
   useEffect(() => {
     return initCuteClickSound();
@@ -169,6 +179,13 @@ function AppContent() {
     let active = true;
     const initialize = async () => {
       try {
+        const bootstrapResponse = await fetch('/api/auth/bootstrap-status', { credentials: 'same-origin' });
+        if (!bootstrapResponse.ok) throw new Error('Cloudflare API is unavailable');
+        const bootstrapStatus = await bootstrapResponse.json();
+        if (!active) return;
+        setBootstrapRequired(Boolean(bootstrapStatus.needsBootstrap));
+        setBootstrapReady(Boolean(bootstrapStatus.bootstrapReady));
+        setBootstrapMode(bootstrapStatus.bootstrapMode === 'claim-existing-owner' ? 'claim-existing-owner' : bootstrapStatus.bootstrapMode === 'create' ? 'create' : 'unavailable');
         const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
@@ -187,32 +204,14 @@ function AppContent() {
   useEffect(() => {
     let active = true;
     if (!sessionUser) {
-      setPinEnabled(false);
-      return () => { active = false; };
-    }
-    fetch('/api/auth/pin/status', { credentials: 'same-origin' })
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'PIN status unavailable');
-        return payload;
-      })
-      .then((payload) => {
-        if (!active) return;
-        setPinEnabled(Boolean(payload.enabled));
-      })
-      .catch(() => {
-        if (active) setPinEnabled(false);
-      });
-    return () => { active = false; };
-  }, [sessionUser]);
-
-  useEffect(() => {
-    let active = true;
-    if (!sessionUser) {
       setIsLoggedIn(false);
       setUserRole('member');
       setAccessReady(true);
       setDataReady(false);
+      directoryRevisionRef.current = null;
+      lastSavedSnapshotRef.current = null;
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
       return () => { active = false; };
     }
 
@@ -235,9 +234,15 @@ function AppContent() {
           : Object.keys(nextRecords);
         setRecordsByYear(nextRecords);
         setAvailableYears(years.length ? years : ['69']);
+        directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+        lastSavedSnapshotRef.current = JSON.stringify({ availableYears: years.length ? years : ['69'], recordsByYear: nextRecords });
+        saveBlockedRef.current = false;
+        saveRequestedRef.current = false;
+        setSaveConflict(null);
+        setLoadingLatestAfterConflict(false);
         undoStackRef.current = [];
         setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
-        setUserName(sessionUser.email || 'ผู้ดูแลระบบ');
+        setUserName(sessionUser.username || 'ผู้ดูแลระบบ');
         setUserRole(sessionUser.role === 'admin' ? 'admin' : 'member');
         setIsLoggedIn(true);
         setAccessReady(true);
@@ -253,51 +258,65 @@ function AppContent() {
     return () => { active = false; };
   }, [sessionUser, dataReloadKey]);
 
+  // Save only against the exact D1 snapshot revision loaded by this client.
+  // Requests are serialized; a stale snapshot is blocked rather than auto-overwritten.
   useEffect(() => {
-    let active = true;
-    if (!isVisitor || sessionUser) return () => { active = false; };
-    setDataReady(false);
-    setDataError('');
-    fetch('/api/public/data', { credentials: 'same-origin' })
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
-        return payload;
-      })
-      .then((payload) => {
-        if (!active) return;
-        const nextRecords = payload.recordsByYear || {};
-        const years = payload.availableYears?.length ? payload.availableYears : Object.keys(nextRecords);
-        setRecordsByYear(nextRecords);
-        setAvailableYears(years.length ? years : ['69']);
-        undoStackRef.current = [];
-        setSelectedYear((current) => years.includes(current) ? current : (years[0] || '69'));
-        setUserName('ผู้เยี่ยมชม');
-        setDataReady(true);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setDataError(error instanceof Error ? error.message : 'โหลดข้อมูลสาธารณะไม่สำเร็จ');
-        setDataReady(false);
-      });
-    return () => { active = false; };
-  }, [isVisitor, sessionUser, dataReloadKey]);
-
-  // Save changes to the isolated M101 D1 database.
-  useEffect(() => {
-    if (!dataReady || !isLoggedIn || !sessionUser) return;
+    if (!dataReady || !isLoggedIn || !sessionUser || saveBlockedRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      if (saveBlockedRef.current) return;
+      if (saveInFlightRef.current) {
+        saveRequestedRef.current = true;
+        return;
+      }
+      const snapshotKey = JSON.stringify({ availableYears, recordsByYear });
+      if (snapshotKey === lastSavedSnapshotRef.current) {
+        pendingDatabaseWriteRef.current = false;
+        return;
+      }
+      const expectedDirectoryRevision = directoryRevisionRef.current;
+      if (expectedDirectoryRevision === null) {
+        saveBlockedRef.current = true;
+        pendingDatabaseWriteRef.current = false;
+        showToast('ไม่พบเวอร์ชันข้อมูลจากเซิร์ฟเวอร์ จึงหยุดบันทึกเพื่อป้องกันข้อมูลสูญหาย กรุณาโหลดข้อมูลใหม่', 'ยังไม่ได้บันทึก', 'error');
+        return;
+      }
+
+      saveInFlightRef.current = true;
       void (async () => {
         try {
           const response = await fetch('/api/data', {
             method: 'PUT',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ availableYears, recordsByYear }),
+            body: JSON.stringify({ availableYears, recordsByYear, expectedDirectoryRevision }),
           });
           const payload = await response.json();
+          if (response.status === 409 || payload.conflict) {
+            saveBlockedRef.current = true;
+            pendingDatabaseWriteRef.current = false;
+            pendingSuccessToastsRef.current = [];
+            let baseline: { availableYears?: string[]; recordsByYear?: Record<string, BusinessRecord[]> } = {};
+            try { baseline = lastSavedSnapshotRef.current ? JSON.parse(lastSavedSnapshotRef.current) : {}; } catch { baseline = {}; }
+            const baselineRecords = baseline.recordsByYear || {};
+            const baselineYears = baseline.availableYears || [];
+            // Capture the latest React state, including edits made while this request was in flight.
+            const unsavedRecords = recordsByYearRef.current;
+            const unsavedYears = availableYearsRef.current;
+            const changedYears = Array.from(new Set([
+              ...Object.keys(baselineRecords), ...Object.keys(unsavedRecords), ...baselineYears, ...unsavedYears,
+            ])).filter((year) => JSON.stringify(baselineRecords[year] || []) !== JSON.stringify(unsavedRecords[year] || []) || baselineYears.includes(year) !== unsavedYears.includes(year));
+            setSaveConflict({
+              changedYears,
+              availableYears: [...unsavedYears],
+              recordsByYear: JSON.parse(JSON.stringify(unsavedRecords)) as Record<string, BusinessRecord[]>,
+            });
+            showToast(payload.error || 'ข้อมูลถูกแก้ไขจากอุปกรณ์อื่น กรุณาโหลดข้อมูลล่าสุดก่อนบันทึกต่อ', 'พบข้อมูลชนกัน — ยังไม่ได้บันทึก', 'error');
+            return;
+          }
           if (!response.ok) throw new Error(payload.error || 'บันทึก Cloudflare D1 ไม่สำเร็จ');
+          directoryRevisionRef.current = Number(payload.directoryRevision);
+          lastSavedSnapshotRef.current = snapshotKey;
           pendingDatabaseWriteRef.current = false;
           const queued = pendingSuccessToastsRef.current.splice(0);
           queued.forEach((item) => showToast(item.message, item.title, 'success'));
@@ -309,13 +328,19 @@ function AppContent() {
             'ข้อมูลยังไม่ซิงก์',
             'error'
           );
+        } finally {
+          saveInFlightRef.current = false;
+          if (saveRequestedRef.current && !saveBlockedRef.current) {
+            saveRequestedRef.current = false;
+            setDataSaveCycle((cycle) => cycle + 1);
+          }
         }
       })();
     }, 600);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears]);
+  }, [dataReady, isLoggedIn, sessionUser, recordsByYear, availableYears, dataSaveCycle]);
 
   // Modals state
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
@@ -348,6 +373,63 @@ function AppContent() {
 
   const handleDismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  useEffect(() => {
+    if (!saveConflict) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = 'ยังมีข้อมูลที่ไม่ได้บันทึก';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [saveConflict]);
+
+  const handleLoadLatestAfterConflict = async () => {
+    if (!saveConflict || loadingLatestAfterConflict) return;
+    setLoadingLatestAfterConflict(true);
+    try {
+      // Download the unsaved local snapshot before replacing the in-memory data.
+      const recovery = new Blob([JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        purpose: 'M101 recovery copy of changes that were not saved because the server snapshot changed.',
+        availableYears: saveConflict.availableYears,
+        recordsByYear: saveConflict.recordsByYear,
+      }, null, 2)], { type: 'application/json' });
+      const recoveryUrl = URL.createObjectURL(recovery);
+      const anchor = document.createElement('a');
+      anchor.href = recoveryUrl;
+      anchor.download = `m101-unsaved-recovery-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(recoveryUrl), 1000);
+
+      const response = await fetch('/api/data', { credentials: 'same-origin', cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'โหลดข้อมูลล่าสุดไม่สำเร็จ');
+      const latestRecords = payload.recordsByYear && Object.keys(payload.recordsByYear).length
+        ? payload.recordsByYear as Record<string, BusinessRecord[]>
+        : { '69': [] };
+      const latestYears = Array.isArray(payload.availableYears) && payload.availableYears.length
+        ? payload.availableYears.map((year: string) => year === '2569' ? '69' : String(year))
+        : Object.keys(latestRecords);
+      const normalizedYears = latestYears.length ? latestYears : ['69'];
+      directoryRevisionRef.current = Number.isSafeInteger(Number(payload.directoryRevision)) ? Number(payload.directoryRevision) : null;
+      lastSavedSnapshotRef.current = JSON.stringify({ availableYears: normalizedYears, recordsByYear: latestRecords });
+      saveBlockedRef.current = false;
+      saveRequestedRef.current = false;
+      undoStackRef.current = [];
+      setRecordsByYear(latestRecords);
+      setAvailableYears(normalizedYears);
+      setSelectedYear((current) => normalizedYears.includes(current) ? current : (normalizedYears[0] || '69'));
+      setSaveConflict(null);
+      showToast('โหลดข้อมูลล่าสุดแล้ว และดาวน์โหลดฉบับที่ยังไม่บันทึกไว้ให้แล้ว', 'ซิงก์ข้อมูลสำเร็จ', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'โหลดข้อมูลล่าสุดไม่สำเร็จ', 'ยังไม่ได้โหลดข้อมูล', 'error');
+    } finally {
+      setLoadingLatestAfterConflict(false);
+    }
   };
 
   // Year Handlers
@@ -617,67 +699,54 @@ function AppContent() {
     }
   };
 
-  const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleBootstrapSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsVisitor(false);
-    setAuthBusy(true);
-    setAuthError('');
+    setBootstrapError('');
+    setBootstrapBusy(true);
     try {
-      const response = await fetch(authMode === 'pin' ? '/api/auth/pin/login' : '/api/auth/login', {
+      const response = await fetch('/api/auth/bootstrap', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(authMode === 'pin'
-          ? { pin: authPin }
-          : { email: authEmail.trim().toLowerCase(), password: authPassword }),
+        body: JSON.stringify({ username: bootstrapUsername.trim(), password: bootstrapPassword, passwordConfirm: bootstrapPasswordConfirm, bootstrapKey }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      if (!response.ok) throw new Error([payload.error || 'ตั้งค่า Owner ไม่สำเร็จ', payload.errorType ? `ประเภท: ${payload.errorType}` : '', payload.errorDetail ? `รายละเอียด: ${payload.errorDetail}` : ''].filter(Boolean).join(' — '));
+      setBootstrapRequired(false);
+      setBootstrapPassword('');
+      setBootstrapPasswordConfirm('');
+      setBootstrapKey('');
       setSessionUser(payload.user as SessionUser);
-      setUserName(payload.user?.email || 'ผู้ดูแลระบบ');
+    } catch (error) {
+      setBootstrapError(error instanceof Error ? error.message : 'ตั้งค่า Owner ไม่สำเร็จ');
+    } finally {
+      setBootstrapBusy(false);
+    }
+  };
+
+  const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthError('');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: authUsername.trim(), password: authPassword }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'ID หรือรหัสผ่านไม่ถูกต้อง');
+      setSessionUser(payload.user as SessionUser);
+      setUserName(payload.user?.username || 'ผู้ดูแลระบบ');
       setUserRole(payload.user?.role === 'admin' ? 'admin' : 'member');
       setAuthPassword('');
-      setAuthPin('');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'เชื่อมต่อระบบล็อกอินไม่สำเร็จ กรุณาลองใหม่');
-      if (authMode === 'pin') setAuthPin('');
     } finally {
       setAuthBusy(false);
     }
   };
-
-  useEffect(() => {
-    if (authMode === 'pin' && authPin.length === 6 && !authBusy) {
-      void handleLoginSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
-    }
-  }, [authMode, authPin, authBusy]);
-
-  // PIN login accepts physical keyboard input without requiring the keypad to be focused.
-  useEffect(() => {
-    if (authMode !== 'pin' || isVisitor || isLoggedIn) return;
-
-    const handlePinKeyDown = (event: KeyboardEvent) => {
-      if (authBusy) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
-
-      if (/^[0-9]$/.test(event.key)) {
-        event.preventDefault();
-        setAuthError('');
-        setAuthPin((current) => current.length < 6 ? current + event.key : current);
-      } else if (event.key === 'Backspace') {
-        event.preventDefault();
-        setAuthError('');
-        setAuthPin((current) => current.slice(0, -1));
-      } else if (event.key === 'Escape') {
-        setAuthError('');
-        setAuthPin('');
-      }
-    };
-
-    window.addEventListener('keydown', handlePinKeyDown);
-    return () => window.removeEventListener('keydown', handlePinKeyDown);
-  }, [authMode, authBusy, isVisitor, isLoggedIn]);
 
   if (!authReady) {
     return <div className="min-h-screen grid place-items-center bg-[#f5f5f5] text-slate-600">กำลังตรวจสอบการเข้าสู่ระบบ…</div>;
@@ -687,130 +756,56 @@ function AppContent() {
     return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5]"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังตรวจสอบสิทธิ์และโหลดข้อมูลจาก Cloudflare D1…" />;
   }
 
-  if (isVisitor && !dataReady) {
-    return dataError ? <div className="min-h-screen grid place-items-center bg-[#f5f5f5] p-6"><div className="max-w-lg rounded-3xl bg-white p-8 shadow-xl"><h1 className="text-xl font-extrabold">โหมดผู้เยี่ยมชม</h1><p className="mt-3 text-sm text-zinc-600">{dataError}</p><button className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => { setDataError(''); setDataReloadKey((value) => value + 1); }}>ลองใหม่</button><button className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700" onClick={() => { setIsVisitor(false); setDataError(''); }}>กลับไปหน้าเข้าสู่ระบบ</button></div></div> : <WorkspaceLoadingSkeleton label="กำลังโหลดข้อมูลที่เปิดเผยได้…" />;
+  if (bootstrapRequired && !sessionUser) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
+        <section className="w-full max-w-[380px] rounded-2xl bg-white px-6 py-8 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.28)] sm:px-8">
+          <div className="mb-6 text-center">
+            <p className="text-xs font-semibold tracking-[0.18em] text-slate-400">M101 · FIRST SETUP</p>
+            <h1 className="mt-3 text-xl font-semibold tracking-tight">ตั้งค่าบัญชี Owner</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{bootstrapMode === 'claim-existing-owner' ? 'ตั้งรหัสผ่าน M101 ให้บัญชี Owner เดิม โดยเก็บ Workspace และข้อมูลกิจการไว้เหมือนเดิม' : 'สร้างบัญชีเจ้าของระบบเพียงบัญชีเดียว ก่อนเริ่มใช้งาน M101'}</p>
+          </div>
+          {bootstrapReady ? (
+            <form onSubmit={handleBootstrapSubmit} className="space-y-3">
+              <input value={bootstrapUsername} onChange={(event) => setBootstrapUsername(event.target.value)} autoComplete="username" required minLength={3} maxLength={32} placeholder="Owner ID" aria-label="Owner ID" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapPassword} onChange={(event) => setBootstrapPassword(event.target.value)} type="password" autoComplete="new-password" required minLength={11} placeholder="รหัสผ่าน Owner (อย่างน้อย 11 ตัว)" aria-label="รหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapPasswordConfirm} onChange={(event) => setBootstrapPasswordConfirm(event.target.value)} type="password" autoComplete="new-password" required minLength={11} placeholder="ยืนยันรหัสผ่าน Owner" aria-label="ยืนยันรหัสผ่าน Owner" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              <input value={bootstrapKey} onChange={(event) => setBootstrapKey(event.target.value)} type="password" autoComplete="off" required placeholder="รหัสตั้งค่าครั้งแรก" aria-label="รหัสตั้งค่าครั้งแรก" className="h-12 w-full rounded-lg border border-slate-200 px-4 text-sm outline-none focus:border-slate-400" />
+              {bootstrapError && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{bootstrapError}</p>}
+              <button type="submit" disabled={bootstrapBusy} className="h-12 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white disabled:opacity-60">{bootstrapBusy ? 'กำลังตั้งค่า…' : bootstrapMode === 'claim-existing-owner' ? 'ตั้งรหัสผ่าน Owner' : 'สร้างบัญชี Owner'}</button>
+            </form>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              <p className="font-semibold">{bootstrapMode === 'claim-existing-owner' ? 'พบ Owner เดิม แต่ยังไม่ได้เปิดการตั้งค่ารหัสผ่าน' : 'ยังไม่ได้เปิดการสร้าง Owner ครั้งแรก'}</p>
+              <p className="mt-1">{bootstrapMode === 'claim-existing-owner' ? 'ระบบพบ Owner เดิมและจะเก็บ Workspace กับข้อมูลกิจการไว้ แต่ต้องเปิดการตั้งค่าครั้งแรกก่อน' : 'ฐานข้อมูลยังไม่มี Owner ระบบจึงล็อกการสร้างบัญชีไว้เพื่อป้องกันบุคคลภายนอกยึดสิทธิ์เจ้าของระบบ'}</p>
+              <ol className="mt-3 list-decimal space-y-1 pl-5">
+                <li>เปิด Cloudflare Dashboard แล้วเลือก Workers &amp; Pages → m101-directory</li>
+                <li>ไปที่ Settings → Variables and Secrets → Preview</li>
+                <li>เพิ่ม <code className="rounded bg-amber-100 px-1">M101_BOOTSTRAP_KEY</code> เป็น Secret และบันทึก</li>
+                <li>สั่ง Redeploy Preview ล่าสุด แล้วกลับมาโหลดหน้านี้ใหม่</li>
+              </ol>
+              <p className="mt-3 text-xs">ตั้งค่าใน Preview เท่านั้น ห้ามใส่ Secret ใน Production หรือส่งรหัสลับผ่านแชต</p>
+            </div>
+          )}
+        </section>
+      </main>
+    );
   }
 
-  if ((!sessionUser || !isLoggedIn) && !isVisitor) {
+  if (!sessionUser || !isLoggedIn) {
     return (
-      <main className="min-h-screen bg-[#f8f8f8] text-slate-900">
-        <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)]">
-          <section className="relative isolate flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#353535] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-screen lg:px-16 lg:py-14">
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255,.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255,.24) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-28 -top-32 -z-10 h-[28rem] w-[28rem] rounded-full border border-white/10" />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 -z-10 h-[20rem] w-[20rem] rounded-full border border-white/10" />
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold tracking-tight">M</div>
-              <div>
-                <p className="text-sm font-semibold tracking-[0.16em]">WORKSPACE</p>
-                <p className="mt-0.5 text-[11px] tracking-wide text-zinc-100/70">ระบบจัดการข้อมูล</p>
-              </div>
-            </div>
-
-            <div className="relative z-10 mt-12 max-w-xl lg:my-auto lg:py-16">
-              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-zinc-100/20 bg-white/[0.07] px-3 py-1.5 text-xs font-medium text-zinc-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" /> พื้นที่จัดการข้อมูลกิจการ
-              </p>
-              <h1 className="max-w-lg text-3xl font-semibold leading-[1.25] tracking-tight sm:text-4xl lg:text-[2.8rem]">
-                ข้อมูลสำคัญ<br className="hidden sm:block" /> จัดการได้อย่างเป็นระบบ
-              </h1>
-              <p className="mt-5 max-w-md text-sm leading-7 text-zinc-50/75 sm:text-base">
-                รวมรายการ เอกสาร และข้อมูลกิจการไว้ในพื้นที่เดียว พร้อมเครื่องมือนำเข้าข้อมูลที่ตรวจสอบได้ก่อนบันทึก
-              </p>
-
-              <div className="mt-10 hidden max-w-md rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:block">
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-50/80">WORKSPACE OVERVIEW</span>
-                  <span className="rounded-full bg-zinc-300/15 px-2.5 py-1 text-[10px] font-medium text-zinc-100">พร้อมใช้งาน</span>
-                </div>
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-200/15 text-zinc-100">01</span>
-                    <div className="flex-1"><div className="h-2 w-28 rounded-full bg-white/70" /><div className="mt-2 h-1.5 w-40 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-zinc-300" />
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg bg-white/[0.07] px-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-zinc-100">02</span>
-                    <div className="flex-1"><div className="h-2 w-20 rounded-full bg-white/55" /><div className="mt-2 h-1.5 w-32 max-w-full rounded-full bg-white/20" /></div>
-                    <span className="h-2 w-2 rounded-full bg-zinc-200" />
-                  </div>
-                </div>
-                <p className="mt-3 text-[10px] tracking-wide text-zinc-50/45">A CLEAR VIEW OF YOUR WORK</p>
-              </div>
-            </div>
-
-            <div className="mt-10 flex items-center justify-between border-t border-white/15 pt-5 text-[11px] text-zinc-50/55">
-              <span>จัดระเบียบงาน ให้เห็นภาพชัดขึ้น</span>
-              <span>พื้นที่ทำงานส่วนตัว</span>
-            </div>
-          </section>
-
-          <section className="flex items-center justify-center px-5 py-10 sm:px-10 lg:px-14">
-            <div className="w-full max-w-[420px]">
-              <div className="mb-8">
-                <p className="text-xs font-semibold tracking-[0.16em] text-[#686868]">ยินดีต้อนรับกลับ</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">เข้าสู่ระบบ</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">ลงชื่อเข้าใช้เพื่อเข้าถึงข้อมูลและพื้นที่ทำงานของคุณ</p>
-              </div>
-
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
-                  <button type="button" onClick={() => { setAuthMode('password'); setAuthPin(''); setAuthError(''); }} aria-pressed={authMode === 'password'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'password' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>อีเมลและรหัสผ่าน</button>
-                  <button type="button" onClick={() => { setAuthMode('pin'); setAuthPassword(''); setAuthError(''); }} aria-pressed={authMode === 'pin'} className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${authMode === 'pin' ? 'bg-[#f1f1f1] text-[#4b4b4b] shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>PIN 6 หลัก</button>
-                </div>
-
-                {authMode === 'password' ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="m101-login-email" className="mb-2 block text-sm font-medium text-slate-700">อีเมล</label>
-                      <input id="m101-login-email" type="email" autoComplete="username" required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="name@example.com" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
-                    </div>
-                    <div>
-                      <label htmlFor="m101-login-password" className="mb-2 block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-                      <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="กรอกรหัสผ่านของคุณ" className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#686868] focus:ring-4 focus:ring-[#686868]/10" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5">
-                    <label className="mb-4 block text-center text-sm font-medium text-slate-700">กรอก PIN 6 หลัก</label>
-                    <div className="mb-5 flex justify-center gap-3" aria-label={`กรอกแล้ว ${authPin.length} จาก 6 หลัก`}>
-                      {Array.from({ length: 6 }, (_, index) => <span key={index} className={`h-3.5 w-3.5 rounded-full border transition-colors ${index < authPin.length ? 'border-[#5a5a5a] bg-[#5a5a5a]' : 'border-slate-300 bg-white'}`} />)}
-                    </div>
-                    <div className="mx-auto grid max-w-[270px] grid-cols-3 gap-2">
-                      {['1','2','3','4','5','6','7','8','9','clear','0','back'].map((key) => (
-                        <button key={key} type="button" disabled={authBusy} onClick={() => {
-                          setAuthError('');
-                          if (key === 'clear') setAuthPin('');
-                          else if (key === 'back') setAuthPin((value) => value.slice(0, -1));
-                          else setAuthPin((value) => value.length < 6 ? value + key : value);
-                        }} className="h-12 rounded-xl border border-slate-200 bg-[#fcfcfc] text-lg font-semibold text-slate-800 transition hover:border-[#b5b5b5] hover:bg-[#f3f3f3] active:scale-[0.98] disabled:opacity-50">
-                          {key === 'clear' ? 'ล้าง' : key === 'back' ? '⌫' : key}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-4 text-center text-xs leading-5 text-slate-500">ใช้แป้นตัวเลขบนหน้าจอหรือคีย์บอร์ดได้ · ครบ 6 หลักจะเข้าสู่ระบบอัตโนมัติ</p>
-                  </div>
-                )}
-
-                {authError && <p role="alert" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 text-sm leading-6 text-zinc-700">{authError}</p>}
-
-                <button type="submit" disabled={authBusy || (authMode === 'pin' && authPin.length !== 6)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#4b4b4b] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3d3d3d] focus:outline-none focus:ring-4 focus:ring-[#686868]/20 disabled:cursor-not-allowed disabled:opacity-60">
-                  {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : <>{authMode === 'pin' ? 'ปลดล็อกด้วย PIN' : 'เข้าสู่ระบบ'} <span aria-hidden="true">→</span></>}
-                </button>
-
-                <div className="flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200" /><span>หรือ</span><span className="h-px flex-1 bg-slate-200" /></div>
-
-                <button type="button" onClick={() => { setIsVisitor(true); setAuthError(''); setDataError(''); }} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200">เข้าใช้งานในฐานะผู้เยี่ยมชม</button>
-              </form>
-
-              <div className="mt-8 flex items-start gap-2.5 rounded-xl bg-[#f2f2f2] px-3.5 py-3 text-xs leading-5 text-[#5a5a5a]">
-                <span aria-hidden="true" className="mt-0.5">●</span>
-                <p>การเข้าสู่ระบบใช้การยืนยันตัวตนที่ตั้งค่าไว้ และเชื่อมต่อข้อมูลอย่างปลอดภัย</p>
-              </div>
-              <p className="mt-6 text-center text-[11px] text-slate-400">พื้นที่จัดการข้อมูล</p>
-            </div>
-          </section>
-        </div>
+      <main className="grid min-h-screen place-items-center bg-[#f4f6fa] px-5 py-10 text-slate-900">
+        <section aria-labelledby="m101-login-title" className="w-full max-w-[380px] rounded-2xl border border-slate-200/80 bg-white px-6 py-8 shadow-[0_24px_70px_-32px_rgba(15,23,42,0.28)] sm:px-8 sm:py-9">
+          <h1 id="m101-login-title" className="mb-7 text-center text-xl font-semibold tracking-tight text-slate-900">เข้าสู่ระบบ</h1>
+          <form onSubmit={handleLoginSubmit} className="space-y-3">
+            <input id="m101-login-username" type="text" autoComplete="username" required value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} placeholder="ID ผู้ใช้" aria-label="ID ผู้ใช้" className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5" />
+            <input id="m101-login-password" type="password" autoComplete="current-password" required value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} placeholder="รหัสผ่าน" aria-label="รหัสผ่าน" className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5" />
+            {authError && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm leading-5 text-rose-700">{authError}</p>}
+            <button type="submit" disabled={authBusy} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#172b4d] px-4 text-sm font-semibold text-white transition hover:bg-[#10213d] focus:outline-none focus:ring-4 focus:ring-[#172b4d]/15 disabled:cursor-not-allowed disabled:opacity-60">
+              {authBusy ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> กำลังเข้าสู่ระบบ…</> : 'เข้าสู่ระบบ'}
+            </button>
+          </form>
+        </section>
       </main>
     );
   }
@@ -823,47 +818,48 @@ function AppContent() {
           onClose={() => setAdminPanelOpen(false)}
           onNavigate={(tab) => { window.dispatchEvent(new CustomEvent('m101:owner-navigate', { detail: { tab } })); setAdminPanelOpen(false); }}
           onPreviewAfk={() => { setAdminPanelOpen(false); window.dispatchEvent(new Event('m101:owner-preview-afk')); }}
+          onManageUsers={() => { setAdminPanelOpen(false); setUserManagementOpen(true); }}
         />
       )}
-      {pinSetupOpen && sessionUser && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <form onSubmit={async (event) => {
-            event.preventDefault();
-            setPinSetupError('');
-            if (!/^\d{6}$/.test(pinSetupValue)) { setPinSetupError('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
-            if (pinSetupValue !== pinSetupConfirm) { setPinSetupError('PIN ทั้งสองช่องไม่ตรงกัน'); return; }
-            setPinSetupBusy(true);
-            try {
-              const response = await fetch('/api/auth/pin/setup', {
-                method: 'POST', credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin: pinSetupValue }),
-              });
-              const payload = await response.json();
-              if (!response.ok) throw new Error(payload.error || 'บันทึก PIN ไม่สำเร็จ');
-              setPinEnabled(true);
-              setPinSetupOpen(false);
-              setPinSetupValue('');
-              setPinSetupConfirm('');
-              showToast('ตั้งค่า PIN เรียบร้อยแล้ว', 'PIN พร้อมใช้งาน');
-            } catch (error) {
-              setPinSetupError(error instanceof Error ? error.message : 'บันทึก PIN ไม่สำเร็จ');
-            } finally {
-              setPinSetupBusy(false);
-            }
-          }} className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-            <div className="mb-5 flex items-center justify-between">
-              <div><h2 className="text-lg font-semibold text-slate-900">{pinEnabled ? 'เปลี่ยน PIN' : 'ตั้งค่า PIN'}</h2><p className="mt-1 text-xs text-slate-500">กำหนดรหัสตัวเลข 6 หลักสำหรับเข้าสู่ระบบ</p></div>
-              {pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="rounded-full px-3 py-1 text-slate-400 hover:bg-slate-100">✕</button>}
+      {userManagementOpen && isLoggedIn && userRole === 'admin' && <UserManagementPanel onClose={() => setUserManagementOpen(false)} />}
+      {saveConflict && (
+        <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="m101-save-conflict-title">
+          <section className="w-full max-w-xl rounded-2xl border border-amber-200 bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg font-bold text-amber-700" aria-hidden="true">!</span>
+              <div className="min-w-0">
+                <h2 id="m101-save-conflict-title" className="text-base font-semibold text-slate-900">ข้อมูลในระบบเปลี่ยนแปลงก่อนบันทึกของคุณ</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">ระบบหยุดบันทึกอัตโนมัติแล้ว ข้อมูลชุดที่คุณแก้ไขยังอยู่ในหน้านี้ แต่ยังไม่ได้บันทึก และจะไม่ถูกเขียนทับข้อมูลล่าสุดบนเซิร์ฟเวอร์</p>
+              </div>
             </div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">PIN ใหม่</label>
-            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupValue} onChange={(event) => setPinSetupValue(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="ตัวเลข 6 หลัก" className="mb-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
-            <label className="mb-2 block text-sm font-medium text-slate-700">ยืนยัน PIN</label>
-            <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} type="password" autoComplete="new-password" value={pinSetupConfirm} onChange={(event) => setPinSetupConfirm(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="กรอกอีกครั้ง" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-slate-400" />
-            {pinSetupError && <p role="alert" className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-sm text-zinc-700">{pinSetupError}</p>}
-            <button type="submit" disabled={pinSetupBusy} className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pinSetupBusy ? 'กำลังบันทึก…' : 'บันทึก PIN'}</button>
-            {!pinEnabled && <button type="button" onClick={() => setPinSetupOpen(false)} className="mt-2 w-full rounded-xl px-4 py-2 text-sm text-slate-500 hover:bg-slate-50">ตั้งค่าภายหลัง</button>}
-          </form>
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <p className="text-xs font-semibold text-amber-900">ชุดข้อมูลที่ยังไม่ได้บันทึก</p>
+              {saveConflict.changedYears.length > 0 ? (
+                <ul className="mt-2 space-y-1.5 text-sm text-slate-800">
+                  {saveConflict.changedYears.map((year) => (
+                    <li key={year} className="flex items-center justify-between gap-3">
+                      <span>รอบปีบัญชี {year}</span>
+                      <span className="text-xs text-amber-800">{(saveConflict.recordsByYear[year] || []).length.toLocaleString()} รายการในฉบับของคุณ</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  ไม่พบความแตกต่างของรายการในฉบับนี้เมื่อเทียบกับข้อมูลที่เคยโหลดไว้ แต่เวอร์ชันบนเซิร์ฟเวอร์เปลี่ยนไปแล้ว ระบบจึงหยุดบันทึกเพื่อให้คุณตรวจสอบข้อมูลล่าสุดก่อน
+                </p>
+              )}
+              <p className="mt-3 text-xs leading-5 text-amber-900">ก่อนโหลดข้อมูลล่าสุด ระบบจะดาวน์โหลดฉบับที่ยังไม่บันทึกเป็นไฟล์ JSON ให้อัตโนมัติ ไฟล์สำรองอาจมีข้อมูลสำคัญและรหัสของกิจการ ควรเก็บไว้ในที่ปลอดภัย</p>
+            </div>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" disabled={loadingLatestAfterConflict} onClick={() => {
+                const recovery = new Blob([JSON.stringify({ availableYears: saveConflict.availableYears, recordsByYear: saveConflict.recordsByYear }, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(recovery);
+                const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'm101-unsaved-recovery.json'; anchor.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">ดาวน์โหลดฉบับที่ยังไม่บันทึก</button>
+              <button type="button" disabled={loadingLatestAfterConflict} onClick={() => void handleLoadLatestAfterConflict()} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60">{loadingLatestAfterConflict ? 'กำลังสำรองและโหลดข้อมูล…' : 'สำรองฉบับนี้แล้วโหลดข้อมูลล่าสุด'}</button>
+            </div>
+          </section>
         </div>
       )}
       <DashboardView
@@ -893,8 +889,6 @@ function AppContent() {
         }}
         isLoggedIn={isLoggedIn}
         isAdmin={userRole === 'admin'}
-        isVisitor={isVisitor}
-        onReturnToLogin={() => { setIsVisitor(false); setDataError(''); setAuthError(''); }}
         onToggleLogin={() => {
           void fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
             .finally(() => {
