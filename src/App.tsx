@@ -186,6 +186,7 @@ function AppContent() {
         setBootstrapRequired(Boolean(bootstrapStatus.needsBootstrap));
         setBootstrapReady(Boolean(bootstrapStatus.bootstrapReady));
         setBootstrapMode(bootstrapStatus.bootstrapMode === 'claim-existing-owner' ? 'claim-existing-owner' : bootstrapStatus.bootstrapMode === 'create' ? 'create' : 'unavailable');
+        if (typeof bootstrapStatus.bootstrapUsername === 'string' && bootstrapStatus.bootstrapUsername) setBootstrapUsername(bootstrapStatus.bootstrapUsername);
         const sessionResponse = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (!sessionResponse.ok) throw new Error('Cloudflare API is unavailable');
         const session = await sessionResponse.json();
