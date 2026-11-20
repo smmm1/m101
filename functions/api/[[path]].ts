@@ -1,5 +1,5 @@
 type Env = { DB: any; PREVIEW_DB?: any; M101_BOOTSTRAP_KEY?: string };
-type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; local_password_set: number; password_hash: string; password_salt: string };
+type UserRow = { id: string; email: string; username: string; display_name: string; role: 'admin' | 'member'; account_status: 'active' | 'suspended'; local_password_set: number; password_hash: string; password_salt: string; created_at: string; pin_hash?: string | null; pin_salt?: string | null };
 
 const COOKIE_NAME = 'm101_session';
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
