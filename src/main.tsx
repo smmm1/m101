@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './design-system/index.css';
+import './win2000-theme.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
