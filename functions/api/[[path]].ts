@@ -197,22 +197,22 @@ async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   for (const user of previewUsers) {
     if (user.id === previewOwner.id) {
       statements.push(env.DB.prepare(
-        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, account_status = 'active', local_password_set = 1 WHERE id = ? AND role = 'admin'"
-      ).bind(user.username, user.password_hash, user.password_salt, user.id));
+        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, pin_hash = ?, pin_salt = ?, account_status = 'active', local_password_set = 1 WHERE id = ? AND role = 'admin'"
+      ).bind(user.username, user.password_hash, user.password_salt, user.pin_hash || null, user.pin_salt || null, user.id));
       continue;
     }
     const existing = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();
     if (existing) {
       statements.push(env.DB.prepare(
-        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, account_status = ?, local_password_set = ? WHERE id = ?"
-      ).bind(user.username, user.password_hash, user.password_salt, user.account_status, Number(user.local_password_set), user.id));
+        "UPDATE users SET username = ?, password_hash = ?, password_salt = ?, pin_hash = ?, pin_salt = ?, account_status = ?, local_password_set = ? WHERE id = ?"
+      ).bind(user.username, user.password_hash, user.password_salt, user.pin_hash || null, user.pin_salt || null, user.account_status, Number(user.local_password_set), user.id));
     } else {
       const conflict = await env.DB.prepare('SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ? COLLATE NOCASE LIMIT 1')
         .bind(user.username, user.email).first();
       if (conflict) throw new Error('Preview user identity conflicts with an existing Production account');
       statements.push(env.DB.prepare(
         'INSERT INTO users (id, email, display_name, role, password_hash, password_salt, created_at, pin_hash, pin_salt, username, account_status, local_password_set) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(user.id, user.email, user.display_name, user.role, user.password_hash, user.password_salt, user.created_at, null, null, user.username, user.account_status, Number(user.local_password_set)));
+      ).bind(user.id, user.email, user.display_name, user.role, user.password_hash, user.password_salt, user.created_at, user.pin_hash || null, user.pin_salt || null, user.username, user.account_status, Number(user.local_password_set)));
     }
   }
 
