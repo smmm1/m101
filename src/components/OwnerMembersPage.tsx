@@ -19,7 +19,7 @@ const dateTime = (value: string) => {
 const actionLabel = (event: Activity) => {
   let metadata: Record<string, unknown> = {};
   try { metadata = JSON.parse(event.metadata_json || '{}'); } catch { metadata = {}; }
-  const name = String(metadata.businessName || metadata.label || '');
+  const name = String(metadata.businessName || metadata.taskName || metadata.label || (event.action.startsWith('user.') && metadata.username ? '@' + metadata.username : ''));
   const year = metadata.fiscalYear ? ` · ปี ${metadata.fiscalYear}` : '';
   const changed = Array.isArray(metadata.changedFields) ? ` (แก้ไข: ${metadata.changedFields.join(', ')})` : '';
   const labels: Record<string, string> = {
