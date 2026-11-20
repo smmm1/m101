@@ -26,7 +26,7 @@ const actionLabel = (event: Activity) => {
     'auth.login': 'เข้าสู่ระบบ', 'auth.logout': 'ออกจากระบบ', 'auth.session_expired': 'เซสชันหมดอายุ',
     'user.created': 'สร้างบัญชีสมาชิก', 'user.updated': 'แก้ไขบัญชีสมาชิก',
     'business.created': 'เพิ่มกิจการ', 'business.updated': 'แก้ไขกิจการ',
-    'business.deleted': 'ลบกิจการ', 'business.viewed': 'เปิดดูรายละเอียดกิจการ',
+    'business.deleted': 'ลบกิจการ', 'business.imported': 'นำเข้าไฟล์กิจการ', 'business.viewed': 'เปิดดูรายละเอียดกิจการ',
     'navigation.opened': 'เปิดหน้าเมนู', 'report.exported': 'ส่งออกรายงาน',
     'business.assignment.created': 'มอบหมายกิจการ', 'business.assignment.revoked': 'ยกเลิกการมอบหมาย',
     'annual_task.created': 'เพิ่มงานประจำปี', 'annual_task.updated': 'แก้ไขงานประจำปี', 'annual_task.deleted': 'ลบงานประจำปี',
@@ -58,6 +58,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedBusiness, setSelectedBusiness] = useState('');
   const [activityFilter, setActivityFilter] = useState<'all' | 'login' | 'changes' | 'views'>('all');
+  const [selectedEvent, setSelectedEvent] = useState<Activity | null>(null);
 
   const loadMembers = useCallback(async () => {
     setLoadingMembers(true);
@@ -106,7 +107,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (tab === 'login' || tab === 'activity') void loadEvents();
-    if (tab === 'permissions') void loadAssignments();
+    // Per-business assignment management is disabled for the shared-workspace model.
   }, [tab, loadEvents, loadAssignments]);
 
   const memberCount = members.filter((member) => member.role === 'member').length;
@@ -277,7 +278,8 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
                 const visual = event.action === 'auth.login' ? { icon: '↪', tone: 'bg-emerald-50 text-emerald-700', tag: 'เข้าสู่ระบบ' }
                   : event.action === 'auth.logout' ? { icon: '↩', tone: 'bg-slate-100 text-slate-600', tag: 'ออกจากระบบ' }
                   : event.action === 'auth.session_expired' ? { icon: '◷', tone: 'bg-amber-50 text-amber-700', tag: 'เซสชันหมดอายุ' }
-                  : event.action.endsWith('.created') ? { icon: '+', tone: 'bg-emerald-50 text-emerald-700', tag: 'เพิ่มข้อมูล' }
+                  : event.action === 'business.imported' ? { icon: '⇧', tone: 'bg-cyan-50 text-cyan-700', tag: 'นำเข้าไฟล์' }
+                   : event.action.endsWith('.created') ? { icon: '+', tone: 'bg-emerald-50 text-emerald-700', tag: 'เพิ่มข้อมูล' }
                   : event.action.endsWith('.updated') ? { icon: '✎', tone: 'bg-sky-50 text-sky-700', tag: 'แก้ไขข้อมูล' }
                   : event.action.endsWith('.deleted') ? { icon: '×', tone: 'bg-rose-50 text-rose-700', tag: 'ลบข้อมูล' }
                   : event.action === 'business.viewed' ? { icon: '◎', tone: 'bg-violet-50 text-violet-700', tag: 'เปิดดูข้อมูล' }
@@ -287,7 +289,7 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
                   : { icon: '•', tone: 'bg-slate-100 text-slate-600', tag: 'กิจกรรมอื่น' };
                 const target = String(meta.businessName || meta.taskName || meta.label || (meta.username ? '@' + meta.username : '') || '');
                 const actor = event.actor_display_name || event.actor_username || 'บัญชีที่ถูกนำออก';
-                return <article key={event.id} className="flex gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50/70">
+                return <button type="button" key={event.id} onClick={() => setSelectedEvent(event)} className="flex w-full gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50/70">
                   <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-base font-semibold ${visual.tone}`} aria-hidden="true">{visual.icon}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-slate-800">{actionLabel(event)}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${visual.tone}`}>{visual.tag}</span></div>
@@ -302,6 +304,37 @@ export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
           </div>
         </section>}
       </div>
+
+      {selectedEvent && (() => {
+        let meta: Record<string, unknown> = {};
+        try { meta = JSON.parse(selectedEvent.metadata_json || '{}') as Record<string, unknown>; } catch { meta = {}; }
+        const safeLabel = (key: string) => ({ companyName: 'ชื่อกิจการ', type: 'ประเภท', status: 'สถานะ', auditorDate: 'วันที่ผู้สอบบัญชี', remark: 'หมายเหตุ', topic: 'หัวข้อ', sourceType: 'แหล่งข้อมูล', sourceFileName: 'ชื่อไฟล์ต้นทาง', sequenceNo: 'ลำดับ' } as Record<string,string>)[key] || key;
+        const valueText = (value: unknown) => value === undefined || value === null || value === '' ? '—' : String(value);
+        const samples = Array.isArray(meta.createdSamples) ? meta.createdSamples as Array<Record<string, unknown>> : [];
+        const updates = Array.isArray(meta.updatedSamples) ? meta.updatedSamples as Array<Record<string, unknown>> : [];
+        const changes = Array.isArray(meta.changes) ? meta.changes as Array<Record<string, unknown>> : [];
+        const preview = meta.recordPreview && typeof meta.recordPreview === 'object' ? meta.recordPreview as Record<string, unknown> : {};
+        return <div className="fixed inset-0 z-[340] grid place-items-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="activity-detail-title">
+          <section className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <header className="flex items-start justify-between border-b border-slate-100 px-5 py-4"><div><p className="text-[10px] font-semibold tracking-wider text-slate-400">ACTIVITY DETAIL</p><h2 id="activity-detail-title" className="mt-1 text-base font-semibold text-slate-800">{actionLabel(selectedEvent)}</h2><p className="mt-1 text-xs text-slate-500">{selectedEvent.actor_display_name || selectedEvent.actor_username || 'สมาชิก'} · {dateTime(selectedEvent.created_at)}</p></div><button type="button" onClick={() => setSelectedEvent(null)} className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100">ปิด</button></header>
+            <div className="max-h-[calc(85vh-76px)] space-y-4 overflow-y-auto p-5">
+              {selectedEvent.action === 'business.imported' ? <>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">ไฟล์</p><p className="mt-1 break-all text-sm font-medium">{valueText(meta.fileName)}</p></div><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">เพิ่มใหม่</p><p className="mt-1 text-xl font-semibold">{Number(meta.createdCount || 0).toLocaleString('th-TH')}</p></div><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">แก้ไขเดิม</p><p className="mt-1 text-xl font-semibold">{Number(meta.updatedCount || 0).toLocaleString('th-TH')}</p></div></div>
+                {samples.length > 0 && <div><h3 className="mb-2 text-sm font-semibold">ตัวอย่างกิจการที่เพิ่ม</h3><div className="divide-y divide-slate-100 rounded-xl border border-slate-200">{samples.map((item,i)=><div key={String(item.id || i)} className="p-3"><p className="text-sm font-medium">{valueText(item.companyName)}</p><p className="mt-1 text-xs text-slate-500">ปี {valueText(item.fiscalYear)} · {valueText(item.type)} · {valueText(item.status)}</p></div>)}</div></div>}
+                {updates.length > 0 && <div><h3 className="mb-2 text-sm font-semibold">ตัวอย่างกิจการที่แก้ไข</h3><div className="space-y-2">{updates.map((item,i)=><div key={String(item.id || i)} className="rounded-xl border border-slate-200 p-3"><p className="text-sm font-medium">{valueText(item.companyName)}</p>{Array.isArray(item.changes) && (item.changes as Array<Record<string,unknown>>).map((change,j)=><p key={j} className="mt-1 text-xs text-slate-600">{safeLabel(String(change.field))}: <span className="text-rose-600">{valueText(change.before)}</span> → <span className="font-medium text-emerald-700">{valueText(change.after)}</span></p>)}</div>)}</div></div>}
+                <p className="text-[11px] text-slate-400">แสดงตัวอย่างสูงสุด 12 รายการต่อประเภท</p>
+              </> : selectedEvent.action === 'business.updated' ? <>
+                <p className="text-sm font-medium">กิจการ: {valueText(meta.businessName)}</p>
+                {changes.length > 0 ? <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">{changes.map((change,i)=><div key={i} className="grid grid-cols-1 gap-1 p-3 sm:grid-cols-[130px_1fr] sm:gap-3"><p className="text-xs font-semibold text-slate-600">{safeLabel(String(change.field))}</p><p className="text-xs text-slate-600"><span className="text-rose-600">{valueText(change.before)}</span><span className="mx-2 text-slate-400">→</span><span className="font-medium text-emerald-700">{valueText(change.after)}</span></p></div>)}</div> : <p className="text-sm text-slate-500">ไม่มีรายละเอียดค่าเดิม/ค่าใหม่ในประวัติรายการนี้</p>}
+              </> : <>
+                <p className="text-sm font-medium">{valueText(meta.businessName || meta.taskName || meta.label || selectedEvent.resource_id)}</p>
+                {Object.keys(preview).length > 0 && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{Object.entries(preview).map(([key,value])=><div key={key} className="rounded-lg bg-slate-50 p-3"><p className="text-[11px] text-slate-500">{safeLabel(key)}</p><p className="mt-1 break-words text-sm text-slate-800">{valueText(value)}</p></div>)}</div>}
+                {selectedEvent.action === 'business.deleted' && <p className="text-xs text-slate-500">บันทึกว่ารายการกิจการนี้ถูกลบโดยสมาชิก</p>}
+              </>}
+            </div>
+          </section>
+        </div>;
+      })()}
 
       {editing && <div className="fixed inset-0 z-[320] grid place-items-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-member-title">
         <form onSubmit={(event) => { event.preventDefault(); void updateMember(editing, { displayName: editName.trim(), newPassword }); }} className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
