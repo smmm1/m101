@@ -1,0 +1,205 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+type Member = {
+  id: string; username: string; display_name: string; role: 'admin' | 'member';
+  account_status: 'active' | 'suspended'; local_password_set: number; created_at: string;
+};
+type Activity = {
+  id: string; actor_user_id: string | null; actor_username?: string | null; actor_display_name?: string | null;
+  action: string; resource_type: string; resource_id: string | null; metadata_json: string; created_at: string;
+};
+type Tab = 'members' | 'login' | 'activity';
+
+const dateTime = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+};
+const actionLabel = (event: Activity) => {
+  let metadata: Record<string, unknown> = {};
+  try { metadata = JSON.parse(event.metadata_json || '{}'); } catch { metadata = {}; }
+  const name = String(metadata.businessName || metadata.label || '');
+  const year = metadata.fiscalYear ? ` · ปี ${metadata.fiscalYear}` : '';
+  const changed = Array.isArray(metadata.changedFields) ? ` (แก้ไข: ${metadata.changedFields.join(', ')})` : '';
+  const labels: Record<string, string> = {
+    'auth.login': 'เข้าสู่ระบบ', 'auth.logout': 'ออกจากระบบ',
+    'user.created': 'สร้างบัญชีสมาชิก', 'user.updated': 'แก้ไขบัญชีสมาชิก',
+    'business.created': 'เพิ่มกิจการ', 'business.updated': 'แก้ไขกิจการ',
+    'business.deleted': 'ลบกิจการ', 'business.viewed': 'เปิดดูรายละเอียดกิจการ',
+    'navigation.opened': 'เปิดหน้าเมนู', 'report.exported': 'ส่งออกรายงาน',
+    'business.assignment.created': 'มอบหมายกิจการ', 'business.assignment.revoked': 'ยกเลิกการมอบหมาย',
+    'owner.password_initialized': 'ตั้งค่าบัญชี Owner',
+  };
+  return (labels[event.action] || event.action) + (name ? ` · ${name}` : '') + year + changed;
+};
+
+export function OwnerMembersPage({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<Tab>('members');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [events, setEvents] = useState<Activity[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [password, setPassword] = useState('');
+  const [editing, setEditing] = useState<Member | null>(null);
+  const [editName, setEditName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [filterMember, setFilterMember] = useState('');
+  const [activityFilter, setActivityFilter] = useState<'all' | 'login' | 'changes' | 'views'>('all');
+
+  const loadMembers = useCallback(async () => {
+    setLoadingMembers(true);
+    try {
+      const response = await fetch('/api/admin/users', { credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'โหลดรายชื่อสมาชิกไม่สำเร็จ');
+      setMembers((payload.users || []) as Member[]);
+    } catch (err) { setError(err instanceof Error ? err.message : 'โหลดสมาชิกไม่สำเร็จ'); }
+    finally { setLoadingMembers(false); }
+  }, []);
+
+  const loadEvents = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const query = new URLSearchParams({ limit: '500' });
+      if (filterMember) query.set('memberId', filterMember);
+      const response = await fetch(`/api/admin/activity?${query.toString()}`, { credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'โหลดประวัติกิจกรรมไม่สำเร็จ');
+      setEvents((payload.events || []) as Activity[]);
+    } catch (err) { setError(err instanceof Error ? err.message : 'โหลดประวัติไม่สำเร็จ'); }
+    finally { setLoadingEvents(false); }
+  }, [filterMember]);
+
+  useEffect(() => { void loadMembers(); }, [loadMembers]);
+  useEffect(() => { if (tab !== 'members') void loadEvents(); }, [tab, loadEvents]);
+
+  const memberCount = members.filter((member) => member.role === 'member').length;
+  const activeCount = members.filter((member) => member.role === 'member' && member.account_status === 'active').length;
+  const filteredEvents = useMemo(() => events.filter((event) => {
+    if (activityFilter === 'login') return event.action.startsWith('auth.');
+    if (activityFilter === 'views') return ['business.viewed', 'navigation.opened'].includes(event.action);
+    if (activityFilter === 'changes') return !event.action.startsWith('auth.') && !['business.viewed', 'navigation.opened'].includes(event.action);
+    return true;
+  }), [events, activityFilter]);
+
+  const createMember = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (saving) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), displayName: displayName.trim(), password }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'สร้างสมาชิกไม่สำเร็จ');
+      setUsername(''); setDisplayName(''); setPassword('');
+      setNotice(`สร้างบัญชี @${payload.user?.username || ''} แล้ว`);
+      await loadMembers();
+    } catch (err) { setError(err instanceof Error ? err.message : 'สร้างสมาชิกไม่สำเร็จ'); }
+    finally { setSaving(false); }
+  };
+
+  const updateMember = async (member: Member, changes: { displayName?: string; accountStatus?: 'active' | 'suspended'; newPassword?: string }) => {
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(member.id)}`, {
+        method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: member.username, displayName: changes.displayName ?? member.display_name, accountStatus: changes.accountStatus ?? member.account_status, newPassword: changes.newPassword || '' }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'บันทึกข้อมูลสมาชิกไม่สำเร็จ');
+      setEditing(null); setNewPassword('');
+      setNotice(changes.accountStatus === 'suspended' ? `ระงับบัญชี @${member.username} แล้ว (เก็บประวัติไว้)` : changes.accountStatus === 'active' ? `เปิดใช้งาน @${member.username} แล้ว` : `บันทึกบัญชี @${member.username} แล้ว`);
+      await loadMembers();
+      if (tab !== 'members') await loadEvents();
+    } catch (err) { setError(err instanceof Error ? err.message : 'บันทึกสมาชิกไม่สำเร็จ'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <main className="fixed inset-0 z-[300] flex min-h-0 flex-col overflow-y-auto bg-[#f5f6f8] text-slate-900">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="กลับ">←</button>
+          <div className="min-w-0"><p className="text-[10px] font-semibold tracking-[.16em] text-slate-400">OWNER CONTROL</p><h1 className="truncate text-lg font-semibold">จัดการสมาชิกและประวัติ</h1></div>
+        </div>
+        <button type="button" onClick={() => { void loadMembers(); if (tab !== 'members') void loadEvents(); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">รีเฟรช</button>
+      </header>
+
+      <div className="mx-auto w-full max-w-6xl space-y-5 p-4 sm:p-8">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">สมาชิกทั้งหมด</p><p className="mt-1 text-2xl font-semibold tabular-nums">{memberCount}</p></div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">กำลังใช้งาน</p><p className="mt-1 text-2xl font-semibold tabular-nums">{activeCount}</p></div>
+          <div className="col-span-2 rounded-xl border border-slate-200 bg-white p-4 sm:col-span-1"><p className="text-xs text-slate-500">ระงับบัญชี</p><p className="mt-1 text-2xl font-semibold tabular-nums">{memberCount - activeCount}</p></div>
+        </section>
+
+        <nav className="flex gap-1 border-b border-slate-200" aria-label="ส่วนจัดการสมาชิก">
+          {([['members','สมาชิก'],['login','เข้า–ออกระบบ'],['activity','กิจกรรมในระบบ']] as Array<[Tab,string]>).map(([key,label]) => (
+            <button key={key} type="button" onClick={() => { setTab(key); setError(''); setNotice(''); }} className={`border-b-2 px-3 py-3 text-sm font-medium transition-colors ${tab === key ? 'border-slate-800 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{label}</button>
+          ))}
+        </nav>
+
+        {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
+        {notice && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</p>}
+
+        {tab === 'members' && <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4"><div><h2 className="text-sm font-semibold">บัญชีสมาชิก</h2><p className="mt-1 text-xs text-slate-400">จัดการบัญชีและสถานะการเข้าใช้งาน</p></div><span className="text-xs text-slate-400">{memberCount} คน</span></div>
+            {loadingMembers ? <p className="p-8 text-center text-sm text-slate-400">กำลังโหลด…</p> : <div className="divide-y divide-slate-100">
+              {members.filter((member) => member.role === 'member').map((member) => <div key={member.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0"><p className="truncate text-sm font-semibold">{member.display_name} <span className="font-normal text-slate-400">@{member.username}</span></p><p className="mt-1 text-xs text-slate-400">สร้างเมื่อ {dateTime(member.created_at)} · สิทธิ์ Member</p><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${member.account_status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{member.account_status === 'active' ? 'ใช้งานได้' : 'ระงับบัญชี'}</span></div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <button type="button" onClick={() => { setEditing(member); setEditName(member.display_name); setNewPassword(''); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">แก้ไข / รีเซ็ตรหัส</button>
+                  <button type="button" disabled={saving} onClick={() => { const next = member.account_status === 'active' ? 'suspended' : 'active'; if (window.confirm(next === 'suspended' ? `ระงับบัญชี @${member.username}? ประวัติเดิมจะยังอยู่` : `เปิดใช้งาน @${member.username} อีกครั้ง?`)) void updateMember(member, { accountStatus: next }); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">{member.account_status === 'active' ? 'นำออก / ระงับ' : 'เปิดใช้งาน'}</button>
+                </div>
+              </div>)}
+              {!memberCount && <p className="p-8 text-center text-sm text-slate-400">ยังไม่มีสมาชิก</p>}
+            </div>}
+          </section>
+
+          <section className="h-fit rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold">เพิ่มสมาชิก</h2><p className="mt-1 text-xs leading-5 text-slate-500">Owner กำหนด User ID และรหัสผ่านให้สมาชิก</p>
+            <form onSubmit={createMember} className="mt-4 space-y-3">
+              <label className="block text-xs font-medium text-slate-600">User ID<input required minLength={3} maxLength={32} pattern="[A-Za-z0-9._-]+" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={username} onChange={(event) => setUsername(event.target.value)} placeholder="เช่น somchai01" className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" /></label>
+              <label className="block text-xs font-medium text-slate-600">ชื่อที่แสดง<input required maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" /></label>
+              <label className="block text-xs font-medium text-slate-600">รหัสผ่านเริ่มต้น<input required minLength={12} maxLength={1024} type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400" /><span className="mt-1 block font-normal text-slate-400">อย่างน้อย 12 ตัวอักษร</span></label>
+              <button type="submit" disabled={saving || password.length < 12 || !username.trim() || !displayName.trim()} className="h-10 w-full rounded-lg bg-[#172b4d] text-sm font-semibold text-white hover:bg-[#10213d] disabled:opacity-50">{saving ? 'กำลังบันทึก…' : 'สร้างบัญชีสมาชิก'}</button>
+            </form>
+            <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-5 text-slate-400">การนำออกจะระงับการเข้าสู่ระบบและเก็บประวัติเดิมไว้ ไม่ลบบันทึกกิจกรรมย้อนหลัง</p>
+          </section>
+        </div>}
+
+        {(tab === 'login' || tab === 'activity') && <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="text-sm font-semibold">{tab === 'login' ? 'ประวัติการเข้า–ออกระบบ' : 'ประวัติกิจกรรมสมาชิก'}</h2><p className="mt-1 text-xs text-slate-400">{tab === 'login' ? 'เวลาเข้าสู่ระบบและออกจากระบบที่ระบบบันทึกได้จริง' : 'การเพิ่ม แก้ไข ลบ เปิดดู และการดำเนินการสำคัญ'}</p></div>
+            <div className="flex flex-wrap gap-2">
+              <select value={filterMember} onChange={(event) => setFilterMember(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-600"><option value="">สมาชิกทั้งหมด</option>{members.filter((member) => member.role === 'member').map((member) => <option key={member.id} value={member.id}>{member.display_name} (@{member.username})</option>)}</select>
+              {tab === 'activity' && <select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-600"><option value="all">ทุกกิจกรรม</option><option value="changes">เพิ่ม / แก้ไข / ลบ</option><option value="views">เปิดดู / เปิดหน้า</option><option value="login">เข้า–ออกระบบ</option></select>}
+              <button type="button" onClick={() => void loadEvents()} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600">โหลดใหม่</button>
+            </div>
+          </div>
+          {loadingEvents ? <p className="p-10 text-center text-sm text-slate-400">กำลังโหลดประวัติ…</p> : filteredEvents.filter((event) => tab === 'login' ? event.action.startsWith('auth.') : true).length ? <div className="divide-y divide-slate-100">
+            {filteredEvents.filter((event) => tab === 'login' ? event.action.startsWith('auth.') : true).map((event) => <article key={event.id} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0"><p className="text-sm font-medium text-slate-800">{actionLabel(event)}</p><p className="mt-1 text-xs text-slate-400">{event.actor_display_name || event.actor_username || 'บัญชีที่ถูกนำออก'}{event.actor_username ? ` (@${event.actor_username})` : ''} · {event.action}</p></div>
+              <time className="shrink-0 text-xs tabular-nums text-slate-500">{dateTime(event.created_at)}</time>
+            </article>)}
+          </div> : <p className="p-10 text-center text-sm text-slate-400">ยังไม่มีประวัติในหมวดนี้</p>}
+          <footer className="border-t border-slate-100 px-4 py-3 text-[11px] leading-5 text-slate-400">แสดงสูงสุด 500 รายการ · การออกจากระบบจะแสดงเฉพาะเมื่อกดออกจากระบบจริง ส่วนเซสชันหมดอายุหรือปิดเบราว์เซอร์จะไม่ถูกนับเป็นการ Logout</footer>
+        </section>}
+      </div>
+
+      {editing && <div className="fixed inset-0 z-[320] grid place-items-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="edit-member-title">
+        <form onSubmit={(event) => { event.preventDefault(); void updateMember(editing, { displayName: editName.trim(), newPassword }); }} className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+          <div><h2 id="edit-member-title" className="text-base font-semibold">แก้ไขสมาชิก</h2><p className="mt-1 text-xs text-slate-400">@{editing.username}</p></div>
+          <label className="block text-xs font-medium text-slate-600">ชื่อที่แสดง<input required maxLength={80} value={editName} onChange={(event) => setEditName(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm" /></label>
+          <label className="block text-xs font-medium text-slate-600">รหัสผ่านใหม่ (เว้นว่างหากไม่เปลี่ยน)<input type="password" minLength={12} maxLength={1024} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm" /><span className="mt-1 block font-normal text-slate-400">อย่างน้อย 12 ตัวอักษร ระบบจะออกจากระบบอุปกรณ์อื่นเมื่อรีเซ็ต</span></label>
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3"><button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600">ยกเลิก</button><button type="submit" disabled={saving || !editName.trim() || (newPassword.length > 0 && newPassword.length < 12)} className="rounded-lg bg-[#172b4d] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? 'กำลังบันทึก…' : 'บันทึก'}</button></div>
+        </form>
+      </div>}
+    </main>
+  );
+}
