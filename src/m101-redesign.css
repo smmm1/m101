@@ -1758,3 +1758,66 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
     font-size: 11px !important;
   }
 }
+
+
+/* Mobile bottom navigation — common component for the standard and classic themes */
+.m101-mobile-bottom-nav { display: none; }
+@media (max-width: 760px) {
+  .m101-primary-nav { display: none !important; }
+  .m101-page-context { display: none !important; }
+  .m101-mobile-bottom-nav {
+    position: fixed;
+    z-index: 60;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: 2px;
+    min-height: 62px;
+    padding: 7px 5px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--ds-color-border);
+    background: var(--ds-color-surface);
+    color: var(--ds-color-text-secondary);
+    box-shadow: 0 -5px 18px rgba(15, 23, 42, .07);
+  }
+  .m101-mobile-bottom-nav button {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 48px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .m101-mobile-bottom-nav button span {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m101-mobile-bottom-nav button.is-active {
+    background: var(--ds-color-primary-soft);
+    color: var(--ds-color-primary);
+  }
+  .m101-mobile-bottom-nav button:focus-visible {
+    outline: 2px solid var(--ds-color-primary);
+    outline-offset: -2px;
+  }
+  .mobile-main-content {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+    scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}
