@@ -465,3 +465,64 @@ html.win2000 .m101-settings-card button { min-height: 28px !important; border-ra
     padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* Windows 2000 — keep long content readable while preserving classic controls */
+html.win2000 .mobile-main-content :where(p, small, li, label, dd, dt),
+html.win2000 .m101-settings :where(p, small, li, label, dd, dt),
+html.win2000 .m101-dialog-panel :where(p, small, li, label, dd, dt),
+html.win2000 .m101-import-dialog :where(p, small, li, label, dd, dt),
+html.win2000 .m101-conflict-dialog :where(p, small, li, label, dd, dt) {
+  min-width: 0;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+html.win2000 .mobile-main-content :where(h1, h2, h3, h4),
+html.win2000 .m101-settings :where(h1, h2, h3, h4),
+html.win2000 .m101-dialog-panel :where(h1, h2, h3, h4),
+html.win2000 .m101-import-dialog :where(h1, h2, h3, h4),
+html.win2000 .m101-conflict-dialog :where(h1, h2, h3, h4) {
+  min-width: 0;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+html.win2000 .mobile-main-content :where(table th, table td),
+html.win2000 .m101-dialog-panel :where(table th, table td),
+html.win2000 .m101-import-dialog :where(table th, table td),
+html.win2000 .m101-conflict-dialog :where(table th, table td) {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.5;
+  vertical-align: top;
+}
+html.win2000 .m101-settings-appearance-copy {
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+html.win2000 .m101-theme-description {
+  max-width: 62ch;
+  line-height: 1.6 !important;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+html.win2000 .m101-theme-option {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.3;
+}
+html.win2000 .m101-recent-main b {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+}
+html.win2000 .m101-record-row,
+html.win2000 .m101-record-row > div,
+html.win2000 .m101-record-row h4 {
+  min-width: 0;
+}
