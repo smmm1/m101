@@ -14,6 +14,7 @@ import '../m101-redesign.css';
 import '../m101-business-theme.css';
 import { parseDocumentFile } from '../utils/excelHelper';
 import { DSBadge, DSButton, DSInput } from '../design-system/components';
+import { useTheme } from '../context/ThemeContext';
 
 function AnimatedCount({ value }: { value: number }) {
   const [displayValue, setDisplayValue] = useState(0);
@@ -97,6 +98,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onManageUsers,
   onToggleLogin,
 }) => {
+  const { theme } = useTheme();
+  const isWin2000 = theme === 'win2000';
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [draggedRecordId, setDraggedRecordId] = useState<string | null>(null);
   const [dragOverRecordId, setDragOverRecordId] = useState<string | null>(null);
@@ -412,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
 
   return (
-    <div className="m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative">
+    <div className={`m101-app-shell mobile-app-shell m101-workspace-shell flex-1 flex flex-col min-h-screen overflow-y-auto bg-[#f4f5f7] text-slate-900 font-body relative ${isWin2000 ? "m101-win2000-application" : ""}`}>
       {showNavigationProgress && (
         <div className="m101-top-loading" role="progressbar" aria-label="กำลังเปลี่ยนหน้า" aria-valuemin={0} aria-valuemax={100}>
           <span />
@@ -462,6 +465,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-[11px] opacity-90">{currentNotification}</span>
           </div>
         </div>
+      )}
+
+      {isWin2000 && (
+        <section className="win2k-window-frame" aria-label="Windows 2000 workspace">
+          <header className="win2k-titlebar">
+            <span className="win2k-app-icon" aria-hidden="true">M</span>
+            <strong>Mustang Directory — ระบบจัดการทะเบียนกิจการ</strong>
+            <span className="win2k-titlebar-user">{userName} · {isAdmin ? 'Administrator' : isLoggedIn ? 'Member' : 'Guest'}</span>
+          </header>
+          <div className="win2k-menubar" role="navigation" aria-label="เมนูโปรแกรม">
+            <button type="button" onClick={() => navigateToTab('dashboard')} aria-current={activeTab === 'dashboard' ? 'page' : undefined}>ภาพรวม</button>
+            <button type="button" onClick={() => navigateToTab('directory')} aria-current={activeTab === 'directory' ? 'page' : undefined}>ทะเบียนกิจการ</button>
+            {isLoggedIn && <button type="button" onClick={() => navigateToTab('tasks')} aria-current={activeTab === 'tasks' ? 'page' : undefined}>งานประจำปี</button>}
+            {isLoggedIn && isAdmin && <button type="button" onClick={() => navigateToTab('import')} aria-current={activeTab === 'import' ? 'page' : undefined}>นำเข้า / ส่งออก</button>}
+            {isLoggedIn && <button type="button" onClick={() => navigateToTab('settings')} aria-current={activeTab === 'settings' ? 'page' : undefined}>ตั้งค่า</button>}
+          </div>
+          <div className="win2k-toolbar">
+            <div className="win2k-toolbar-group" aria-label="ทางลัด">
+              <button type="button" onClick={() => navigateToTab('dashboard')}><span aria-hidden="true">⌂</span> หน้าแรก</button>
+              <button type="button" onClick={() => navigateToTab('directory')}><span aria-hidden="true">▤</span> รายการกิจการ</button>
+              {isLoggedIn && isAdmin && <button type="button" onClick={() => fileInputRef.current?.click()}><span aria-hidden="true">⇧</span> นำเข้าไฟล์</button>}
+            </div>
+            <label className="win2k-search">
+              <span>ค้นหา:</span>
+              <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="ชื่อกิจการ / เลขทะเบียน" />
+            </label>
+            <div className="win2k-year">รอบปี <strong>{selectedYear}</strong></div>
+          </div>
+        </section>
       )}
 
       {/* 1. DISTINCT NAVBAR AT THE VERY TOP */}
@@ -1060,6 +1092,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
         </div>
       </div>
+
+      {isWin2000 && (
+        <footer className="win2k-statusbar" aria-label="สถานะโปรแกรม">
+          <span>{activeTab === 'dashboard' ? 'ภาพรวมระบบ' : activeTab === 'directory' ? 'ทะเบียนกิจการ' : activeTab === 'tasks' ? 'งานประจำปี' : activeTab === 'import' ? 'นำเข้า / ส่งออกข้อมูล' : 'ตั้งค่าระบบ'}</span>
+          <span>{records.length.toLocaleString('th-TH')} รายการ</span>
+          <span>รอบปีบัญชี {selectedYear}</span>
+          <span>{isLoggedIn ? 'เชื่อมต่อในฐานะสมาชิก' : 'โหมดผู้เยี่ยมชม'}</span>
+        </footer>
+      )}
 
       {/* Modals */}
       {isLoggedIn && isAddModalOpen && (
