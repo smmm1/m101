@@ -925,3 +925,402 @@ html.win2000 ::selection { background: #0a246a !important; color: #fff !importan
   html.win2000 .m101-directory-actions { width: 100% !important; }
   html.win2000 .m101-directory-action { flex: 1 1 auto !important; justify-content: center !important; }
 }
+
+/* ==========================================================================
+   Dedicated Windows 2000 application chrome
+   Replaces the modern web navigation with a separate desktop-app hierarchy.
+   ========================================================================== */
+html.win2000 body {
+  background: #008080 !important;
+}
+html.win2000 .m101-win2000-application {
+  min-height: 100vh !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  padding: 7px !important;
+  gap: 0 !important;
+  background: #008080 !important;
+  color: #111 !important;
+  font-family: Tahoma, "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 .win2k-window-frame {
+  flex: 0 0 auto;
+  margin: 0 0 6px;
+  background: #d4d0c8;
+  border: 2px solid #fff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  box-shadow: 1px 1px 0 #808080;
+  color: #111;
+}
+html.win2000 .win2k-titlebar {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 5px;
+  color: #fff;
+  background: linear-gradient(90deg,#000080 0%,#1084d0 100%);
+  font: bold 12px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-app-icon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #fff;
+  background: #d4d0c8;
+  color: #000080;
+  font: bold 14px Tahoma, sans-serif;
+}
+html.win2000 .win2k-titlebar-user {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: normal;
+  opacity: .95;
+}
+html.win2000 .win2k-menubar {
+  min-height: 29px;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px 4px;
+  border-bottom: 1px solid #808080;
+  background: #d4d0c8;
+}
+html.win2000 .win2k-menubar button {
+  padding: 3px 12px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: #111;
+  background: transparent;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-menubar button:hover,
+html.win2000 .win2k-menubar button[aria-current="page"] {
+  border: 1px solid #fff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  background: #e6e2d8;
+}
+html.win2000 .win2k-toolbar {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 7px;
+  background: #d4d0c8;
+}
+html.win2000 .win2k-toolbar-group {
+  display: flex;
+  gap: 3px;
+  padding-right: 10px;
+  border-right: 1px solid #808080;
+}
+html.win2000 .win2k-toolbar-group button {
+  min-height: 29px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px outset #fff;
+  border-radius: 0;
+  background: #d4d0c8;
+  color: #111;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-toolbar-group button:active { border-style: inset; }
+html.win2000 .win2k-toolbar-group button span { font-size: 16px; color: #000080; }
+html.win2000 .win2k-search {
+  min-width: 120px;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #222;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-search input {
+  height: 27px;
+  min-width: 0;
+  flex: 1;
+  padding: 3px 7px;
+  border: 2px inset #b8b8b8;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-year {
+  padding: 5px 9px;
+  border: 1px inset #fff;
+  background: #e6e2d8;
+  color: #222;
+  white-space: nowrap;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-year strong { color: #000080; font-size: 13px; }
+html.win2000 .m101-win2000-application > .m101-topbar,
+html.win2000 .m101-win2000-application > .m101-mobile-bottom-nav {
+  display: none !important;
+}
+html.win2000 .m101-win2000-application > .mobile-main-content {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  border: 2px solid #fff !important;
+  border-right-color: #404040 !important;
+  border-bottom-color: #404040 !important;
+  background: #d4d0c8 !important;
+}
+html.win2000 .m101-win2000-application > .mobile-main-content > .m101-tab-transition {
+  width: 100% !important;
+  min-height: 100% !important;
+  padding: 9px !important;
+  border: 1px solid #808080 !important;
+  background: #d4d0c8 !important;
+}
+html.win2000 .win2k-statusbar {
+  flex: 0 0 auto;
+  min-height: 25px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px 0;
+  background: #d4d0c8;
+  color: #222;
+  font: 10px Tahoma, "Noto Sans Thai", sans-serif;
+}
+html.win2000 .win2k-statusbar span {
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px inset #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.win2000 .win2k-statusbar span:first-child { flex: 1 1 auto; }
+html.win2000 .win2k-statusbar span:not(:first-child) { flex: 0 1 auto; }
+
+/* This theme uses document-like panels and compact list rows, not web cards. */
+html.win2000 .m101-win2000-application .m101-overview {
+  max-width: none !important;
+  gap: 8px !important;
+}
+html.win2000 .m101-win2000-application .m101-overview-header {
+  padding: 8px 10px !important;
+  border: 1px solid #808080 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  background: #d4d0c8 !important;
+}
+html.win2000 .m101-win2000-application .m101-overview-header h1 {
+  color: #000080 !important;
+  font: bold 17px Tahoma, "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 .m101-win2000-application .m101-overview-header p { color: #333 !important; }
+html.win2000 .m101-win2000-application .m101-overview-actions button,
+html.win2000 .m101-win2000-application .m101-directory-action,
+html.win2000 .m101-win2000-application .m101-settings button {
+  min-height: 27px !important;
+  padding: 4px 9px !important;
+  border: 2px outset #fff !important;
+  border-radius: 0 !important;
+  background: #d4d0c8 !important;
+  color: #111 !important;
+  box-shadow: none !important;
+  font: 11px Tahoma, "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 .m101-win2000-application .m101-overview-metrics {
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  gap: 6px !important;
+}
+html.win2000 .m101-win2000-application .m101-metric-card {
+  min-height: 80px !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-content: space-between !important;
+  padding: 7px 9px !important;
+  border: 1px solid #808080 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  border-radius: 0 !important;
+  background: #ece9d8 !important;
+  box-shadow: none !important;
+}
+html.win2000 .m101-win2000-application .m101-metric-card::before { display: none !important; }
+html.win2000 .m101-win2000-application .m101-metric-label {
+  grid-column: 1 / -1 !important;
+  padding-bottom: 4px !important;
+  border-bottom: 1px solid #aaa !important;
+  color: #333 !important;
+  font: bold 10px Tahoma, "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 .m101-win2000-application .m101-metric-card strong {
+  color: #000080 !important;
+  font: bold 25px Tahoma, sans-serif !important;
+}
+html.win2000 .m101-win2000-application .m101-metric-foot { color: #444 !important; font-size: 9px !important; }
+html.win2000 .m101-win2000-application .m101-overview-grid { gap: 7px !important; }
+html.win2000 .m101-win2000-application .m101-overview-panel {
+  padding: 0 !important;
+  border: 1px solid #808080 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  border-radius: 0 !important;
+  background: #ece9d8 !important;
+  box-shadow: none !important;
+}
+html.win2000 .m101-win2000-application .m101-panel-heading {
+  margin: 0 !important;
+  padding: 7px 9px !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid #000040 !important;
+  background: #000080 !important;
+  color: #fff !important;
+}
+html.win2000 .m101-win2000-application .m101-panel-heading h2,
+html.win2000 .m101-win2000-application .m101-panel-heading p,
+html.win2000 .m101-win2000-application .m101-panel-heading .m101-eyebrow,
+html.win2000 .m101-win2000-application .m101-panel-heading .m101-panel-subtitle { color: #fff !important; }
+html.win2000 .m101-win2000-application .m101-panel-heading h2 { font: bold 11px Tahoma, "Noto Sans Thai", sans-serif !important; }
+html.win2000 .m101-win2000-application .m101-status-panel > :not(.m101-panel-heading),
+html.win2000 .m101-win2000-application .m101-category-panel > :not(.m101-panel-heading) { margin-left: 9px !important; margin-right: 9px !important; }
+html.win2000 .m101-win2000-application .m101-status-completion strong { color: #fff !important; font: bold 19px Tahoma, sans-serif !important; }
+html.win2000 .m101-win2000-application .m101-status-completion span { color: #fff !important; }
+html.win2000 .m101-win2000-application .m101-progress-stack,
+html.win2000 .m101-win2000-application .m101-category-bar {
+  height: 13px !important;
+  border: 2px inset #b8b8b8 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+html.win2000 .m101-win2000-application .m101-progress-stack span,
+html.win2000 .m101-win2000-application .m101-category-bar span { border-radius: 0 !important; }
+html.win2000 .m101-win2000-application .m101-dashboard-table-wrap { padding: 0 !important; }
+html.win2000 .m101-win2000-application .m101-dashboard-table th,
+html.win2000 .m101-win2000-application .m101-record-list th {
+  padding: 6px 8px !important;
+  border: 1px solid #808080 !important;
+  border-radius: 0 !important;
+  background: #d4d0c8 !important;
+  color: #111 !important;
+  font: bold 10px Tahoma, "Noto Sans Thai", sans-serif !important;
+}
+html.win2000 .m101-win2000-application .m101-dashboard-table td,
+html.win2000 .m101-win2000-application .m101-record-list td {
+  padding: 6px 8px !important;
+  border: 1px solid #c0c0c0 !important;
+  background: #fff !important;
+  color: #111 !important;
+  font-size: 11px !important;
+}
+html.win2000 .m101-win2000-application .m101-dashboard-table tr:nth-child(even) td,
+html.win2000 .m101-win2000-application .m101-record-list tr:nth-child(even) td { background: #f2f2f2 !important; }
+html.win2000 .m101-win2000-application .m101-dashboard-record-link { color: #000080 !important; text-decoration: underline !important; }
+html.win2000 .m101-win2000-application .m101-directory-shell {
+  grid-template-columns: minmax(0,1fr) 310px !important;
+  gap: 7px !important;
+}
+html.win2000 .m101-win2000-application .m101-directory-list-panel,
+html.win2000 .m101-win2000-application .m101-selected-record-card {
+  border: 1px solid #808080 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  border-radius: 0 !important;
+  background: #ece9d8 !important;
+  box-shadow: none !important;
+}
+html.win2000 .m101-win2000-application .m101-directory-toolbar {
+  padding: 8px !important;
+  border-bottom: 1px solid #808080 !important;
+  background: #d4d0c8 !important;
+}
+html.win2000 .m101-win2000-application .m101-directory-toolbar h2 { color: #000080 !important; font-size: 15px !important; }
+html.win2000 .m101-win2000-application .m101-record-list { background: #fff !important; }
+html.win2000 .m101-win2000-application .m101-selected-record-card { padding: 0 8px 8px !important; gap: 7px !important; }
+html.win2000 .m101-win2000-application .m101-selected-record-card > div {
+  padding: 8px !important;
+  border: 1px solid #aaa !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+html.win2000 .m101-win2000-application .m101-selected-record-card h3 { color: #000080 !important; font-size: 12px !important; }
+html.win2000 .m101-win2000-application .m101-settings-card,
+html.win2000 .m101-win2000-application .m101-settings > section {
+  border: 1px solid #808080 !important;
+  border-top-color: #fff !important;
+  border-left-color: #fff !important;
+  border-radius: 0 !important;
+  background: #ece9d8 !important;
+  box-shadow: none !important;
+}
+html.win2000 .m101-win2000-application .m101-settings-card h3,
+html.win2000 .m101-win2000-application .m101-settings h3 { color: #000080 !important; }
+html.win2000 .m101-win2000-application .m101-settings button[aria-pressed="true"] {
+  border-style: inset !important;
+  background: #000080 !important;
+  color: #fff !important;
+}
+html.win2000 .m101-win2000-application input:not([type="checkbox"]):not([type="radio"]),
+html.win2000 .m101-win2000-application select,
+html.win2000 .m101-win2000-application textarea {
+  border: 2px inset #b8b8b8 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #111 !important;
+}
+html.win2000 .m101-win2000-application .rounded-2xl,
+html.win2000 .m101-win2000-application .rounded-3xl { border-radius: 0 !important; }
+html.win2000 .m101-win2000-application .shadow,
+html.win2000 .m101-win2000-application .shadow-lg,
+html.win2000 .m101-win2000-application .shadow-xl,
+html.win2000 .m101-win2000-application .shadow-2xl { box-shadow: none !important; }
+
+@media (max-width: 760px) {
+  html.win2000 .m101-win2000-application {
+    height: 100dvh !important;
+    padding: 0 !important;
+  }
+  html.win2000 .m101-win2000-application .win2k-window-frame {
+    margin: 0;
+    border-width: 0 0 2px;
+  }
+  html.win2000 .m101-win2000-application .win2k-titlebar { min-height: 28px; }
+  html.win2000 .m101-win2000-application .win2k-titlebar-user { display: none; }
+  html.win2000 .m101-win2000-application .win2k-menubar {
+    overflow-x: auto;
+    min-height: 34px;
+    white-space: nowrap;
+  }
+  html.win2000 .m101-win2000-application .win2k-menubar button { flex: 0 0 auto; padding-inline: 9px; }
+  html.win2000 .m101-win2000-application .win2k-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+  }
+  html.win2000 .m101-win2000-application .win2k-toolbar-group {
+    width: 100%;
+    padding: 0 0 5px;
+    border-right: 0;
+    border-bottom: 1px solid #808080;
+  }
+  html.win2000 .m101-win2000-application .win2k-toolbar-group button { flex: 1; justify-content: center; }
+  html.win2000 .m101-win2000-application .win2k-search { flex: 1 1 65%; }
+  html.win2000 .m101-win2000-application .win2k-year { flex: 0 0 auto; }
+  html.win2000 .m101-win2000-application > .mobile-main-content {
+    padding: 6px !important;
+    padding-bottom: calc(7px + env(safe-area-inset-bottom)) !important;
+  }
+  html.win2000 .m101-win2000-application > .mobile-main-content > .m101-tab-transition { padding: 5px !important; }
+  html.win2000 .m101-win2000-application .m101-overview-metrics { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  html.win2000 .m101-win2000-application .m101-overview-grid,
+  html.win2000 .m101-win2000-application .m101-directory-shell { grid-template-columns: minmax(0,1fr) !important; }
+  html.win2000 .m101-win2000-application .m101-directory-shell > div:last-child { width: 100% !important; }
+  html.win2000 .m101-win2000-application .win2k-statusbar { min-height: 22px; gap: 2px; }
+  html.win2000 .m101-win2000-application .win2k-statusbar span { padding: 2px 4px; font-size: 9px; }
+  html.win2000 .m101-win2000-application .win2k-statusbar span:last-child { display: none; }
+}
