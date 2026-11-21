@@ -1821,3 +1821,71 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
     scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* Readable text flow — shared page, dialog, table and settings content */
+.mobile-main-content :where(p, small, li, label, dd, dt),
+.m101-settings :where(p, small, li, label, dd, dt),
+.m101-dialog-panel :where(p, small, li, label, dd, dt),
+.m101-import-dialog :where(p, small, li, label, dd, dt),
+.m101-conflict-dialog :where(p, small, li, label, dd, dt) {
+  min-width: 0;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.mobile-main-content :where(h1, h2, h3, h4),
+.m101-settings :where(h1, h2, h3, h4),
+.m101-dialog-panel :where(h1, h2, h3, h4),
+.m101-import-dialog :where(h1, h2, h3, h4),
+.m101-conflict-dialog :where(h1, h2, h3, h4) {
+  min-width: 0;
+  line-height: 1.4;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.mobile-main-content :where(table th, table td),
+.m101-dialog-panel :where(table th, table td),
+.m101-import-dialog :where(table th, table td),
+.m101-conflict-dialog :where(table th, table td) {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.55;
+  vertical-align: top;
+}
+.mobile-main-content :where(.flex, .inline-flex) > :where(div, p, span, small),
+.m101-settings :where(.flex, .inline-flex) > :where(div, p, span, small) {
+  min-width: 0;
+}
+.m101-settings-appearance-copy {
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+.m101-theme-description {
+  max-width: 62ch;
+  line-height: 1.7 !important;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.m101-theme-option {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
+}
+.m101-recent-main b {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}
+.m101-record-row,
+.m101-record-row > div,
+.m101-record-row h4 {
+  min-width: 0;
+}
