@@ -720,13 +720,27 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
       }
 
-      let years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
+      const records = (body.recordsByYear && typeof body.recordsByYear === 'object' && !Array.isArray(body.recordsByYear)
+        ? body.recordsByYear
+        : {}) as Record<string, unknown[]>;
+      const requestedYears = Array.isArray(body.availableYears) ? body.availableYears : Object.keys(records);
+      let years = Array.from(new Set(requestedYears.map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
-      const records = body.recordsByYear || {};
-      const recordsToWrite: Record<string, unknown[]> = {};
+      const recordsToWrite: Record<string, Array<Record<string, unknown>>> = {};
       for (const year of years) {
-        recordsToWrite[year] = Array.isArray(records[year]) ? records[year] as unknown[] : [];
+        const incoming = records[year];
+        if (incoming !== undefined && !Array.isArray(incoming)) {
+          return json({ error: `ข้อมูลปี ${year} มีรูปแบบรายการไม่ถูกต้อง` }, 400);
+        }
+        const rows = Array.isArray(incoming) ? incoming : [];
+        const validRows = rows.filter((record): record is Record<string, unknown> =>
+          record !== null && typeof record === 'object' && !Array.isArray(record)
+        );
+        if (validRows.length !== rows.length) {
+          return json({ error: `ข้อมูลปี ${year} มีรายการที่ไม่ใช่วัตถุข้อมูลกิจการ` }, 400);
+        }
+        recordsToWrite[year] = validRows;
       }
       for (const year of years) if ((recordsToWrite[year] || []).length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
 
