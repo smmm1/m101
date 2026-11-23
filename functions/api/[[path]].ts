@@ -741,6 +741,18 @@ export async function onRequest(context: { request: Request; env: Env }) {
         if (validRows.length !== rows.length) {
           return json({ error: `ข้อมูลปี ${year} มีรายการที่ไม่ใช่วัตถุข้อมูลกิจการ` }, 400);
         }
+        const seenRecordIds = new Set<string>();
+        for (const [index, record] of validRows.entries()) {
+          const id = typeof record.id === 'string' ? record.id.trim() : '';
+          const companyName = typeof record.companyName === 'string' ? record.companyName.trim() : '';
+          if (!id || !companyName) {
+            return json({ error: `ข้อมูลปี ${year} แถวที่ ${index + 1} ต้องมีรหัสรายการและชื่อกิจการ` }, 400);
+          }
+          if (seenRecordIds.has(id)) {
+            return json({ error: `ข้อมูลปี ${year} มีรหัสรายการซ้ำ: ${id.slice(0, 80)}` }, 400);
+          }
+          seenRecordIds.add(id);
+        }
         recordsToWrite[year] = validRows;
       }
       for (const year of years) if ((recordsToWrite[year] || []).length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
