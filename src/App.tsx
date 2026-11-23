@@ -633,12 +633,15 @@ function AppContent() {
       const nameMatches = companyName ? existingNameMap.get(companyName) || [] : [];
       // Only auto-match unique identities. Ambiguous matches are left for manual review
       // by importing as a new row rather than overwriting an arbitrary existing business.
+      const nameMatch = nameMatches.length === 1 ? nameMatches[0] : null;
+      // A matching name must not overwrite a business that already has a different
+      // tax ID. Name fallback is safe only when the incoming or stored tax ID is absent.
       const matched = taxMatches.length === 1
         ? { record: taxMatches[0], matchBy: 'taxId' as const }
         : taxMatches.length > 1
           ? null
-          : nameMatches.length === 1
-            ? { record: nameMatches[0], matchBy: 'companyName' as const }
+          : nameMatch && (!taxId || !normalizeTax(nameMatch.taxId))
+            ? { record: nameMatch, matchBy: 'companyName' as const }
             : null;
 
       if (matched) {
