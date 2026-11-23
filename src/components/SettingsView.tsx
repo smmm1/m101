@@ -56,6 +56,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // Export JSON Backup
   const handleBackupDatabase = () => {
+    const confirmed = window.confirm('ไฟล์สำรอง JSON จะมีข้อมูลลับของกิจการ เช่น รหัสผ่าน, รหัส e-Filing และรหัสประกันสังคม\n\nควรเก็บไฟล์นี้ไว้ในที่ปลอดภัยและไม่ส่งต่อให้ผู้อื่น\n\nต้องการดาวน์โหลดไฟล์สำรองเต็มหรือไม่?');
+    if (!confirmed) return;
     try {
       const dataStr = JSON.stringify(records, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -125,13 +127,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         onShowToast('ไม่มีข้อมูลสำหรับส่งออก', 'แจ้งเตือน', 'info');
         return;
       }
+      // General-purpose Excel exports must never include stored credentials.
       const rows = records.map((r, idx) => ({
         ลำดับ: r.sequenceNo || idx + 1,
         ชื่อกิจการ: r.companyName,
         ประเภท: r.type === 'company' ? 'บริษัทจำกัด' : r.type === 'partnership' ? 'ห้างหุ้นส่วน' : 'บุคคลธรรมดา',
         เลขประจำตัวผู้เสียภาษี: r.taxId,
-        รหัสผ่าน: r.password,
-        'e-Filing': r.eFilingCode,
         วันที่ผู้สอบ: r.auditorDate,
         สถานะ: r.status === 'completed' ? 'เสร็จสิ้น' : r.status === 'in_progress' ? 'กำลังทำ' : 'รอดำเนินการ',
         หมายเหตุ: r.remark || '',
@@ -314,7 +315,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <h3 className="text-sm font-bold text-slate-900 dark:text-white font-headline">
                 สำรองและส่งออกข้อมูล (Backup & Export)
               </h3>
-              <p className="text-[11px] text-slate-400">ดาวน์โหลดและกู้คืนไฟล์ข้อมูลรอบปี</p>
+              <p className="text-[11px] text-slate-400">ไฟล์ JSON เป็นข้อมูลสำรองเต็มที่มีข้อมูลลับ ส่วน Excel จะไม่ส่งออกรหัสผ่านและรหัสเข้าใช้</p>
             </div>
           </div>
 
@@ -337,7 +338,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="material-symbols-outlined text-[20px] text-zinc-600 group-hover:scale-110 transition-transform">
                     download
                   </span>
-                  <span>สำรองข้อมูล JSON (Backup)</span>
+                  <span>สำรองข้อมูลเต็ม JSON (มีข้อมูลลับ)</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">.json</span>
               </DSButton>
@@ -369,7 +370,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="material-symbols-outlined text-[20px] text-zinc-600 group-hover:scale-110 transition-transform">
                     table_chart
                   </span>
-                  <span>ส่งออกไฟล์ Excel ทั้งหมด (.xlsx)</span>
+                  <span>ส่งออกทะเบียน Excel (ไม่รวมข้อมูลลับ)</span>
                 </div>
                 <span className="text-[10px] text-zinc-600 font-mono font-bold">.xlsx</span>
               </DSButton>
