@@ -679,6 +679,7 @@ function AppContent() {
             return {
               ...r,
               companyName: incoming.companyName || r.companyName,
+              taxId: incoming.taxId !== undefined && incoming.taxId !== '' ? incoming.taxId : r.taxId,
               type: incoming.type || r.type,
               auditorDate: incoming.auditorDate !== undefined && incoming.auditorDate !== '' ? incoming.auditorDate : r.auditorDate,
               password: incoming.password !== undefined && incoming.password !== '' ? incoming.password : r.password,
