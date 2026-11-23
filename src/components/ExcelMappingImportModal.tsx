@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import type { BusinessRecord } from '../types';
 import { DSButton, DSSelect } from '../design-system/components';
@@ -112,6 +112,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   isOpen, selectedYear, onClose, onImportRecords, onShowToast,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [fileName, setFileName] = useState('');
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [sheetName, setSheetName] = useState('');
@@ -144,6 +145,46 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   };
 
   const close = () => { reset(); onClose(); };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const getFocusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) ?? []).filter((element) => element.offsetParent !== null);
+    getFocusable()[0]?.focus();
+
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        reset();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isOpen]);
 
   const loadSheet = (book: XLSX.WorkBook, name: string) => {
     const sheet = book.Sheets[name];
@@ -282,7 +323,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
   return (
     <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
-      <div className="m101-import-wizard w-full max-w-5xl max-h-[94vh] overflow-hidden rounded-2xl border bg-white shadow-2xl flex flex-col">
+      <div ref={dialogRef} className="m101-import-wizard w-full max-w-5xl max-h-[94vh] overflow-hidden rounded-2xl border bg-white shadow-2xl flex flex-col">
         <header className="m101-import-wizard__header"><div><p className="m101-import-kicker">M101 · นำเข้าข้อมูล</p><h2 id="excel-mapping-title">นำเข้ารายชื่อกิจการ</h2><p>ปีบัญชี {selectedYear} · ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p></div><DSButton type="button" onClick={close} variant="ghost">ปิด</DSButton></header>
         <nav className="m101-import-progress" aria-label="ขั้นตอนนำเข้า"><div className={!workbook ? 'is-current' : 'is-done'}><span>1</span><b>เลือกไฟล์</b></div><i /><div className={workbook && step === 'sheet' ? 'is-current' : step === 'mapping' ? 'is-done' : ''}><span>2</span><b>เลือกข้อมูล</b></div><i /><div className={step === 'mapping' ? 'is-current' : ''}><span>3</span><b>จับคู่และยืนยัน</b></div></nav>
         <div className="m101-import-wizard__body">
