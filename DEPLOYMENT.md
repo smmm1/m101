@@ -35,4 +35,5 @@ D1 data is persistent and separate from the static site deployment. Do not repla
 
 
 - Authentication must never trigger Preview-to-Production data transfer. Logging in is auth-only; the legacy `migratePreviewWorkspace` routine is intentionally not called from the login route.
+- General Excel exports are for routine business records and must exclude authentication secrets and stored credentials. Full JSON backups may contain sensitive data and must be explicitly confirmed and handled as restricted files.
 - Preview-to-Production record migration is a separate, high-impact operation. It requires a separately reviewed migration plan, verified source/target D1 bindings, a current backup, record-level reconciliation, and explicit approval before any Production write. Do not use login or a Preview deployment to perform that transfer.
