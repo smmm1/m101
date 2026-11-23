@@ -284,9 +284,9 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     const duplicateSourceRows: number[] = [];
     rowsWithNames.forEach((rowIndex) => {
       const row = dataRows[rowIndex] ?? [];
-      const taxId = taxColumn === undefined ? '' : clean(row[Number(taxColumn)]).replace(/\\D/g, '');
+      const taxId = taxColumn === undefined ? '' : clean(row[Number(taxColumn)]).replace(/\D/g, '');
       const companyName = companyColumn === undefined ? '' : clean(row[Number(companyColumn)])
-        .normalize('NFKC').toLocaleLowerCase('th').replace(/[\\s\\u00a0\\-_.(),/\\\\]/g, '');
+        .normalize('NFKC').toLocaleLowerCase('th').replace(/[\s\u00a0\-_.(),/\\]/g, '');
       const key = taxId ? `tax:${taxId}` : companyName ? `name:${companyName}` : '';
       if (key && seenSourceKeys.has(key)) duplicateSourceRows.push(rowIndex);
       if (key) seenSourceKeys.add(key);
