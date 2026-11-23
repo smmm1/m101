@@ -92,7 +92,8 @@ async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAcc
 }
 
 
-// Kept as a migration routine only; authentication must never invoke this Production-writing operation.\nasync function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
+// Kept as a migration routine only; authentication must never invoke this Production-writing operation.
+async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   if (!env.PREVIEW_DB || authenticatedOwner.role !== 'admin') throw new Error('Preview account migration is unavailable');
   const migrationKey = 'preview_workspace_migration_v1';
   const alreadyMigrated = await env.DB.prepare('SELECT config_value FROM app_config WHERE config_key = ?').bind(migrationKey).first();
