@@ -615,7 +615,7 @@ function AppContent() {
     const normalizeCompany = (value?: string) => String(value || '')
       .normalize('NFKC')
       .toLocaleLowerCase('th')
-      .replace(/[\s\u00a0\-_.(),/\\]/g, '');
+      .replace(/[\s\u00a0\-_.(),\/\\]/g, '');
 
     const existingTaxMap = new Map<string, BusinessRecord[]>();
     const existingNameMap = new Map<string, BusinessRecord[]>();
