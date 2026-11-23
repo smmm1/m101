@@ -159,7 +159,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               <span
                 className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
-                เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีเลขผู้เสียภาษีซ้ำกับของเดิมหรือไม่
+                เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีรายการที่จับคู่กับข้อมูลเดิมได้หรือไม่
               </span>
             </div>
           </label>
@@ -196,7 +196,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <DSBadge variant="warning">{incoming.matchBy === 'companyName' ? 'ชื่อกิจการตรงกัน' : 'เลขภาษีตรงกัน'}</DSBadge>
+                    <DSBadge variant="warning">{matchBy === 'companyName' ? 'ชื่อกิจการตรงกัน' : 'เลขภาษีตรงกัน'}</DSBadge>
                   </div>
                 </div>
               ))}
