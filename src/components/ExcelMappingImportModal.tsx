@@ -293,7 +293,36 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
               <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ขั้นตอน 2</span><h3>เลือกตารางที่จะนำเข้า</h3><p>ระบบพบ {regions.length} ตารางใน Sheet นี้ เลือกตารางที่ต้องการ</p></div><strong className="m101-import-count">{regions.length} ตาราง</strong></div>
                 {regions.length === 0 ? <div className="m101-import-empty"><b>ยังไม่พบตารางข้อมูล</b><p>ลองเลือก Sheet อื่น หรือตรวจสอบว่าใน Sheet มีข้อมูล</p></div> : <div className="m101-import-table-options">{regions.map((region, index) => { const selected = regionId === region.id; const sample = region.rows[region.headerIndex] ?? []; return <button key={region.id} type="button" className={'m101-import-table-option ' + (selected ? 'is-selected' : '')} aria-pressed={selected} onClick={() => { setRegionId(region.id); setHeaderRowIndex(region.headerIndex); }}><span className="m101-import-table-option__check">{selected ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="m101-import-table-option__copy"><b>ตาราง {index + 1}</b><small>ประมาณ {region.rows.length} แถว · {sample.filter(Boolean).length} คอลัมน์ · เริ่มแถว {region.startRow + 1}</small><em>{sample.filter(Boolean).slice(0, 5).join(' · ') || 'ยังไม่มีหัวคอลัมน์'}</em></span><span className="material-symbols-outlined">{selected ? 'radio_button_checked' : 'radio_button_unchecked'}</span></button>; })}</div>}
               </section>
-              {selectedRegion && <section className="m101-import-section"><div className="m101-import-section__heading"><div><h3>แถวไหนเป็นหัวตาราง?</h3><p>ถ้าระบบเลือกไม่ตรง สามารถเปลี่ยนได้</p></div></div><label className="m101-import-control"><span>เลือกแถวหัวตาราง</span><DSSelect value={String(headerRowIndex)} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); setPreviewPage(0); }}>{selectedRegion.rows.slice(0, Math.min(12, selectedRegion.rows.length)).map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} — {row.filter(Boolean).slice(0, 4).join(' / ') || 'ไม่มีข้อความ'}</option>)}</DSSelect></label><div className="m101-import-mini-preview"><b>หัวตารางที่เลือก</b><div>{(selectedRegion.rows[headerRowIndex] ?? []).map((cell, index) => <span key={index}>{cell || 'คอลัมน์ ' + (index + 1)}</span>)}</div></div></section>}
+              {selectedRegion && <section className="m101-import-section"><div className="m101-import-section__heading"><div><h3>แถวไหนเป็นหัวตาราง?</h3><p>ถ้าระบบเลือกไม่ตรง สามารถเปลี่ยนได้</p></div></div><label className="m101-import-control"><span>เลือกแถวหัวตาราง</span><DSSelect value={String(headerRowIndex)} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); setPreviewPage(0); }}>{selectedRegion.rows.slice(0, Math.min(12, selectedRegion.rows.length)).map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} — {row.filter(Boolean).slice(0, 4).join(' / ') || 'ไม่มีข้อความ'}</option>)}</DSSelect></label><div className="m101-import-mini-preview"><b>หัวตารางที่เลือก</b><div>{(selectedRegion.rows[headerRowIndex] ?? []).map((cell, index) => <span key={index}>{cell || 'คอลัมน์ ' + (index + 1)}</span>)}</div></div>
+                <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                    <b className="text-slate-700">ตัวอย่างข้อมูลใน Sheet แบบตาราง</b>
+                    <span className="text-slate-500">แสดง {Math.min(50, selectedRegion.rows.length)} จาก {selectedRegion.rows.length} แถว</span>
+                  </div>
+                  <div className="max-h-72 overflow-auto">
+                    <table className="min-w-full border-collapse text-left text-xs">
+                      <thead className="sticky top-0 z-10 bg-slate-100 text-slate-600">
+                        <tr>
+                          <th scope="col" className="sticky left-0 border-b border-r border-slate-200 bg-slate-100 px-2 py-2 text-center">แถว</th>
+                          {Array.from({ length: Math.max(1, ...selectedRegion.rows.map((row) => row.length)) }, (_, columnIndex) => (
+                            <th key={columnIndex} scope="col" className="whitespace-nowrap border-b border-r border-slate-200 px-3 py-2 font-semibold">{XLSX.utils.encode_col(selectedRegion.startCol + columnIndex)}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedRegion.rows.slice(0, 50).map((row, rowIndex) => (
+                          <tr key={rowIndex} className={rowIndex === headerRowIndex ? 'bg-blue-50 font-semibold' : rowIndex % 2 ? 'bg-slate-50/70' : 'bg-white'}>
+                            <th scope="row" className="sticky left-0 border-b border-r border-slate-200 bg-inherit px-2 py-1.5 text-center font-medium text-slate-500">{selectedRegion.startRow + rowIndex + 1}</th>
+                            {Array.from({ length: Math.max(1, ...selectedRegion.rows.map((item) => item.length)) }, (_, columnIndex) => (
+                              <td key={columnIndex} className="max-w-64 whitespace-nowrap border-b border-r border-slate-100 px-3 py-1.5 text-slate-700">{row[columnIndex] || '—'}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>}
               <div className="m101-import-wizard__actions"><span>ยังไม่บันทึกข้อมูลในขั้นตอนนี้</span><DSButton type="button" disabled={!selectedRegion} onClick={beginMapping} variant="primary">ถัดไป: จับคู่คอลัมน์ <span className="material-symbols-outlined">arrow_forward</span></DSButton></div>
             </div> : selectedRegion ? <div className="m101-import-step-content">
               <div className="m101-import-context"><div><b>{sheetName} / ตาราง {regions.findIndex((item) => item.id === regionId) + 1}</b><small>เลือกว่าคอลัมน์จากไฟล์จะไปเก็บในช่องใดของ M101</small></div><DSButton type="button" variant="secondary" onClick={() => setStep('sheet')}>เปลี่ยน Sheet / ตาราง</DSButton></div>
