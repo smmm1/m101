@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import type { BusinessRecord } from '../types';
 import { DSButton, DSSelect } from '../design-system/components';
@@ -112,10 +112,12 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   isOpen, selectedYear, onClose, onImportRecords, onShowToast,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [fileName, setFileName] = useState('');
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [sheetName, setSheetName] = useState('');
   const [regions, setRegions] = useState<TableRegion[]>([]);
+  const [sheetMatrix, setSheetMatrix] = useState<string[][]>([]);
   const [regionId, setRegionId] = useState('');
   const [headerRowIndex, setHeaderRowIndex] = useState(0);
   const [mapping, setMapping] = useState<Record<number, ImportField | ''>>({});
@@ -126,13 +128,15 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
   const selectedRegion = regions.find((region) => region.id === regionId) ?? null;
   const headers = selectedRegion?.rows[headerRowIndex] ?? [];
-  const dataRows = selectedRegion ? selectedRegion.rows.slice(headerRowIndex + 1).filter((row) => row.some(Boolean)) : [];
+  const dataRowEntries = selectedRegion ? selectedRegion.rows.map((row, index) => ({ row, index })).slice(headerRowIndex + 1).filter(({ row }) => row.some(Boolean)) : [];
+  const dataRows = dataRowEntries.map(({ row }) => row);
 
   const reset = () => {
     setFileName('');
     setWorkbook(null);
     setSheetName('');
     setRegions([]);
+    setSheetMatrix([]);
     setRegionId('');
     setHeaderRowIndex(0);
     setMapping({});
@@ -145,10 +149,51 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
   const close = () => { reset(); onClose(); };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const getFocusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) ?? []).filter((element) => element.offsetParent !== null);
+    getFocusable()[0]?.focus();
+
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        reset();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isOpen]);
+
   const loadSheet = (book: XLSX.WorkBook, name: string) => {
     const sheet = book.Sheets[name];
     const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: false, defval: '' });
     const found = detectRegions(matrix);
+    setSheetMatrix(matrix.map((row) => row.map(clean)));
     setSheetName(name);
     setRegions(found);
     setRegionId(found.length === 1 ? found[0].id : '');
@@ -229,6 +274,39 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     if (rowsWithNames.length !== selectedRows.length) {
       onShowToast('มีแถวที่ไม่มีชื่อกิจการ ระบบจะข้ามแถวเหล่านั้น', 'ตรวจสอบข้อมูล', 'info');
     }
+
+    // Prevent duplicate records inside the same source selection from bypassing
+    // the database duplicate-review step. Repeated tax IDs are always ambiguous;
+    // name-only matches are checked only when no tax ID is supplied.
+    const taxColumn = Object.entries(mapping).find(([, field]) => field === 'taxId')?.[0];
+    const companyColumn = Object.entries(mapping).find(([, field]) => field === 'companyName')?.[0];
+    const seenTaxIds = new Set<string>();
+    const seenCompanyNames = new Map<string, string>();
+    const duplicateSourceRows: number[] = [];
+    rowsWithNames.forEach((rowIndex) => {
+      const row = dataRows[rowIndex] ?? [];
+      const taxId = taxColumn === undefined ? '' : clean(row[Number(taxColumn)]).replace(/\D/g, '');
+      const companyName = companyColumn === undefined ? '' : clean(row[Number(companyColumn)])
+        .normalize('NFKC').toLocaleLowerCase('th').replace(/[\s\u00a0\-_.(),/\\]/g, '');
+      const previousTaxIdForName = companyName ? seenCompanyNames.get(companyName) : undefined;
+      const duplicateTaxId = Boolean(taxId && seenTaxIds.has(taxId));
+      const duplicateName = previousTaxIdForName !== undefined
+        && (!taxId || !previousTaxIdForName || previousTaxIdForName === taxId);
+      if (duplicateTaxId || duplicateName) duplicateSourceRows.push(rowIndex);
+      if (taxId) seenTaxIds.add(taxId);
+      if (companyName && previousTaxIdForName === undefined) seenCompanyNames.set(companyName, taxId);
+    });
+    if (duplicateSourceRows.length > 0) {
+      const sourceRowNumbers = duplicateSourceRows.slice(0, 5)
+        .map((rowIndex) => selectedRegion.startRow + (dataRowEntries[rowIndex]?.index ?? rowIndex) + 1);
+      onShowToast(
+        `พบรายการซ้ำในไฟล์เดียวกัน ${duplicateSourceRows.length} แถว (เช่น แถว ${sourceRowNumbers.join(', ')}) กรุณาตรวจสอบและแก้ไฟล์ก่อนนำเข้า`,
+        'หยุดการนำเข้าเพื่อตรวจสอบข้อมูลซ้ำ',
+        'error'
+      );
+      return;
+    }
+
     const output: Partial<BusinessRecord>[] = rowsWithNames.map((rowIndex, index) => {
       const source = dataRows[rowIndex] ?? [];
       const record: Partial<BusinessRecord> = {
@@ -274,7 +352,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       return record;
     });
     onImportRecords(output);
-    onShowToast(`นำเข้าข้อมูล ${output.length} รายการ จาก ${sheetName} สำเร็จ`, 'นำเข้าสำเร็จ', 'success');
+    // The parent queues the success message and releases it only after D1 confirms the write.
     close();
   };
 
@@ -282,7 +360,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
 
   return (
     <div className="m101-dialog-overlay m101-import-dialog fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="excel-mapping-title">
-      <div className="m101-import-wizard w-full max-w-5xl max-h-[94vh] overflow-hidden rounded-2xl border bg-white shadow-2xl flex flex-col">
+      <div ref={dialogRef} className="m101-import-wizard w-full max-w-5xl max-h-[94vh] overflow-hidden rounded-2xl border bg-white shadow-2xl flex flex-col">
         <header className="m101-import-wizard__header"><div><p className="m101-import-kicker">M101 · นำเข้าข้อมูล</p><h2 id="excel-mapping-title">นำเข้ารายชื่อกิจการ</h2><p>ปีบัญชี {selectedYear} · ไฟล์ต้นฉบับจะไม่ถูกแก้ไข</p></div><DSButton type="button" onClick={close} variant="ghost">ปิด</DSButton></header>
         <nav className="m101-import-progress" aria-label="ขั้นตอนนำเข้า"><div className={!workbook ? 'is-current' : 'is-done'}><span>1</span><b>เลือกไฟล์</b></div><i /><div className={workbook && step === 'sheet' ? 'is-current' : step === 'mapping' ? 'is-done' : ''}><span>2</span><b>เลือกข้อมูล</b></div><i /><div className={step === 'mapping' ? 'is-current' : ''}><span>3</span><b>จับคู่และยืนยัน</b></div></nav>
         <div className="m101-import-wizard__body">
@@ -293,7 +371,36 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
               <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ขั้นตอน 2</span><h3>เลือกตารางที่จะนำเข้า</h3><p>ระบบพบ {regions.length} ตารางใน Sheet นี้ เลือกตารางที่ต้องการ</p></div><strong className="m101-import-count">{regions.length} ตาราง</strong></div>
                 {regions.length === 0 ? <div className="m101-import-empty"><b>ยังไม่พบตารางข้อมูล</b><p>ลองเลือก Sheet อื่น หรือตรวจสอบว่าใน Sheet มีข้อมูล</p></div> : <div className="m101-import-table-options">{regions.map((region, index) => { const selected = regionId === region.id; const sample = region.rows[region.headerIndex] ?? []; return <button key={region.id} type="button" className={'m101-import-table-option ' + (selected ? 'is-selected' : '')} aria-pressed={selected} onClick={() => { setRegionId(region.id); setHeaderRowIndex(region.headerIndex); }}><span className="m101-import-table-option__check">{selected ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="m101-import-table-option__copy"><b>ตาราง {index + 1}</b><small>ประมาณ {region.rows.length} แถว · {sample.filter(Boolean).length} คอลัมน์ · เริ่มแถว {region.startRow + 1}</small><em>{sample.filter(Boolean).slice(0, 5).join(' · ') || 'ยังไม่มีหัวคอลัมน์'}</em></span><span className="material-symbols-outlined">{selected ? 'radio_button_checked' : 'radio_button_unchecked'}</span></button>; })}</div>}
               </section>
-              {selectedRegion && <section className="m101-import-section"><div className="m101-import-section__heading"><div><h3>แถวไหนเป็นหัวตาราง?</h3><p>ถ้าระบบเลือกไม่ตรง สามารถเปลี่ยนได้</p></div></div><label className="m101-import-control"><span>เลือกแถวหัวตาราง</span><DSSelect value={String(headerRowIndex)} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); setPreviewPage(0); }}>{selectedRegion.rows.slice(0, Math.min(12, selectedRegion.rows.length)).map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} — {row.filter(Boolean).slice(0, 4).join(' / ') || 'ไม่มีข้อความ'}</option>)}</DSSelect></label><div className="m101-import-mini-preview"><b>หัวตารางที่เลือก</b><div>{(selectedRegion.rows[headerRowIndex] ?? []).map((cell, index) => <span key={index}>{cell || 'คอลัมน์ ' + (index + 1)}</span>)}</div></div></section>}
+              {selectedRegion && <section className="m101-import-section"><div className="m101-import-section__heading"><div><h3>แถวไหนเป็นหัวตาราง?</h3><p>ถ้าระบบเลือกไม่ตรง สามารถเปลี่ยนได้</p></div></div><label className="m101-import-control"><span>เลือกแถวหัวตาราง</span><DSSelect value={String(headerRowIndex)} onChange={(event) => { setHeaderRowIndex(Number(event.target.value)); setMapping({}); setSelectedRows([]); setPreviewPage(0); }}>{selectedRegion.rows.slice(0, Math.min(12, selectedRegion.rows.length)).map((row, index) => <option key={index} value={index}>แถว {selectedRegion.startRow + index + 1} — {row.filter(Boolean).slice(0, 4).join(' / ') || 'ไม่มีข้อความ'}</option>)}</DSSelect></label><div className="m101-import-mini-preview"><b>หัวตารางที่เลือก</b><div>{(selectedRegion.rows[headerRowIndex] ?? []).map((cell, index) => <span key={index}>{cell || 'คอลัมน์ ' + (index + 1)}</span>)}</div></div>
+                <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                    <b className="text-slate-700">ตัวอย่างข้อมูลใน Sheet แบบตาราง</b>
+                    <span className="text-slate-500">แสดง {Math.min(50, sheetMatrix.length)} จาก {sheetMatrix.length} แถว · สูงสุด 26 คอลัมน์</span>
+                  </div>
+                  <div className="max-h-72 overflow-auto">
+                    <table className="min-w-full border-collapse text-left text-xs">
+                      <thead className="sticky top-0 z-10 bg-slate-100 text-slate-600">
+                        <tr>
+                          <th scope="col" className="sticky left-0 border-b border-r border-slate-200 bg-slate-100 px-2 py-2 text-center">แถว</th>
+                          {Array.from({ length: Math.min(26, Math.max(1, ...sheetMatrix.map((row) => row.length))) }, (_, columnIndex) => (
+                            <th key={columnIndex} scope="col" className="whitespace-nowrap border-b border-r border-slate-200 px-3 py-2 font-semibold">{XLSX.utils.encode_col(columnIndex)}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sheetMatrix.slice(0, 50).map((row, rowIndex) => (
+                          <tr key={rowIndex} className={rowIndex === selectedRegion.startRow + headerRowIndex ? 'bg-blue-50 font-semibold' : rowIndex % 2 ? 'bg-slate-50/70' : 'bg-white'}>
+                            <th scope="row" className="sticky left-0 border-b border-r border-slate-200 bg-inherit px-2 py-1.5 text-center font-medium text-slate-500">{rowIndex + 1}</th>
+                            {Array.from({ length: Math.min(26, Math.max(1, ...sheetMatrix.map((item) => item.length))) }, (_, columnIndex) => (
+                              <td key={columnIndex} className="max-w-64 whitespace-nowrap border-b border-r border-slate-100 px-3 py-1.5 text-slate-700">{row[columnIndex] || '—'}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>}
               <div className="m101-import-wizard__actions"><span>ยังไม่บันทึกข้อมูลในขั้นตอนนี้</span><DSButton type="button" disabled={!selectedRegion} onClick={beginMapping} variant="primary">ถัดไป: จับคู่คอลัมน์ <span className="material-symbols-outlined">arrow_forward</span></DSButton></div>
             </div> : selectedRegion ? <div className="m101-import-step-content">
               <div className="m101-import-context"><div><b>{sheetName} / ตาราง {regions.findIndex((item) => item.id === regionId) + 1}</b><small>เลือกว่าคอลัมน์จากไฟล์จะไปเก็บในช่องใดของ M101</small></div><DSButton type="button" variant="secondary" onClick={() => setStep('sheet')}>เปลี่ยน Sheet / ตาราง</DSButton></div>
@@ -302,7 +409,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                 <div className={'m101-import-required-note ' + (hasCompanyName ? 'is-ready' : '')}><span className="material-symbols-outlined">{hasCompanyName ? 'check_circle' : 'info'}</span>{hasCompanyName ? 'จับคู่ชื่อกิจการแล้ว พร้อมตรวจสอบรายการ' : 'ต้องจับคู่ “ชื่อกิจการ” ก่อนจึงจะนำเข้าได้'}</div>
               </section>
               <section className="m101-import-section"><div className="m101-import-section__heading"><div><span>ตรวจสอบก่อนบันทึก</span><h3>ตัวอย่างข้อมูลที่จะเข้า M101</h3><p>เลือกเฉพาะแถวที่ต้องการ · แสดง {preview.length === 0 ? 0 : previewPage * previewPageSize + 1}–{Math.min((previewPage + 1) * previewPageSize, preview.length)} จาก {dataRows.length} แถว</p></div><DSButton type="button" variant="secondary" onClick={toggleAll}>{selectedRows.length === dataRows.length ? 'ยกเลิกเลือกทั้งหมด' : 'เลือกทั้งหมด'}</DSButton></div>
-                {mappedColumns.length === 0 ? <div className="m101-import-empty">เลือกช่องข้อมูล M101 อย่างน้อย 1 คอลัมน์เพื่อดูตัวอย่าง</div> : <div className="m101-import-preview-list">{visiblePreview.map((row, localIndex) => { const index = previewPage * previewPageSize + localIndex; return <label key={index} className={'m101-import-preview-row ' + (selectedRows.includes(index) ? 'is-selected' : '')}><input type="checkbox" checked={selectedRows.includes(index)} onChange={() => setSelectedRows((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])} /><span className="m101-import-preview-row__number">{index + 1}</span><span className="m101-import-preview-row__values">{mappedColumns.map(([column, field]) => <span key={column}><small>{FIELD_OPTIONS.find((item) => item.value === field)?.label}</small><b>{clean(row[Number(column)]) || '—'}</b></span>)}</span></label>; })}</div>}
+                {mappedColumns.length === 0 ? <div className="m101-import-empty">เลือกช่องข้อมูล M101 อย่างน้อย 1 คอลัมน์เพื่อดูตัวอย่าง</div> : <div className="m101-import-preview-list">{visiblePreview.map((row, localIndex) => { const index = previewPage * previewPageSize + localIndex; return <label key={index} className={'m101-import-preview-row ' + (selectedRows.includes(index) ? 'is-selected' : '')}><input type="checkbox" checked={selectedRows.includes(index)} onChange={() => setSelectedRows((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])} /><span className="m101-import-preview-row__number">{selectedRegion.startRow + (dataRowEntries[index]?.index ?? index) + 1}</span><span className="m101-import-preview-row__values">{mappedColumns.map(([column, field]) => <span key={column}><small>{FIELD_OPTIONS.find((item) => item.value === field)?.label}</small><b>{clean(row[Number(column)]) || '—'}</b></span>)}</span></label>; })}</div>}
                 {pageCount > 1 && <div className="m101-import-pagination"><span>หน้า {previewPage + 1} / {pageCount} · เลือกไว้ {selectedRows.length} รายการ</span><div><DSButton type="button" variant="secondary" disabled={previewPage === 0} onClick={() => setPreviewPage((page) => Math.max(0, page - 1))}>ก่อนหน้า</DSButton><DSButton type="button" variant="secondary" disabled={previewPage >= pageCount - 1} onClick={() => setPreviewPage((page) => Math.min(pageCount - 1, page + 1))}>ถัดไป</DSButton></div></div>}
               </section>
               <div className="m101-import-wizard__actions"><span>เลือกนำเข้า {selectedRows.length} จาก {dataRows.length} รายการ</span><DSButton type="button" onClick={confirmImport} disabled={!hasCompanyName || selectedRows.length === 0} variant="primary">ยืนยันนำเข้า {selectedRows.length} รายการ</DSButton></div>

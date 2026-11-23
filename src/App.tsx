@@ -611,22 +611,41 @@ function AppContent() {
   ) => {
     const duplicateList: DuplicateConflictItem[] = [];
     const newItemsList: Partial<BusinessRecord>[] = [];
+    const normalizeTax = (value?: string) => String(value || '').replace(/\D/g, '');
+    const normalizeCompany = (value?: string) => String(value || '')
+      .normalize('NFKC')
+      .toLocaleLowerCase('th')
+      .replace(/[\s\u00a0\-_.(),\/\\]/g, '');
 
-    const existingTaxMap = new Map<string, BusinessRecord>();
-    currentRecords.forEach((r) => {
-      const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
-      if (cleanTax) {
-        existingTaxMap.set(cleanTax, r);
-      }
+    const existingTaxMap = new Map<string, BusinessRecord[]>();
+    const existingNameMap = new Map<string, BusinessRecord[]>();
+    currentRecords.forEach((record) => {
+      const taxId = normalizeTax(record.taxId);
+      const companyName = normalizeCompany(record.companyName);
+      if (taxId) existingTaxMap.set(taxId, [...(existingTaxMap.get(taxId) || []), record]);
+      if (companyName) existingNameMap.set(companyName, [...(existingNameMap.get(companyName) || []), record]);
     });
 
     parsedItems.forEach((item) => {
-      const cleanTax = item.taxId ? item.taxId.replace(/\D/g, '').trim() : '';
-      if (cleanTax && existingTaxMap.has(cleanTax)) {
-        duplicateList.push({
-          incoming: item,
-          existing: existingTaxMap.get(cleanTax)!,
-        });
+      const taxId = normalizeTax(item.taxId);
+      const companyName = normalizeCompany(item.companyName);
+      const taxMatches = taxId ? existingTaxMap.get(taxId) || [] : [];
+      const nameMatches = companyName ? existingNameMap.get(companyName) || [] : [];
+      // Only auto-match unique identities. Ambiguous matches are left for manual review
+      // by importing as a new row rather than overwriting an arbitrary existing business.
+      const nameMatch = nameMatches.length === 1 ? nameMatches[0] : null;
+      // A matching name must not overwrite a business that already has a different
+      // tax ID. Name fallback is safe only when the incoming or stored tax ID is absent.
+      const matched = taxMatches.length === 1
+        ? { record: taxMatches[0], matchBy: 'taxId' as const }
+        : taxMatches.length > 1
+          ? null
+          : nameMatch && (!taxId || !normalizeTax(nameMatch.taxId))
+            ? { record: nameMatch, matchBy: 'companyName' as const }
+            : null;
+
+      if (matched) {
+        duplicateList.push({ incoming: item, existing: matched.record, matchBy: matched.matchBy });
       } else {
         newItemsList.push(item);
       }
@@ -642,7 +661,6 @@ function AppContent() {
       const formatted = createNewFormattedRecords(newItemsList, currentRecords);
       updateActiveYearRecords((prev) => [...formatted, ...prev]);
       showToast(`นำเข้าสำเร็จ ${formatted.length} รายการ เข้าสู่ปี ${selectedYear}`, 'นำเข้าไฟล์สำเร็จ');
-
     }
   };
 
@@ -654,20 +672,17 @@ function AppContent() {
       pendingChangeContextRef.current = { type: 'import', fileName: pendingImportFile, fiscalYear: selectedYear };
       const incomingUpdatesMap = new Map<string, Partial<BusinessRecord>>();
       conflictDuplicates.forEach(({ incoming, existing }) => {
-        const cleanTax = existing.taxId ? existing.taxId.replace(/\D/g, '').trim() : '';
-        if (cleanTax) {
-          incomingUpdatesMap.set(cleanTax, incoming);
-        }
+        incomingUpdatesMap.set(existing.id, incoming);
       });
 
       updateActiveYearRecords((prev) => {
         const updatedList = prev.map((r) => {
-          const cleanTax = r.taxId ? r.taxId.replace(/\D/g, '').trim() : '';
-          if (cleanTax && incomingUpdatesMap.has(cleanTax)) {
-            const incoming = incomingUpdatesMap.get(cleanTax)!;
+          if (incomingUpdatesMap.has(r.id)) {
+            const incoming = incomingUpdatesMap.get(r.id)!;
             return {
               ...r,
               companyName: incoming.companyName || r.companyName,
+              taxId: incoming.taxId !== undefined && incoming.taxId !== '' ? incoming.taxId : r.taxId,
               type: incoming.type || r.type,
               auditorDate: incoming.auditorDate !== undefined && incoming.auditorDate !== '' ? incoming.auditorDate : r.auditorDate,
               password: incoming.password !== undefined && incoming.password !== '' ? incoming.password : r.password,

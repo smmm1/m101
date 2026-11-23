@@ -92,6 +92,7 @@ async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAcc
 }
 
 
+// Kept as a migration routine only; authentication must never invoke this Production-writing operation.
 async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   if (!env.PREVIEW_DB || authenticatedOwner.role !== 'admin') throw new Error('Preview account migration is unavailable');
   const migrationKey = 'preview_workspace_migration_v1';
@@ -458,8 +459,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
         const previewCandidate = await hashPassword(password, previewUser?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
         if (previewUser && previewUser.role === 'admin' && previewUser.account_status === 'active'
           && Number(previewUser.local_password_set) === 1 && constantTimeEqual(previewCandidate.hash, previewUser.password_hash)) {
-          await migratePreviewWorkspace(env, previewUser);
-          user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(previewUser.id).first() as UserRow | null;
+          // Never write Production data as a side effect of login. Preview-to-Production
+          // migration must be a separately reviewed and explicitly authorized operation.
+          return json({ error: 'พบบัญชี Owner ในฐานข้อมูล Preview แต่ระบบจะไม่ย้ายข้อมูลระหว่างเข้าสู่ระบบ กรุณาดำเนินการ Migration แยกต่างหากหลังตรวจสอบปลายทางและข้อมูลที่จะย้าย' }, 409);
         }
       }
       // Perform the same PBKDF2 work for unknown, suspended, and active accounts
@@ -719,13 +721,39 @@ export async function onRequest(context: { request: Request; env: Env }) {
         return json({ error: 'ไม่พบเวอร์ชันข้อมูลที่อ่านล่าสุด กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' }, 428);
       }
 
-      let years = Array.from(new Set((body.availableYears || Object.keys(body.recordsByYear || {})).map((year: string) => String(year === '2569' ? '69' : year))))
+      const records = (body.recordsByYear && typeof body.recordsByYear === 'object' && !Array.isArray(body.recordsByYear)
+        ? body.recordsByYear
+        : {}) as Record<string, unknown[]>;
+      const requestedYears = Array.isArray(body.availableYears) ? body.availableYears : Object.keys(records);
+      let years = Array.from(new Set(requestedYears.map((year: string) => String(year === '2569' ? '69' : year))))
         .filter((year) => /^\d{2,4}$/.test(year)).slice(0, 100);
       if (!years.length) years.push('69');
-      const records = body.recordsByYear || {};
-      const recordsToWrite: Record<string, unknown[]> = {};
+      const recordsToWrite: Record<string, Array<Record<string, unknown>>> = {};
       for (const year of years) {
-        recordsToWrite[year] = Array.isArray(records[year]) ? records[year] as unknown[] : [];
+        const incoming = records[year];
+        if (incoming !== undefined && !Array.isArray(incoming)) {
+          return json({ error: `ข้อมูลปี ${year} มีรูปแบบรายการไม่ถูกต้อง` }, 400);
+        }
+        const rows = Array.isArray(incoming) ? incoming : [];
+        const validRows = rows.filter((record): record is Record<string, unknown> =>
+          record !== null && typeof record === 'object' && !Array.isArray(record)
+        );
+        if (validRows.length !== rows.length) {
+          return json({ error: `ข้อมูลปี ${year} มีรายการที่ไม่ใช่วัตถุข้อมูลกิจการ` }, 400);
+        }
+        const seenRecordIds = new Set<string>();
+        for (const [index, record] of validRows.entries()) {
+          const id = typeof record.id === 'string' ? record.id.trim() : '';
+          const companyName = typeof record.companyName === 'string' ? record.companyName.trim() : '';
+          if (!id || !companyName) {
+            return json({ error: `ข้อมูลปี ${year} แถวที่ ${index + 1} ต้องมีรหัสรายการและชื่อกิจการ` }, 400);
+          }
+          if (seenRecordIds.has(id)) {
+            return json({ error: `ข้อมูลปี ${year} มีรหัสรายการซ้ำ: ${id.slice(0, 80)}` }, 400);
+          }
+          seenRecordIds.add(id);
+        }
+        recordsToWrite[year] = validRows;
       }
       for (const year of years) if ((recordsToWrite[year] || []).length > 10000) return json({ error: `ข้อมูลปี ${year} มีรายการมากเกินไป` }, 413);
 

@@ -5,6 +5,7 @@ import { DSBadge, DSButton } from '../design-system/components';
 export interface DuplicateConflictItem {
   incoming: Partial<BusinessRecord>;
   existing: BusinessRecord;
+  matchBy?: 'taxId' | 'companyName';
 }
 
 export type ConflictResolutionMode = 'update_existing' | 'skip_duplicates' | 'import_all';
@@ -77,7 +78,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
             </span>
           </div>
           <div className="p-3 rounded-xl border border-slate-300 bg-slate-100">
-            <span className="text-[11px] text-slate-700 block">ซ้ำตามเลขภาษี</span>
+            <span className="text-[11px] text-slate-700 block">รายการซ้ำ</span>
             <span className="text-lg font-bold font-mono text-slate-900">
               {duplicateItems.length.toLocaleString()}
             </span>
@@ -110,7 +111,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               <span
                 className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
-                นำข้อมูลใหม่จากไฟล์ไปอัปเดตทับรายการเดิมที่มีเลขประจำตัวผู้เสียภาษีตรงกัน (เช่น รหัสผ่าน, วันที่แจ้งผู้สอบ, รหัส e-Filing) และนำเข้ารายการใหม่อัตโนมัติ
+                นำข้อมูลใหม่ไปอัปเดตรายการเดิมที่จับคู่ได้จากเลขประจำตัวผู้เสียภาษีหรือชื่อกิจการที่ตรงกันเพียงรายการเดียว และเพิ่มรายการใหม่อัตโนมัติ
               </span>
             </div>
           </label>
@@ -134,7 +135,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               <span
                 className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
-                ไม่แก้ไขข้อมูลเดิมในระบบ และข้ามรายการที่เลขผู้เสียภาษีซ้ำทั้งหมด โดยจะนำเข้าเฉพาะกิจการที่ยังไม่เคยมีในระบบ
+                ไม่แก้ไขข้อมูลเดิมในระบบ และข้ามรายการที่จับคู่กับข้อมูลเดิมได้ โดยจะนำเข้าเฉพาะกิจการที่ยังไม่พบรายการตรงกัน
               </span>
             </div>
           </label>
@@ -158,7 +159,7 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
               <span
                 className="text-[11px] mt-0.5 leading-relaxed text-slate-600"
               >
-                เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีเลขผู้เสียภาษีซ้ำกับของเดิมหรือไม่
+                เพิ่มทุกรายการลงในระบบเป็นแถวใหม่โดยไม่สนใจว่ามีรายการที่จับคู่กับข้อมูลเดิมได้หรือไม่
               </span>
             </div>
           </label>
@@ -184,18 +185,18 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {showPreviewList && (
             <div className="max-h-48 overflow-y-auto divide-y divide-[#ececec] border-t border-[#e4e4e7] bg-white p-2">
-              {duplicateItems.map(({ incoming, existing }, idx) => (
+              {duplicateItems.map(({ incoming, existing, matchBy }, idx) => (
                 <div key={idx} className="p-2 flex items-center justify-between gap-3 text-xs">
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-[#18181b] truncate">
                       {incoming.companyName || existing.companyName}
                     </span>
                     <span className="text-[11px] font-mono text-[#71717a]">
-                      เลขภาษี: {existing.taxId} • ลำดับเดิม #{existing.sequenceNo}
+                      {matchBy === 'companyName' ? 'จับคู่ด้วยชื่อกิจการ' : `เลขภาษี: ${existing.taxId}`} • ลำดับเดิม #{existing.sequenceNo}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <DSBadge variant="warning">ตรงกับในระบบ</DSBadge>
+                    <DSBadge variant="warning">{matchBy === 'companyName' ? 'ชื่อกิจการตรงกัน' : 'เลขภาษีตรงกัน'}</DSBadge>
                   </div>
                 </div>
               ))}
