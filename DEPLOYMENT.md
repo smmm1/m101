@@ -32,3 +32,7 @@
 Do not switch the production branch to a preview branch. Changes are released by committing to `main`, then verifying that the latest Cloudflare deployment is marked `production`, references the same commit, and succeeds.
 
 D1 data is persistent and separate from the static site deployment. Do not replace the database binding or run destructive migrations as part of a routine UI deployment. Never run Preview migrations against the Production database.
+
+
+- Authentication must never trigger Preview-to-Production data transfer. Logging in is auth-only; the legacy `migratePreviewWorkspace` routine is intentionally not called from the login route.
+- Preview-to-Production record migration is a separate, high-impact operation. It requires a separately reviewed migration plan, verified source/target D1 bindings, a current backup, record-level reconciliation, and explicit approval before any Production write. Do not use login or a Preview deployment to perform that transfer.
