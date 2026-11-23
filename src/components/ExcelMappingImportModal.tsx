@@ -280,16 +280,21 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     // name-only matches are checked only when no tax ID is supplied.
     const taxColumn = Object.entries(mapping).find(([, field]) => field === 'taxId')?.[0];
     const companyColumn = Object.entries(mapping).find(([, field]) => field === 'companyName')?.[0];
-    const seenSourceKeys = new Set<string>();
+    const seenTaxIds = new Set<string>();
+    const seenCompanyNames = new Map<string, string>();
     const duplicateSourceRows: number[] = [];
     rowsWithNames.forEach((rowIndex) => {
       const row = dataRows[rowIndex] ?? [];
       const taxId = taxColumn === undefined ? '' : clean(row[Number(taxColumn)]).replace(/\D/g, '');
       const companyName = companyColumn === undefined ? '' : clean(row[Number(companyColumn)])
         .normalize('NFKC').toLocaleLowerCase('th').replace(/[\s\u00a0\-_.(),/\\]/g, '');
-      const key = taxId ? `tax:${taxId}` : companyName ? `name:${companyName}` : '';
-      if (key && seenSourceKeys.has(key)) duplicateSourceRows.push(rowIndex);
-      if (key) seenSourceKeys.add(key);
+      const previousTaxIdForName = companyName ? seenCompanyNames.get(companyName) : undefined;
+      const duplicateTaxId = Boolean(taxId && seenTaxIds.has(taxId));
+      const duplicateName = previousTaxIdForName !== undefined
+        && (!taxId || !previousTaxIdForName || previousTaxIdForName === taxId);
+      if (duplicateTaxId || duplicateName) duplicateSourceRows.push(rowIndex);
+      if (taxId) seenTaxIds.add(taxId);
+      if (companyName && previousTaxIdForName === undefined) seenCompanyNames.set(companyName, taxId);
     });
     if (duplicateSourceRows.length > 0) {
       const sourceRowNumbers = duplicateSourceRows.slice(0, 5)
