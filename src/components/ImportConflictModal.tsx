@@ -185,14 +185,14 @@ export const ImportConflictModal: React.FC<ImportConflictModalProps> = ({
 
           {showPreviewList && (
             <div className="max-h-48 overflow-y-auto divide-y divide-[#ececec] border-t border-[#e4e4e7] bg-white p-2">
-              {duplicateItems.map(({ incoming, existing }, idx) => (
+              {duplicateItems.map(({ incoming, existing, matchBy }, idx) => (
                 <div key={idx} className="p-2 flex items-center justify-between gap-3 text-xs">
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-[#18181b] truncate">
                       {incoming.companyName || existing.companyName}
                     </span>
                     <span className="text-[11px] font-mono text-[#71717a]">
-                      {incoming.matchBy === 'companyName' ? 'จับคู่ด้วยชื่อกิจการ' : `เลขภาษี: ${existing.taxId}`} • ลำดับเดิม #{existing.sequenceNo}
+                      {matchBy === 'companyName' ? 'จับคู่ด้วยชื่อกิจการ' : `เลขภาษี: ${existing.taxId}`} • ลำดับเดิม #{existing.sequenceNo}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
