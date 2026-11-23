@@ -274,6 +274,34 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     if (rowsWithNames.length !== selectedRows.length) {
       onShowToast('มีแถวที่ไม่มีชื่อกิจการ ระบบจะข้ามแถวเหล่านั้น', 'ตรวจสอบข้อมูล', 'info');
     }
+
+    // Prevent duplicate records inside the same source selection from bypassing
+    // the database duplicate-review step. Repeated tax IDs are always ambiguous;
+    // name-only matches are checked only when no tax ID is supplied.
+    const taxColumn = Object.entries(mapping).find(([, field]) => field === 'taxId')?.[0];
+    const companyColumn = Object.entries(mapping).find(([, field]) => field === 'companyName')?.[0];
+    const seenSourceKeys = new Set<string>();
+    const duplicateSourceRows: number[] = [];
+    rowsWithNames.forEach((rowIndex) => {
+      const row = dataRows[rowIndex] ?? [];
+      const taxId = taxColumn === undefined ? '' : clean(row[Number(taxColumn)]).replace(/\\D/g, '');
+      const companyName = companyColumn === undefined ? '' : clean(row[Number(companyColumn)])
+        .normalize('NFKC').toLocaleLowerCase('th').replace(/[\\s\\u00a0\\-_.(),/\\\\]/g, '');
+      const key = taxId ? `tax:${taxId}` : companyName ? `name:${companyName}` : '';
+      if (key && seenSourceKeys.has(key)) duplicateSourceRows.push(rowIndex);
+      if (key) seenSourceKeys.add(key);
+    });
+    if (duplicateSourceRows.length > 0) {
+      const sourceRowNumbers = duplicateSourceRows.slice(0, 5)
+        .map((rowIndex) => selectedRegion.startRow + (dataRowEntries[rowIndex]?.index ?? rowIndex) + 1);
+      onShowToast(
+        `พบรายการซ้ำในไฟล์เดียวกัน ${duplicateSourceRows.length} แถว (เช่น แถว ${sourceRowNumbers.join(', ')}) กรุณาตรวจสอบและแก้ไฟล์ก่อนนำเข้า`,
+        'หยุดการนำเข้าเพื่อตรวจสอบข้อมูลซ้ำ',
+        'error'
+      );
+      return;
+    }
+
     const output: Partial<BusinessRecord>[] = rowsWithNames.map((rowIndex, index) => {
       const source = dataRows[rowIndex] ?? [];
       const record: Partial<BusinessRecord> = {
@@ -319,7 +347,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
       return record;
     });
     onImportRecords(output);
-    onShowToast(`นำเข้าข้อมูล ${output.length} รายการ จาก ${sheetName} สำเร็จ`, 'นำเข้าสำเร็จ', 'success');
+    // The parent queues the success message and releases it only after D1 confirms the write.
     close();
   };
 
