@@ -92,7 +92,7 @@ async function getWorkspaceAccess(user: UserRow, env: Env): Promise<WorkspaceAcc
 }
 
 
-async function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
+// Kept as a migration routine only; authentication must never invoke this Production-writing operation.\nasync function migratePreviewWorkspace(env: Env, authenticatedOwner: UserRow) {
   if (!env.PREVIEW_DB || authenticatedOwner.role !== 'admin') throw new Error('Preview account migration is unavailable');
   const migrationKey = 'preview_workspace_migration_v1';
   const alreadyMigrated = await env.DB.prepare('SELECT config_value FROM app_config WHERE config_key = ?').bind(migrationKey).first();
@@ -458,8 +458,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
         const previewCandidate = await hashPassword(password, previewUser?.password_salt || 'bTEwMS1sb2dpbi1kdW1teS1zYWx0');
         if (previewUser && previewUser.role === 'admin' && previewUser.account_status === 'active'
           && Number(previewUser.local_password_set) === 1 && constantTimeEqual(previewCandidate.hash, previewUser.password_hash)) {
-          await migratePreviewWorkspace(env, previewUser);
-          user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(previewUser.id).first() as UserRow | null;
+          // Never write Production data as a side effect of login. Preview-to-Production
+          // migration must be a separately reviewed and explicitly authorized operation.
+          return json({ error: 'พบบัญชี Owner ในฐานข้อมูล Preview แต่ระบบจะไม่ย้ายข้อมูลระหว่างเข้าสู่ระบบ กรุณาดำเนินการ Migration แยกต่างหากหลังตรวจสอบปลายทางและข้อมูลที่จะย้าย' }, 409);
         }
       }
       // Perform the same PBKDF2 work for unknown, suspended, and active accounts
