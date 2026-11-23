@@ -117,6 +117,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [sheetName, setSheetName] = useState('');
   const [regions, setRegions] = useState<TableRegion[]>([]);
+  const [sheetMatrix, setSheetMatrix] = useState<string[][]>([]);
   const [regionId, setRegionId] = useState('');
   const [headerRowIndex, setHeaderRowIndex] = useState(0);
   const [mapping, setMapping] = useState<Record<number, ImportField | ''>>({});
@@ -135,6 +136,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     setWorkbook(null);
     setSheetName('');
     setRegions([]);
+    setSheetMatrix([]);
     setRegionId('');
     setHeaderRowIndex(0);
     setMapping({});
@@ -191,6 +193,7 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
     const sheet = book.Sheets[name];
     const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: false, defval: '' });
     const found = detectRegions(matrix);
+    setSheetMatrix(matrix.map((row) => row.map(clean)));
     setSheetName(name);
     setRegions(found);
     setRegionId(found.length === 1 ? found[0].id : '');
@@ -339,23 +342,23 @@ export const ExcelMappingImportModal: React.FC<Props> = ({
                 <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
                     <b className="text-slate-700">ตัวอย่างข้อมูลใน Sheet แบบตาราง</b>
-                    <span className="text-slate-500">แสดง {Math.min(50, selectedRegion.rows.length)} จาก {selectedRegion.rows.length} แถว</span>
+                    <span className="text-slate-500">แสดง {Math.min(50, sheetMatrix.length)} จาก {sheetMatrix.length} แถว · สูงสุด 26 คอลัมน์</span>
                   </div>
                   <div className="max-h-72 overflow-auto">
                     <table className="min-w-full border-collapse text-left text-xs">
                       <thead className="sticky top-0 z-10 bg-slate-100 text-slate-600">
                         <tr>
                           <th scope="col" className="sticky left-0 border-b border-r border-slate-200 bg-slate-100 px-2 py-2 text-center">แถว</th>
-                          {Array.from({ length: Math.max(1, ...selectedRegion.rows.map((row) => row.length)) }, (_, columnIndex) => (
-                            <th key={columnIndex} scope="col" className="whitespace-nowrap border-b border-r border-slate-200 px-3 py-2 font-semibold">{XLSX.utils.encode_col(selectedRegion.startCol + columnIndex)}</th>
+                          {Array.from({ length: Math.min(26, Math.max(1, ...sheetMatrix.map((row) => row.length))) }, (_, columnIndex) => (
+                            <th key={columnIndex} scope="col" className="whitespace-nowrap border-b border-r border-slate-200 px-3 py-2 font-semibold">{XLSX.utils.encode_col(columnIndex)}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedRegion.rows.slice(0, 50).map((row, rowIndex) => (
-                          <tr key={rowIndex} className={rowIndex === headerRowIndex ? 'bg-blue-50 font-semibold' : rowIndex % 2 ? 'bg-slate-50/70' : 'bg-white'}>
-                            <th scope="row" className="sticky left-0 border-b border-r border-slate-200 bg-inherit px-2 py-1.5 text-center font-medium text-slate-500">{selectedRegion.startRow + rowIndex + 1}</th>
-                            {Array.from({ length: Math.max(1, ...selectedRegion.rows.map((item) => item.length)) }, (_, columnIndex) => (
+                        {sheetMatrix.slice(0, 50).map((row, rowIndex) => (
+                          <tr key={rowIndex} className={rowIndex === selectedRegion.startRow + headerRowIndex ? 'bg-blue-50 font-semibold' : rowIndex % 2 ? 'bg-slate-50/70' : 'bg-white'}>
+                            <th scope="row" className="sticky left-0 border-b border-r border-slate-200 bg-inherit px-2 py-1.5 text-center font-medium text-slate-500">{rowIndex + 1}</th>
+                            {Array.from({ length: Math.min(26, Math.max(1, ...sheetMatrix.map((item) => item.length))) }, (_, columnIndex) => (
                               <td key={columnIndex} className="max-w-64 whitespace-nowrap border-b border-r border-slate-100 px-3 py-1.5 text-slate-700">{row[columnIndex] || '—'}</td>
                             ))}
                           </tr>
