@@ -91,23 +91,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       try {
         const text = event.target?.result as string;
         const parsed = JSON.parse(text);
-        if (
-          Array.isArray(parsed) &&
-          parsed.length > 0 &&
-          parsed.every((item) =>
-            item !== null &&
-            typeof item === 'object' &&
-            !Array.isArray(item) &&
-            typeof item.companyName === 'string' &&
-            item.companyName.trim().length > 0
-          )
-        ) {
-          if (onRestoreRecords) {
-            onRestoreRecords(parsed);
-            onShowToast(`กู้คืนข้อมูล ${parsed.length} รายการสำเร็จ`, 'กู้คืนสำเร็จ');
-          }
-        } else {
+        if (!Array.isArray(parsed) || parsed.length === 0) {
           onShowToast('ไฟล์สำรองไม่ถูกต้อง หรือไม่มีรายการข้อมูล', 'ข้อผิดพลาด', 'error');
+          return;
+        }
+
+        const seenIds = new Set<string>();
+        for (const [index, item] of parsed.entries()) {
+          if (
+            item === null ||
+            typeof item !== 'object' ||
+            Array.isArray(item) ||
+            typeof item.id !== 'string' ||
+            !item.id.trim() ||
+            typeof item.companyName !== 'string' ||
+            !item.companyName.trim()
+          ) {
+            onShowToast(`ไฟล์สำรองมีข้อมูลไม่ครบในรายการที่ ${index + 1} (ต้องมีรหัสรายการและชื่อกิจการ)`, 'กู้คืนถูกยกเลิก', 'error');
+            return;
+          }
+          const id = item.id.trim();
+          if (seenIds.has(id)) {
+            onShowToast(`ไฟล์สำรองมีรหัสรายการซ้ำ: ${id.slice(0, 80)}`, 'กู้คืนถูกยกเลิก', 'error');
+            return;
+          }
+          seenIds.add(id);
+        }
+
+        if (onRestoreRecords) {
+          onRestoreRecords(parsed);
+          onShowToast(`ส่งข้อมูล ${parsed.length} รายการเข้าคิวกู้คืนแล้ว ระบบจะแจ้งผลหลังบันทึกลงฐานข้อมูล`, 'กำลังกู้คืนข้อมูล', 'info');
         }
       } catch {
         onShowToast('เกิดข้อผิดพลาดในการอ่านไฟล์สำรอง', 'ข้อผิดพลาด', 'error');
